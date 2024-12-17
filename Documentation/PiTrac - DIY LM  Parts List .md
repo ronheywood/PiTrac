@@ -4,7 +4,7 @@
 
 | Quantity | Hardware | Purpose |
 | :---- | :---- | :---- |
-| 1 | [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) and power supply, 4 GB minimum, 8 FB recommended. | Getting a bundled kit with the Pi and power supply and some other things can be economical if you don’t have any Pi-related stuff yet. |
+| 1 | [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) and power supply, 4 GB minimum, 8 GB recommended. | Getting a bundled kit with the Pi and power supply and some other things can be economical if you don’t have any Pi-related stuff yet. |
 | 1 | [Raspberry Pi 4 Model B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) and power supply, 4 GB minimum.  It may also make sense for a little more money just to get a second Pi 5\. |  |
 | 1 | [Pimoroni NVMe Base for Raspberry Pi 5 \- PIM699](https://www.adafruit.com/product/5845) ((optional, but recommended for speed and longevity).   [This board](https://www.amazon.com/gp/product/B0CQ4D2C9S/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1) works well, too. | For the Pi 5, this allows use of an NVMe memory drive instead of an MicroSD card. |
 | 1 | An [NVMe solid state (SSD) memory drive](https://www.amazon.com/gp/product/B0BGFRZDTB/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1) (optional, but recommended for speed and longevity) | Typically with an M.2 M key edge connector, in the 2230 and 2242 form factors.  Should probably get at least 256 GB capacity. |

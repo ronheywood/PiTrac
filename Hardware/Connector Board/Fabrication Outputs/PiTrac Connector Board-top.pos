@@ -1,0 +1,17 @@
+### Footprint positions - created on Fri Nov 29 16:24:32 2024 ###
+### Printed by KiCad version 7.0.10
+## Unit = mm, Angle = deg.
+## Side : top
+# Ref       Val       Package                                                 PosX       PosY       Rot  Side
+J3          ~         Micro_USB_B_Female                                  119.7000  -115.3200    0.0000  top
+R1          330R      R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal   130.8100   -81.2800  180.0000  top
+R2          270R      R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal   146.1762   -89.0791   90.0000  top
+R3          270R      R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal   167.6400   -91.4400   90.0000  top
+R4          330R      R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal   150.8400   -78.8610  -90.0000  top
+Sys1_Conn1  ~         PinHeader_1x04_P2.54mm_Vertical                     114.4851   -81.2800    0.0000  top
+Sys2_Conn1  ~         PinHeader_1x03_P2.54mm_Vertical                     172.7200   -85.0900    0.0000  top
+U2          H11L1     DIP-6_W7.62mm                                       155.5514   -81.2800    0.0000  top
+U3          H11L1     DIP-6_W7.62mm                                       134.6200   -81.2800    0.0000  top
+U4          74HC04    DIP-14_W7.62mm_Socket                               121.9200   -91.4400    0.0000  top
+U5          ~         PCB_Dual_MOS_Driver_Module                          148.7058  -112.8513    0.0000  top
+## End

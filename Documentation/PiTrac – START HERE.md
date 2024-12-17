@@ -1,0 +1,54 @@
+**PiTrac – Start Reading Here**
+
+The process of building your own PiTrac DIY Launch Monitor is described here at a high level.   There are several more-detailed instruction documents elsewhere in the PiTrac repository that are referred to below for various sub-assemblies and tasks like compiling the code and preparing the build environment.
+
+First a bit of a caveat – this is not a beginner project.  You’ll need to be at least a little familiar with Linux and to be able to, for example, use an editor like vi that is available on Linux as well as have some experience compiling code in that environment.  Also, please read the “What is PiTrac” missive to make sure you understand the relatively immature nature of the project currently.  We hope you’ll build one of your own PiTracs, but want to make sure you know things like the fact it only works for right-hand players right now (hopefully fixed early next year) and that you’ll have to do a little careful soldering that will certainly void some warrantees on the Pi Camera\! 😊  We’re also certain that there are still lots of mistakes in the documentation (not to mention the code).  So, you’ll have to expect that there will be some hiccups.  We’re working to setup a Bugzilla server or something similar.
+
+With that said, here is what you need to do to make your own PiTrac:
+
+**1\.**       **Download the PiTrac Repository**
+
+If you haven’t already done so, download the entire current PiTrac repository.  This can be accomplished using any one of several github utilities.  Exactly how you do this will depend on your particular environment, but here’s a few ways:
+
+1\.       If you’re on an Apple or Unix computer, you probably already have git installed.  Just open a terminal window.  Change directories to where you want to land your copy of the PiTrac repository, and do:
+
+a.       git clone TBD
+
+2\.       For Windows (and the Mac, for that matter), there’s lots of YouTube videos.  [Here’s a decent one](https://www.youtube.com/watch?v=7ouVv6PFZGc&t=281).  Once you’ve installed git, you can use one of the tools described in the video to clone the PiTrac project as described above for Macs.
+
+3\.       You can also install Microsoft Visual Studio, which includes git management functionality.
+
+**2\. Gather the Parts You’ll Need**
+
+We’ve listed the basic components that you’ll need to build a PiTrac here.  We (at least currently) don’t sell any of these components. 
+
+The one component that you won’t be able to just buy off the shelf is the little Connector Board printed circuit board.  However, the manufacturing input files are here, and if you send those to a company like [www.jlcpcb.com](http://www.jlcpcb.com/) or [www.pcbway.com](http://www.pcbway.com/), they will often include a small run of this PCB on the unused parts of larger boards they are making for other customers.  This is usually available for only a few dollars, and the slowest shipping option to the US (for example) is also only a few dollars.  It can take a couple of weeks for this process, so you might want to get it going soonest.
+
+The other components can be purchased at places like [www.adafruit.com](http://www.adafruit.com/) and [www.pimoroni.com](http://www.pimoroni.com/) , not to mention Amazon and directly from the [Raspberry Pi folks](https://www.raspberrypi.com/products/raspberry-pi-5/).  Most of the little nuts and bolts are best purchased as part of bulk kits.  See the Component List.
+
+NOTE:  You may want to skim through the rest of the documents to see if you want to modify the parts list.
+
+ 
+
+**4\.**       **Setup the Raspberry Pi Computers That You Will Use in the PiTrac**
+
+The next step is to get your Pi computers up and running and to install the software packages that will be needed to build the PiTrac software.  This process is done first, before putting together the 3D-printed enclosure that the Pi computers are eventually mounted to.
+
+See the document for how to prepare the Pi’s and build the PiTrac executables here.
+
+NOTE: If you are going to have someone else 3D print the enclosure, it’s probably not a bad idea to get that started while you work on getting the Pi’s setup.
+
+ 
+
+**5\.**       **Print the Parts That Make Up the PiTrac Enclosure**
+
+If you have your own 3D Printer (or access to one), you can print your own 3D parts using the models and assembly instructions here.  We know that some folks have also had some luck having a third-party printing company take the models and documentation and print the parts for a fee.
+
+The parts are large enough that you’ll need several spools of printer filament, not to mention a few days to get everything printed.  This is our first project open-sourcing 3D part designs, so be ready for some hiccups here.
+
+ 
+
+**6\.**       **Assemble Your PiTrac**
+
+Once you have PiTrac compiled on each of the two Pi’s, you’re ready to attach the Pi’s to the 3D-printed PiTrac enclosure and assemble the final(ish\!) launch monitor.  See the assembly instructions here.  The assembly requires that the cameras be calibrated as the LM is being built.  For that reason, the PiTrac software (which performs some of that calibration) needs to be ready to go before you start putting things together.
+

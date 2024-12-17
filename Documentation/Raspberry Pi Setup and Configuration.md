@@ -1,5 +1,7 @@
 **PiTrac \- Raspberry Pi Setup and Configuration**
 
+**THIS DOCUMENT IS UNDER CONSTRUCTION \- IGNORE FOR NOW**
+
 These instructions are targeted toward folks who don’t have a lot of experience building software systems in the Pi Operating System and who could benefit from more step-by-step direction. Someone who’s familiar with using tools like meson and ninja to build software can likely skip over many of these steps. However, the instructions contain a number of idiosyncratic steps and configuration requirements that are particular to PiTrac.
 
 These instructions start with a Raspberry Pi with nothing on it, and are meant to describe all the steps to get from that point to a working, compiled version of PiTrac.  PiTrac currently requires two Raspberry Pi’s, so the majority of these instructions will have to be repeated twice.  Because the ‘smaller’ Pi system that connects to Camera 2 is the only Pi that handles the Tomcat/Tomee web-based GUI for the system, there are a few more steps for that system.
@@ -102,7 +104,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
          2. For example:  
             1. 10.0.0.100:/NAS\_Share\_Drive /mnt/PiTracShare nfs \_netdev,auto 0 0  
       2. If using CIFS:  
-         1. Add the following to /etc/fstab after the last non-comment line, replacing RELATIVE PWD and other things in \[\]’s with the real pwd and info  
+         1. Add the following to /etc/fstab after the last non-comment line, replacing PWD and other things in \[\]’s with the real pwd and info  
             1. //\<NAS IP Address\>:/\<NAS Shared Drive Name\> /mnt/PiTracShare cifs username=\[PiTracUserName\],password=\[PWD\],workgroup=WORKGROUP,users,exec,auto,rw,file\_mode=0777,dir\_mode=0777,user\_xattr 0 0  
    8. sudo systemctl daemon-reload  
    9. sudo mount \-a  
@@ -262,19 +264,6 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
     7. cmake \-DMSGPACK\_CXX20=ON .  
     8. sudo cmake \--build . \--target install  
     9. sudo /sbin/ldconfig  
-    10. TBD \- DO WE NEED TO DO THIS?  I DIDN”T  
-    11. Also, need to create our own .pc file:  
-        1. \# Package Information for pkg-config  
-        2.   
-        3. prefix=/usr/local  
-        4. exec\_prefix=${prefix}  
-        5. libdir=${exec\_prefix}/lib  
-        6. includedir=${prefix}/msgpack/adaptor/include/  
-        7.   
-        8. Name: msgpack-cxx  
-        9. Description: Open Source GPIO library  
-        10. Version: 1.0.0  
-        11. Cflags: \-I${includedir}  
 20. Install ActiveMQ Broker (need only do on the Pi 2 system, as it is the only system that will be running the broker ?)   
     1. [https://activemq.apache.org/version-5-getting-started.html\#installation-procedure-for-unix](https://activemq.apache.org/version-5-getting-started.html#installation-procedure-for-unix)   
     2. Get Apache Pre-Reqs  
@@ -301,7 +290,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        2. cd \~/Dev  
        3. gunzip /mnt/PiTracShare/tmp/activemq-cpp-library-3.9.5-src.tar.gz (or wherever you put the .gz zip file)  
        4. export MAVEN\_OPTS=-Xmx1024M  
-       5.  mvn \-Dtest=false \-Dsurefire.failIfNoSpecifiedTests=false clean install  
+       5. mvn \-Dtest=false \-Dsurefire.failIfNoSpecifiedTests=false clean install  
     4. May also able to do:  
        1. git clone [https://gitbox.apache.org/repos/asf/activemq-cpp.git](https://gitbox.apache.org/repos/asf/activemq-cpp.git) if the version is new enough  
     5. cd activemq-cpp-library/activemq-cpp-library  
@@ -377,11 +366,10 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        5.      gstreamer1.0-tools \\  
        6.      gstreamer1.0-gl \\  
        7.      Gstreamer1.0-gtk3  
-26. 1,$ s/\\.\\.\\/build\\/golf\_sim\_test/$PITRAC\_ROOT\\/ImageProcessing\\/build\\/pitrac\_lm/g  
-27. Install other Launch Monitor dependencies  
-    1. Formatting library because the currently-packaged gcc12.2 in debian doesn’t have the c++20 format capability yet  
+26. Install other Launch Monitor dependencies  
+    1. Formatting library because the currently-packaged gcc12.2 in Debian unix doesn’t have the c++20 format capability yet  
        1. **`sudo apt`** `install libfmt-dev`  
-28. **Build Launch Monitor\!**  
+27. **Build Launch Monitor\!**  
     1. Prerequisites:  
        1. Setup the PITRAC\_ROOT environment variable to point to the “LM” directory of the PiTrac build.  That is one directory “up” from the directory that has the meson.build file in it.  
           1. E.g., include in your .zshrc or .bashrc or whatever shell you use:  
@@ -406,7 +394,9 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        1. add\_global\_arguments('-DPITRAC\_COMPILING\_ON\_PI\_4', language : 'cpp')  
        2. This requirement should go away once we have the latest rpicam-app code integrated into the system.  
     3. meson setup build \-Denable\_libav=true \-Denable\_drm=true \-Denable\_egl=true \-Denable\_qt=true \-Denable\_opencv=true \-Denable\_tflite=false  
-    4. ninja \-C build
+    4. ninja \-C build  
+    5. TBD \- Github doesn’t seem to preserve the runnability (-x) status of the scripots, so we have to do this manually  
+       1. chmod 755 CameraTools/\*.sh RunScripts/\*.sh
 
 **Nice-to-Haves for an easy-to-use development environment**
 

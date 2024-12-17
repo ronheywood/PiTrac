@@ -42,7 +42,7 @@ NOTE: If you are going to have someone else 3D print the enclosure, it’s proba
 
 **5\.**       **Print the Parts That Make Up the PiTrac Enclosure**
 
-If you have your own 3D Printer (or access to one), you can print your own 3D parts using the [3D design models](https://github.com/jamespilgrim/PiTrac/tree/main/3D%20Printed%20Parts/Enclosure%20Models) and [assembly instructions](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/DIY%20LM%20Enclosure%20Assembly.md).  We know that some folks have also had some luck having a third-party printing company take the models and documentation and print the parts for a fee.
+If you have your own 3D Printer (or access to one), you can print your own 3D parts using the [3D design models](https://github.com/jamespilgrim/PiTrac/tree/main/3D%20Printed%20Parts/Enclosure%20Models) and [assembly instructions](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/DIY%20LM%20Enclosure%20Assembly.zip).  We know that some folks have also had some luck having a third-party printing company take the models and documentation and print the parts for a fee.
 
 The parts are large enough that you’ll need several spools of printer filament, not to mention a few days to get everything printed.  This is our first project open-sourcing 3D part designs, so be ready for some hiccups here.
 

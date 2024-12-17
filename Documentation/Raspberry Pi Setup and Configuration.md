@@ -1,6 +1,6 @@
 **PiTrac \- Raspberry Pi Setup and Configuration**
 
-**THIS DOCUMENT IS UNDER CONSTRUCTION \- IGNORE FOR NOW**
+**THIS DOCUMENT IS STILL UNDER CONSTRUCTION \- CHECK BACK LATER**
 
 These instructions are targeted toward folks who don’t have a lot of experience building software systems in the Pi Operating System and who could benefit from more step-by-step direction. Someone who’s familiar with using tools like meson and ninja to build software can likely skip over many of these steps. However, the instructions contain a number of idiosyncratic steps and configuration requirements that are particular to PiTrac.
 
@@ -8,15 +8,15 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
 
 **Necessary & Recommended Components:**
 
-- A raspberry Pi 4 and/or 5 with at least 4 Gig of memory  
+- A raspberry Pi 4 and a Pi 5 with at least 4 GB of memory (8 GB recommend for the Pi 5\)  
 - A Micro SD card with at least 64Gig  
-- Especially if you are planning on using the larger Pi 5 as a development environment, an NVMe hat with an NVMe drive is a great investment.  
-- Power supply for the Pi(s)  
+- Especially if you are planning on using the larger Pi 5 as a development environment, an NVMe hat with an NVMe SSD drive is a great investment.  
+- Power supplies for the Pi’s  
 - Network cabling if using the Pi’s wired ethernet port (recommended \- some of the packages we’ll be downloading are large and slow over WiFi)  
 - Monitor, keyboard and mouse to connect to the Pi (recommended, but can also run the Pi ‘headless’ without any direct connections  
 - Especially if running headless, a Mac, PC, or other Linux machine that you will use to interact with the Pi, along with a terminal tool to login to the Pi, such as Putty.  
 - Visual Studio (optional) for your PC or MAC  
-  - Most of the PiTrac system runs not only in the Pi, but can also (mostly) run from a Visual Studio platform on a PC or Mac.  The more comfortable graphical  programming environment in VS is great for testing and debugging and coding new features.  
+  - Most of the PiTrac system runs not only in the Pi, but can also (mostly) run from a Visual Studio platform on a PC or Mac.  The more comfortable graphical  programming environment in VS is great for testing and debugging and coding new features into the same code base.  
 - A separate file server, such as a NAS is highly recommended if you expect to be making changes to the PiTrac system.  Pi’s are a little fragile, so keeping the PiTrac files elsewhere in a safer environment (and then mounting those files on the Pi remotely) is a good practice.  
   - We typically have a separate server that we use both from the Pi and also from a PC running Visual Studio that is used to help debugging.  
   - It’s wise to think of the Pi as a temporary, write-only device that could be erased at any time.

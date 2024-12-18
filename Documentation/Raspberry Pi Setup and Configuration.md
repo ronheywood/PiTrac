@@ -54,11 +54,13 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
    3. Or, equivalently, do the following from the command line:  
       1. sudo apt \-y update  
       2. sudo apt \-y upgrade  
+      3. sudo reboot now      (to make sure everything is updated)  
 4. Remotely login (to be able to paste from this setup document)  
    1. putty rsp01 \-l \<username\>    (the boot image should already allow putty)  
    2. Then, follow the instructions below…  
 5. If necessary, make sure that \<PiTracUserName\> has sudo privileges  
-6. To Install an NVME Board on the Pi  \[Optional\]:  
+   1. Some guidance [here](https://askubuntu.com/questions/168280/how-do-i-grant-sudo-privileges-to-an-existing-user).  
+6. To Install an NVME Board on the Pi  \[Optional, and probably only for the Pi 5 (confusingly referred to as the “Pi 1” computer in the PiTrac project)\]:  
    1. If you have a SSD drive, best to get it up and booting now  
    2. See also the instructions here, which will work in most cases: [https://wiki.geekworm.com/NVMe\_SSD\_boot\_with\_the\_Raspberry\_Pi\_5](https://wiki.geekworm.com/NVMe_SSD_boot_with_the_Raspberry_Pi_5)  
       Although the instructions below should work as well.  
@@ -90,48 +92,59 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
       6. Power down, remove power, then remove the SSD card  
       7. When you turn the power on, the Pi should reboot from the SSD drive, and it should be pretty quick\!
 
-7. Setup mounting of a remote NAS drive (or similar) to use for development so that you can’t lose everything if the Pi has an issue.    
-   1. The remote drive will store the development environment, though you can obviously set up the PiTrac not to need a separate drive once you have everything working.  However, it’s really a good idea to have the development and test environment on a different computer than on the individual Pi’s.  
-   2. There are many ways to automatically mount a removable drive to a Pi.  The following is just one way that assumes you have a NAS with NFS services enabled and with a shareable drive that the Pi can read/write to.  
+7. Setup mounting of a remote NAS drive (or similar)   
+   1. To use for development so that you can’t lose everything if the Pi has an issue.  Also allows for easier transfers of files to the Pi from another computer.  
+   2. The remote drive will store the development environment, though you can obviously set up the PiTrac not to need a separate drive once you have everything working.  However, it’s really a good idea to have the development and test environment on a different computer than on the individual Pi’s.  
+   3. There are many ways to automatically mount a removable drive to a Pi.  The following is just one way that assumes you have a NAS with NFS services enabled and with a shareable drive that the Pi can read/write to.  
       1. NOTE:  If this Pi will be anywhere in a public network, obviously do not include your password in the fstab\!  
-   3. sudo mkdir /mnt/PiTracShare  
-   4. cd /etc  
-   5. sudo cp fstab fstab.original  
-   6. sudo chmod 600 /etc/fstab   \[to try protect any passwords in the file\]  
-   7. sudo vi fstab  
-      1. If using NFS:  
+   4. sudo mkdir /mnt/PiTracShare  
+   5. cd /etc  
+   6. sudo cp fstab fstab.original  
+   7. sudo chmod 600 /etc/fstab   \[to try protect any passwords in the file\]  
+   8. sudo vi fstab  
+      1. If using NFS (seems easier):  
          1. \<NAS IP Address\>:/\<NAS Shared Drive Name\> /mnt/PiTracShare nfs \_netdev,auto 0 0  
          2. For example:  
             1. 10.0.0.100:/NAS\_Share\_Drive /mnt/PiTracShare nfs \_netdev,auto 0 0  
       2. If using CIFS:  
          1. Add the following to /etc/fstab after the last non-comment line, replacing PWD and other things in \[\]’s with the real pwd and info  
             1. //\<NAS IP Address\>:/\<NAS Shared Drive Name\> /mnt/PiTracShare cifs username=\[PiTracUserName\],password=\[PWD\],workgroup=WORKGROUP,users,exec,auto,rw,file\_mode=0777,dir\_mode=0777,user\_xattr 0 0  
-   8. sudo systemctl daemon-reload  
-   9. sudo mount \-a  
-      1. If there’s an error, make sure the password is correct  
-      2. ls \-al /mnt/PiTracShare    should show any files there  
+   9. sudo systemctl daemon-reload  
+   10. sudo mount \-a  
+       1. If there’s an error, make sure the password is correct  
+       2. ls \-al /mnt/PiTracShare    should show any files there  
 8. Setup Samba server (to allow the two Pi’s to share a folder between themselves)  
    1. Need to allow the Pi’s to serve out directories to the other Pi to share information like debugging pictures from one Pi to the other  
    2. See [https://pimylifeup.com/raspberry-pi-samba/](https://pimylifeup.com/raspberry-pi-samba/) for the basics  
-   3. We suggest the faster Pi 5 (or whatever will be connected to Camera 1\) be Pi from which the shared directory is shared.  
-   4. Something like:  
+   3. We suggest the faster Pi 5 (or whatever will be connected to Camera 1\) be the Pi from which the shared directory is shared.  
+   4. For the Pi from which the directory will be shared, something like:  
       1. sudo apt-get install samba samba-common-bin  
       2. sudo systemctl restart smbd  
       3. sudo systemctl status smbd  
          1. Should show “active (running)”  
       4. mount \-t cifs  
-      5. sudo vi /etc/samba/smb.conf   and add the following lines at the bottom  
+      5. Create the directory structure that the two Pis will share (this helps facilitate transfer of debugging images between the two Pis)  
+         1. mkdir /home/\<PiTracUser\>/LM\_Shares  
+         2. mkdir /home/\<PiTracUser\>/LM\_Shares/GolfSim\_Share  
+         3. mkdir /home/\<PiTracUser\>/LM\_Shares/Images  
+      6. sudo vi /etc/samba/smb.conf   and add the following lines at the bottom  
          1. \[LM\_Shares\]  
          2. path \= /home/\<PiTracUser\>/LM\_Shares  
          3. writeable=Yes  
          4. create mask=0777  
          5. directory mask=0777  
          6. public=no  
-      6. sudo smbpasswd \-a \<PiTracUsername\>  
+      7. sudo smbpasswd \-a \<PiTracUsername\>  
          1. Enter the same password you used for the PiTracUsername  
-      7. sudo systemctl restart smbd  
-9. Setup ssh to make it easier to login securely and quickly (w/o a pwed) \[optional, but really useful\]  
-   1. This step assumes your PiTrac is secure in your own network and that the machine you use to log in is not used by others (given that this helps automate remote logins)  
+      8. sudo systemctl restart smbd  
+   5. For the Pi to which the directory will be shared:  
+      1. Add the following to /etc/fstab after the last non-comment line, replacing PWD and other things in \[\]’s with the real pwd and info for the PiTracUserName and paswword  
+         1. //\<Pi 1’s IP Address\>/LM\_Shares /home/\<PiTracUser\>/LM\_Shares cifs username=\[PiTracUserName\],password=\[PWD\],workgroup=WORKGROUP,users,exec,auto,rw,file\_mode=0777,dir\_mode=0777,user\_xattr 0 0  
+      2. sudo systemctl daemon-reload  
+      3. sudo mount \-a  
+      4. Check to make sure the second Pi can “see” the other Pi’s LM\_Shares sub-directories (Images and GolfSim\_Share)  
+9. Setup ssh to use a stored key make it easier to login securely and quickly (w/o a pwd) \[optional, but really useful to avoid having to type a password every time\]  
+   1. **WARNING \-** This step assumes your PiTrac is secure in your own network and that the machine you use to log in is not used by others (given that this helps automate remote logins)  
    2. If not already, remotely log into the Pi from the machine where you’re reading this document  
    3. Create an ssh file  
       1. install \-d \-m 700 \~/.ssh  
@@ -142,7 +155,6 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
       2. The key would have been generated using puttygen  
       3. The file should simply have each key (no spaces\!)  preceded on the same line with “ssh-rsa ”  
    7. sudo chmod 644 \~/.ssh/authorized\_keys  
-   8.   
 10. If you don’t already have your development world setup the way you want it, we suggest trying now some of the environments/tools at the bottom of these instructions labeled “**Nice-to-Haves for an easy-to-use development environment**”  
 11. Git and GitHub  
     1. If the project will be hosted on a shared drive, and you 100% control of that drive and it’s not public, then let github know that we’re all family here.  On the pi and on whatever computer you log in from, do::  
@@ -151,7 +163,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
 12. Configure the clock to not vary (as our timing is based on it\!)  
     1. cd /boot/firmware  
     2. sudo cp config.txt config.txt.ORIGINAL  
-    3. Sudo vi config.txt:  
+    3. sudo vi config.txt:  
     4. For Pi 4 & 5:  
        1. Set force\_turbo=1   in /boot/firmware/config.txt  
        2. E.g.,   
@@ -159,11 +171,10 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        4. force\_turbo=1  
     5. For Pi 5 also add  
        1. arm\_boost=1 in /boot/firmware/config.txt   
-       2.   
 13. Install and build OpenCV \- for both python and C++    
-    1. Latest version as of this writing (late 2024\) is 4.10  
+    1. Latest version of OpenCV as of this writing (late 2024\) is 4.10  
     2. See e.g., [https://itslinuxfoss.com/install-opencv-debian/](https://itslinuxfoss.com/install-opencv-debian/) for more information on installing  
-    3. Increase swap space other requirements to have around 6 Gig.  For a 4 Gig or larger Pi, you can skip this.  
+    3. If necessary, increase swap space to have around 6 Gig of usable space.  For a 4 Gig or larger Pi, you can skip this step and just go to compiling  
        1. See [https://qengineering.eu/install-opencv-4.5-on-raspberry-64-os.html](https://qengineering.eu/install-opencv-4.5-on-raspberry-64-os.html)  
           1. \# enlarge the boundary (CONF\_MAXSWAP)  
           2. $ sudo nano /sbin/dphys-swapfile  
@@ -176,12 +187,14 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        1. mkdir \~/Dev  
        2. cd Dev    (this is where we will compile the packages PiTrac needs)  
        3. See [https://qengineering.eu/install-opencv-4.5-on-raspberry-64-os.html](https://qengineering.eu/install-opencv-4.5-on-raspberry-64-os.html)  
-       4. You can use the fully-automated script, though you might learn more if you follow the steps in the guide.  
-          1. The script in named OpenCV-4-10-0.sh and is available as described in the above URL.  
+       4. You can use the fully-automated script from the above webpage, though you might learn more if you follow the steps in the guide (which mirror the script).  
+          1. The script is named OpenCV-4-10-0.sh and is available as described in the above URL.  
           2. In the OpenCV-4-10-0.sh script, it’s useful for testing to change the following before running:  
              1.  INSTALL\_C\_EXAMPLES=ON   
-          3. Run the script and review the output to make sure there were no errors.  The script takes quite a while to run on some Pi’s.  
-       5. Ensure the script run the sudo make install step at the end after the script runs  
+             2.  INSTALL\_PYTHON\_EXAMPLES=ON   
+          3. In addition, if your Pi only has 4 GB or less, change the “-j4” to “-j 2” to prevent the compile process from consuming all the memory.  
+          4. Run the script and review the output to make sure there were no errors.  The script takes quite a while to run on some Pi’s.  
+       5. Ensure the script runs the sudo make install step at the end after the script runs  
 14. Install Boost (a set of utilities that PiTrac uses)  
     1. Install the current version of the boost development environment  
        1. sudo apt-get install libboost1.74-all  
@@ -202,7 +215,8 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
           13. Libs: \-L${libdir} \-lboost\_filesystem \-lboost\_system \-lboost\_timer \-lboost\_log \-lboost\_chrono \-lboost\_regex \-lboost\_thread \-lboost\_program\_options  
           14. Cflags: \-isystem ${includedir}  
     3. Finally, because of a problem when compiling boost under C++20 (which PiTrac uses), add “\#include \<utility\> as the last include before the line that says “name space boost” in the awaitable.hpp file at /usr/include/boost/asio/awaitable.hpp”  
-       1. This is a hack, but work for now.
+       1. sudo vi /usr/include/boost/asio/awaitable.hpp  
+       2. This is a hack, but works for now.
 
 15. Install and build lgpio (this is a library to work with the GPIO pins of the Pi)  
     1. cd \~/Dev   
@@ -211,7 +225,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
     4. cd lg  
     5. make  
     6. sudo make install  
-    7. Create a /usr/local/lib/pkgconfig/lgpio.pc containing the following:  
+    7. Create a /usr/lib/pkgconfig/lgpio.pc containing the following:  
        1. \# Package Information for pkg-config  
        2.   
        3. prefix=/usr/local  

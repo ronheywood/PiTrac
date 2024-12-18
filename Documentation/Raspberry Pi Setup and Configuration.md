@@ -253,143 +253,172 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
           1. Perform the git clone at \~/Dev where we’ve been building the other software  
           2. Do not install boost dev as a prerequisite- we built it already above  
           3. When done (after the install step), do sudo ldconfig to refresh the shared libraries  
-          4. On the Pi 4 (if it has less than 6GB memory), add “-j 2” at the end of the ninja \-C build command to limit the amount of memory used during the build.  
+          4. On the Pi 4 (if it has less than 6GB memory), add “-j 2” at the end of the ninja \-C build command to limit the amount of memory used during the build.  E.g., ninja \-C build \-j2  
 17. Build rpicam-apps:  
-    1. See [https://www.raspberrypi.com/documentation/computers/camera\_software.html\#building-libcamera-and-rpicam-apps](https://www.raspberrypi.com/documentation/computers/camera_software.html#building-libcamera-and-rpicam-apps)  
-       1. BUT, we will add `-Denable_opencv=true` to the meson build step because we have installed OpenCV and will wish to use OpenCV-based post-processing stages  
+    1. See the following for instructions, but with a couple exceptions…[https://www.raspberrypi.com/documentation/computers/camera\_software.html\#building-libcamera-and-rpicam-apps](https://www.raspberrypi.com/documentation/computers/camera_software.html#building-libcamera-and-rpicam-apps)  
+       1. BUT, we will add `-Denable_opencv=enabled` to the meson build step because we have installed OpenCV and will wish to use OpenCV-based post-processing stages  
        2. Also, we don’t need to re-install most of the prerequisites listed in the Pi website.  Just do:  
           1. sudo apt install \-y libexif-dev  
-    2. cd \~Dev  
-    3. git clone https://github.com/raspberrypi/rpicam-apps.git  
-    4. cd rpicam-apps  
-    5. meson setup build \-Denable\_libav=enabled \-Denable\_drm=enabled \-Denable\_egl=enabled \-Denable\_qt=enabled \-Denable\_opencv=enabled \-Denable\_tflite=disabled \-Denable\_hailo=disabled  
-    6. meson compile \-C build  
-    7. sudo meson install \-C build  
-    8. sudo ldconfig \# this is only necessary on the first build  
+    2. Specifically, do this:  
+       1. cd \~Dev  
+       2. git clone https://github.com/raspberrypi/rpicam-apps.git  
+       3. cd rpicam-apps  
+       4. meson setup build \-Denable\_libav=enabled \-Denable\_drm=enabled \-Denable\_egl=enabled \-Denable\_qt=enabled \-Denable\_opencv=enabled \-Denable\_tflite=disabled \-Denable\_hailo=disabled  
+       5. meson compile \-C build  
+       6. sudo meson install \-C build  
+       7. sudo ldconfig \# this is only necessary on the first build  
 18. Install recent java (for activeMQ)  
     1. sudo apt install openjdk-17-jdk openjdk-17-jre  
 19. Install msgpack  
     1. Info at:  [https://github.com/msgpack/msgpack-c/wiki/v1\_1\_cpp\_packer\#sbuffer](https://github.com/msgpack/msgpack-c/wiki/v1_1_cpp_packer#sbuffer)   
     2. cd \~/Dev  
     3. git clone [https://github.com/msgpack/msgpack-c.git](https://github.com/msgpack/msgpack-c.git)  
-    4. For some reason, the above does not grab all the necessary files. So, go here: [https://github.com/msgpack/msgpack-c/tree/cpp\_master](https://github.com/msgpack/msgpack-c/tree/cpp_master) and click on “Code” and down load the zip file into the \~/Dev directory  
+    4. For some reason, the above does not grab all the necessary files. So, also go here: [https://github.com/msgpack/msgpack-c/tree/cpp\_master](https://github.com/msgpack/msgpack-c/tree/cpp_master) and click on “Code” and down load the zip file into the \~/Dev directory  
     5. unzip /mnt/PiTracShare/dev/tmp/msgpack-c-cpp\_master.zip  
     6. cd msgpack-c-cpp\_master  
     7. cmake \-DMSGPACK\_CXX20=ON .  
     8. sudo cmake \--build . \--target install  
     9. sudo /sbin/ldconfig  
-20. Install ActiveMQ Broker (need only do on the Pi 2 system, as it is the only system that will be running the broker ?)   
-    1. [https://activemq.apache.org/version-5-getting-started.html\#installation-procedure-for-unix](https://activemq.apache.org/version-5-getting-started.html#installation-procedure-for-unix)   
-    2. Get Apache Pre-Reqs  
-       1. sudo apt-get install libapr1-dev  
-       2. sudo apt install libcppunit-dev  
-       3. sudo apt \-y install doxygen  
-       4. sudo apt \-y install e2fsprogs  
-       5. sudo apt \-y install maven  
-    3. cd activemq-cpp-library-3.9.5  
-    4. ./autogen.sh  
-    5. ./configure  
-    6. make  
-    7. sudo make install  
-21. Install ActiveMQ C++ CMS messaging system (on both Pi’s)  
-    1. Pre-requisites:  
+20. Install ActiveMQ C++ CMS messaging system (on both Pi’s)  
+    1. This code allows PiTrac to talk to the ActiveMQ message broker  
+    2. Pre-requisites:  
        1. sudo apt \-y install libtool  
        2. sudo apt-get \-y install libssl-dev  
        3. sudo apt-get \-y install libapr1-dev  
        4. sudo apt install \-y libcppunit-dev  
        5. sudo apt-get install \-y autoconf  
-    2. Download [activemq-cpp-library-3.9.5-src.tar.gz](http://www.apache.org/dyn/closer.lua/activemq/activemq-cpp/3.9.5/activemq-cpp-library-3.9.5-src.tar.gz)  
-    3. [https://activemq.apache.org/components/cms/developers/building](https://activemq.apache.org/components/cms/developers/building)   
-       1. [https://activemq.apache.org/components/classic/download/](https://activemq.apache.org/components/classic/download/) has the source code zip file that you will want to download  
-       2. cd \~/Dev  
-       3. gunzip /mnt/PiTracShare/tmp/activemq-cpp-library-3.9.5-src.tar.gz (or wherever you put the .gz zip file)  
-       4. export MAVEN\_OPTS=-Xmx1024M  
-       5. mvn \-Dtest=false \-Dsurefire.failIfNoSpecifiedTests=false clean install  
-    4. May also able to do:  
-       1. git clone [https://gitbox.apache.org/repos/asf/activemq-cpp.git](https://gitbox.apache.org/repos/asf/activemq-cpp.git) if the version is new enough  
-    5. cd activemq-cpp-library/activemq-cpp-library  
-    6. ./autogen.sh  
-    7. ./configure  
-    8. make  
-    9. sudo make install  
+    3. Download and unzip [activemq-cpp-library-3.9.5-src.tar.gz](http://www.apache.org/dyn/closer.lua/activemq/activemq-cpp/3.9.5/activemq-cpp-library-3.9.5-src.tar.gz)   
+       1. This version is a little old, but we’re not aware of a newer one  
+       2. May also able to do:  
+          1. git clone [https://gitbox.apache.org/repos/asf/activemq-cpp.git](https://gitbox.apache.org/repos/asf/activemq-cpp.git) if the available version is new enough (3.9.5 or later)  
+       3. ([https://activemq.apache.org/components/cms/developers/building](https://activemq.apache.org/components/cms/developers/building) has more information on the installation process, if necessary)  
+    4. cd \~/Dev  
+    5. gunzip /mnt/PiTracShare/tmp/activemq-cpp-library-3.9.5-src.tar.gz (or wherever you put the .gz zip file)  
+    6. cd activemq-cpp-library-3.9.5  
+    7. ./autogen.sh  
+    8. ./configure  
+    9. make  
+    10. sudo make install  
+21. Install ActiveMQ Broker (need only do on the Pi 2 system, as it is the only system that will be running the broker ?)   
+    1. We will install the binary (non-source code version)  
+    2. Get Apache Pre-Reqs (most should already have been installed)  
+       1. sudo apt \-y install libapr1-dev  
+       2. sudo apt \-y install libcppunit-dev  
+       3. sudo apt \-y install doxygen  
+       4. sudo apt \-y install e2fsprogs  
+       5. sudo apt \-y install maven  
+    3. [https://activemq.apache.org/components/classic/download/](https://activemq.apache.org/components/classic/download/) has the source code zip file that you will want to download with the ActiveMQ Broker  
+       1. E.g., [apache-activemq-6.1.4-bin.tar.gz](https://www.apache.org/dyn/closer.cgi?filename=/activemq/6.1.4/apache-activemq-6.1.4-bin.tar.gz&action=download)  
+    4. Follow these instructions to install:  
+       1. [https://activemq.apache.org/version-5-getting-started.html\#installation-procedure-for-unix](https://activemq.apache.org/version-5-getting-started.html#installation-procedure-for-unix)    
+       2. Set the following environment variable to ensure you don’t run out of memory:  
+          1. export MAVEN\_OPTS=-Xmx1024M  
+       3. We suggest you install activemq at /opt, so…  
+          1. cd /opt  
+          2. sudo tar xvf /mnt/PiTracShare/tmp/apache\*.tar  (or wherever you put the tarball file  
+       4. Test it manually once, and then we’ll start it automatically later:  
+          1. cd /opt/apache-activemq\*  
+          2. sudo ./bin/activemq start   (NOTE \- must start in main directory to ensure that the files like logs get created in the correct place)  
+          3. Wait a half-minute and then check the data/activemq.log file to make sure everything is good  
+          4. netstat \-an|grep 61616      should then return “LISTEN”  
+          5. sudo ./bin/activemq stop  
+       5. Setup for remote access  
+          1. cd conf  
+          2. sudo cp jetty.xml jetty.xml.ORIGINAL  
+          3. sudo vi jetty.xml jetty.xml  
+             1. Search for the line that has 127.0.0.1 and replace with whatever the IP address is for the Pi this is all  running on.  
+             2. Search for the line that begins with “ Enable this connector if you wish to use https with web console”  
+             3. Uncomment the next section by removing the \!-- and → at the beginning and end of the bean  
+          4. cd .. ; sudo ./bin/activemq start  
+          5. Log into the broker console from another machine by: https://\<Pi IP address or name\>:8161/admin  
+             1. If this works, the broker is setup correctly  
+       6. Setup ActiveMQ to run automatically on startup  
+          1. sudo vi /etc/systemd/system/activemq.service   and add:  
+             1. \[Unit\]  
+             2. Description=ActiveMQ  
+             3. After=network.target  
+             4.   
+             5. \[Service\]  
+             6. User=root  
+             7. Type=forking  
+             8. ExecStart=/opt/apache-activemq-6.1.4/bin/activemq start  
+             9. ExecStop=/opt/apache-activemq-6.1.4/bin/activemq stop  
+             10. KillSignal=SIGCONT  
+             11.   
+             12. \[Install\]  
+             13. WantedBy=multi-user.target  
+          2. sudo systemctl daemon-reload  
+          3. sudo systemctl start activemq  
+          4. sudo systemctl enable activemq  
+          5. sudo reboot now   (to test the auto-start)  
+          6. After the system comes back, do the following to verify it’s working:  
+             1. sudo /opt/apache-activemq-6.1.4/bin/activemq status  (should say it’s running)  
 22. Install maven for building servlets on Tomcat/Tomee  
-    1. sudo apt install maven  
-23. Install tomee on the cam2 system  
+    1. sudo apt \-y install maven  
+23. Install Tomee (on the cam2 system only)  
     1. Use the “Plume” version that supports JMS  
-    2. Make sure we have java 17+  
-    3. [https://tomee.apache.org/download.html](https://tomee.apache.org/download.html)  
-    4. cd /opt  
-    5. unzip /mnt/PiTracShare/dev/tmp/apache-tomee-9.1.2-plume.zip  
-    6. sudo mv apache-tomee-plume-9.1.2 tomee  
-    7. sudo chmod \-R 755 tomee  
-    8. Vi conf/tomcat-users.xml and add:  
+    2. Get the Tomee binary here:  [https://tomee.apache.org/download.html](https://tomee.apache.org/download.html)  
+    3. cd /opt  
+    4. sudo unzip /mnt/PiTracShare/tmp/apache-tomee-10.0.0-M3-plume.zip  (or whatever version you’re using)  
+    5. sudo mv apache-tomee-plume-10.0.0-M3 tomee      \[or whatever version\]  
+    6. sudo chmod \-R 755 tomee  
+       1. **WARNING** \- Only use this technique if you’re on a secure, private platform.  It’s easier to simply allow read-writes from other than the root user, but there’s other (better) ways of doing this too.  This is just a simple hack for a home system.  
+    7. cd tomee  
+    8. sudo chmod \-R go+w webapps (so that the tomcat uses can deploy webapps  
+    9. sudo vi conf/tomcat-users.xml and add before the last line (\</tomcat-users\>)  
        1. \<role rolename="tomcat"/\>  
        2. \<role rolename="admin-gui"/\>  
        3. \<role rolename="manager-gui"/\>  
        4. \<user username="tomcat" password="tomcat" roles="tomcat,admin-gui,manager-gui"/\>  
-    9. Add a systemctl daemon script to /etc/systemd/system/tomee.service  
-       1. \[Unit\]  
-       2. Description=Apache TomEE  
-       3. After=network.target  
-       4.   
-       5. \[Service\]  
-       6. User=root  
-       7. Type=forking  
-       8. \#Environment=JAVA\_HOME=/usr/lib/jvm/default-java  
-       9. Environment=JAVA\_HOME=/usr/lib/jvm/java-1.17.0-openjdk-arm64  
-       10. Environment=CATALINA\_PID=/opt/tomee/temp/tomee.pid  
-       11. Environment=CATALINA\_HOME=/opt/tomee  
-       12. Environment=CATALINA\_BASE=/opt/tomee  
-       13. Environment=CATALINA\_OPTS='-server'  
-       14. Environment=JAVA\_OPTS='-Djava.awt.headless=true'  
-       15. ExecStart=/opt/tomee/bin/startup.sh  
-       16. ExecStop=/opt/tomee/bin/shutdown.sh  
-       17. KillSignal=SIGCONT  
-       18.   
-       19. \[Install\]  
-       20. WantedBy=multi-user.target  
-    10. Update /opt/tomee/webapps/manager/META-INF/context.xml to allow “.\*” instead of just 127.0….  Replace the whole regex string  
-    11. Add a new document base/root to allow access to the shared mounted drive:    
-        1. Edit conf/server.xml and just before the /Host\> put:  
-        2. NOTE \_ THIS IS NOT CORRECT ANY MORE \_ FIX\!  
-        3. \<Context docBase="/mnt/PiTracShare/dev/GolfSim/LM/Images" path="/golfsim/Images" /\>  
-    12. Allow symbolic linking.  In conf/context.xml, add before the end:  
+    10. Add a systemctl daemon script to /etc/systemd/system/tomee.service so that tomee will start on boot. sudo vi /etc/systemd/system/tomee.service  
+        1. \[Unit\]  
+        2. Description=Apache TomEE  
+        3. After=network.target  
+        4.   
+        5. \[Service\]  
+        6. User=root  
+        7. Type=forking  
+        8. \#Environment=JAVA\_HOME=/usr/lib/jvm/default-java  
+        9. Environment=JAVA\_HOME=/usr/lib/jvm/java-1.17.0-openjdk-arm64  
+        10. Environment=CATALINA\_PID=/opt/tomee/temp/tomee.pid  
+        11. Environment=CATALINA\_HOME=/opt/tomee  
+        12. Environment=CATALINA\_BASE=/opt/tomee  
+        13. Environment=CATALINA\_OPTS='-server'  
+        14. Environment=JAVA\_OPTS='-Djava.awt.headless=true'  
+        15. ExecStart=/opt/tomee/bin/startup.sh  
+        16. ExecStop=/opt/tomee/bin/shutdown.sh  
+        17. KillSignal=SIGCONT  
+        18.   
+        19. \[Install\]  
+        20. WantedBy=multi-user.target  
+    11. Update /opt/tomee/webapps/manager/META-INF/context.xml to allow “.\*” instead of just 127.0….  Replace the whole regex string  
+        1. The result should simply be allow=".\*" on that line  
+        2. sudo cp context.xml context.xml.ORIGINAL    \[just in case\]  
+    12. Add a new document base/root to allow access to the shared mounted drive:    
+        1. Edit conf/server.xml and just before the /Host\> near the end of the file, put:  
+        2. \<Context docBase="/home/\<PiTracUserName\>/LM\_Shares/Images" path="/golfsim/Images" /\>  
+        3. This will allow the Tomee system to access a directory that is outside of the main Tomee installation tree.  This directory will be used to get debugging images from the other Pi into the web-based GUI that this Pi will be serving up.  
+        4. NOTE \- if the shared directory that is mounted off of the other Pi does not exist, Tomee may not be able to start  
+    13. Allow symbolic linking.  In conf/context.xml, add before the end:  
         1. \<Resources allowLinking="true" /\>  
-    13. Install the systemctl:    
+    14. Install the systemctl siervice we just created and start it:    
         1. sudo systemctl daemon-reload  
         2. sudo systemctl enable tomee  
         3. sudo systemctl start tomee  
         4. sudo systemctl status tomee.service  
-        5. Touch the PID file so that it’s there when things start the first time.  
-24. Setup Git credentials  
-    1. FIRST, I tried , [https://joaopmatias.medium.com/quick-setup-for-git-credentials-and-signed-com/gpiomits-98087c1cea9f](https://joaopmatias.medium.com/quick-setup-for-git-credentials-and-signed-commits-98087c1cea9f)  is a start, but then I used gh instead of credential manager  
-    2. Note that my personal git token is at /mnt/PiTracShare/git\_personal\_token.txt  
-    3. Instead, use the “gh” CLI:  
-       1.  sudo mkdir \-p \-m 755 /etc/apt/keyrings  
-       2. wget \-qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg \> /dev/null \\\\n  
-       3. echo "deb \[arch=$(dpkg \--print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg\] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list \> /dev/null  
-       4. sudo apt install gh \-y  
-       5. gh auth login   (will ask for the personal token)  
-       6. gh repo clone https://github.com/jamespilgrim/LaunchMonitor.git  
-25. Setup  for streaming (just trying to see a picture on the screen\!)  
-    1. See [https://qengineering.eu/install-gstreamer-1.18-on-raspberry-pi-4.html](https://qengineering.eu/install-gstreamer-1.18-on-raspberry-pi-4.html)  
-       1. sudo apt-get install libgstreamer1.0-dev \\  
-       2.      libgstreamer-plugins-base1.0-dev \\  
-       3.      libgstreamer-plugins-bad1.0-dev \\  
-       4.      gstreamer1.0-plugins-ugly \\  
-       5.      gstreamer1.0-tools \\  
-       6.      gstreamer1.0-gl \\  
-       7.      Gstreamer1.0-gtk3  
-26. Install other Launch Monitor dependencies  
+        5. Try the following to see how things are starting and to fix any problems:  
+           1. sudo tail \-f /opt/tomee/logs/catalina.out  
+        6. Next login from a web console:   http://\<Pi-with-Tomee\>:8080/manager/html  
+           1. user-name/pwd is by default tomcat/tomcat  
+24. Install other Launch Monitor dependencies  
     1. Formatting library because the currently-packaged gcc12.2 in Debian unix doesn’t have the c++20 format capability yet  
-       1. **`sudo apt`** `install libfmt-dev`  
-27. **Build Launch Monitor\!**  
+       1. **`sudo apt`** `-y install libfmt-dev`  
+25. **Build Launch Monitor\!**  
     1. Prerequisites:  
        1. Setup the PITRAC\_ROOT environment variable to point to the “LM” directory of the PiTrac build.  That is one directory “up” from the directory that has the meson.build file in it.  
           1. E.g., include in your .zshrc or .bashrc or whatever shell you use:  
              1. export PITRAC\_ROOT=/mnt/PiTracShare/GolfSim/LM  
-             2.   
-       2. sudo apt-get install libraspberrypi-dev raspberrypi-kernel-headers  
+       2. sudo apt-get \-y install libraspberrypi-dev raspberrypi-kernel-headers  
        3. Add extended timeout to  rpi\_apps.yaml file so that even if an external trigger doesn’t fire for a really long time, the libcamera library won’t time-out:  
           1. (**NOTE** for Pi 5, use /usr/share/libcamera/pipeline/rpi/pisp instead of /usr/share/libcamera/pipeline/rpi/vc4, below)  
           2. cd  /usr/share/libcamera/pipeline/rpi/vc4  
@@ -408,9 +437,36 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        1. add\_global\_arguments('-DPITRAC\_COMPILING\_ON\_PI\_4', language : 'cpp')  
        2. This requirement should go away once we have the latest rpicam-app code integrated into the system.  
     3. meson setup build \-Denable\_libav=true \-Denable\_drm=true \-Denable\_egl=true \-Denable\_qt=true \-Denable\_opencv=true \-Denable\_tflite=false  
-    4. ninja \-C build  
+    4. ninja \-C build       (add \-j 2 if compiling in 4GB or less)  
     5. TBD \- Github doesn’t seem to preserve the runnability (-x) status of the scripots, so we have to do this manually  
-       1. chmod 755 CameraTools/\*.sh RunScripts/\*.sh
+       1. chmod 755 CameraTools/\*.sh RunScripts/\*.sh  
+26. Setup the PiTrac-specific code package for the PiTrac GUI on the Tomee server  
+    1. cd \~  
+    2. mkdir WebAppDev  
+    3. cd WebAppDev  
+    4. vi refresh\_from\_dev.sh     and put this in it:  
+       1. \# After running this script, then do a "mvn package" to compile and then  
+       2. \# /opt/tomee/bin/restart.sh  
+       3.   
+       4. mkdir \-p src/main/{webapp/WEB-INF,java/com/verdanttechs/jakarta/ee9}  
+       5. cp $PITRAC\_ROOT/ImageProcessing/golfsim\_tomee\_webapp/src/main/java/com/verdanttechs/jakarta/ee9/MonitorServlet.java ./src/main/java/com/verdanttechs/jakarta/ee9/  
+       6. cp $PITRAC\_ROOT//ImageProcessing/golfsim\_tomee\_webapp/src/main/webapp/WEB-INF/\*.jsp ./src/main/webapp/WEB-INF  
+       7. cp $PITRAC\_ROOT//ImageProcessing/golfsim\_tomee\_webapp/src/main/webapp/\*.html ./src/main/webapp  
+       8. cp $PITRAC\_ROOT//ImageProcessing/golfsim\_tomee\_webapp/pom.xml .  
+       9. \# Also pull over the current .json configuration file to make sure that the webapp is looking at the correct version.  
+       10. cp $PITRAC\_ROOT//ImageProcessing/golf\_sim\_config.json  \~/LM\_Shares/GolfSim\_Share/  
+       11.   
+    5. Create the “.war” package for Tomee  
+       1. mvn package  
+       2. NOTE:  The first time this is performed, it will take a few minutes to gather up all the required packages from the internet  
+       3. This process will create a “golfsim.war” file in the “target” directory.  That file will then have to be “deployed” into tomee by using the manager console at http://\<Pi-with-Tomee\>:8080/manager/html  
+       4. Copy the .war file to a place that is visible from where the browser is logged into the tomee console.   
+       5. Select “Choose File” in the section in the console labeled “WAR file to deploy”.  Select the .war file and then wait a moment until it’s name is displayed.  Then push the “Deploy” button.  
+       6. In a moment, the “golfsim” app should show up on the list.  Click it.  
+       7. If you get a “HTTP Status 404 – Not Found” error, try:  
+          1. cd /opt/tomee/webapps  
+          2. sudo chmod \-R 777 golfsim  
+          3. sudo systemctl restart tomee  (the first error will ‘stick’ otherwise)
 
 **Nice-to-Haves for an easy-to-use development environment**
 
@@ -421,7 +477,8 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
       1. sudo apt-get update && sudo apt-get install zsh  
       2. Edit your passwd configuration file to tell which shell to use for user pi :   
          1. sudo vi /etc/passwd and change /bin/bash to /bin/zsh for the \<PiTracUserName\> (usually the last line)  
-         2. logout  
+         2. **WARNING:** Double-check the line in passwd is correct \- you won’t be able to ssh back in if not\!  
+         3. logout  
    3. Reconnect to your raspberry, and   
       1. If on login Zsh asks about the .z files, select 0 to create an empty .zshrc  
       2. check that zsh is the shell with echo $0.  
@@ -437,16 +494,15 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
    1. Install NeoVim:  
       1. sudo apt-get install neovim  
          2. sudo apt-get install python3-neovim  
-   2. Install vundle into NVIM, not vim:  
-      1.   
-      2. git clone [https://github.com/VundleVim/Vundle.vim.git](https://github.com/VundleVim/Vundle.vim.git) \~/.config/nvim/bundle/Vundle.vim  
-      3. Edit .\~/.config/nvim/bundle/Vundle.vim/autoload/vundle.vim and change   
-         1. Change $HOME/.vim/bundle (should be near the end of the file) to $HOME/.config/nvim/bundle.  
-   3. Configure neovim \- Vundle does not work perfectly with nvim unless you make some changes  
-      1. Note these comments:  
+   2. Install vundle into NVIM, (and not vim, as many online instructions assume\!):  
+      1. git clone [https://github.com/VundleVim/Vundle.vim.git](https://github.com/VundleVim/Vundle.vim.git) \~/.config/nvim/bundle/Vundle.vim  
+      2. Configure neovim \- Vundle does not work perfectly with nvim unless you make some changes  
+         1. Vi \~/.config/nvim/bundle/Vundle.vim/autoload/vundle.vim and change   
+         2. Change $HOME/.vim/bundle (should be near the end of the file) to $HOME/.config/nvim/bundle  
+      3. Note these comments:  
          1. [https://gist.github.com/lujiacn/520e3e8abfd1c1b39c30399222766ee8](https://gist.github.com/lujiacn/520e3e8abfd1c1b39c30399222766ee8)   
          2. [https://superuser.com/questions/1405420/i-really-need-help-installing-vundle-for-neovim](https://superuser.com/questions/1405420/i-really-need-help-installing-vundle-for-neovim)   
-      2. Create the file /home/\<PiTracUserName\>/.config/nvim/init.vim and add:  
+      4. Create the file /home/\<PiTracUserName\>/.config/nvim/init.vim and add:  
          1. set nocompatible              " be iMproved, required  
          2. filetype off                  " required  
          3.   
@@ -468,13 +524,13 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
          19. " \===================  
          20. call vundle\#end()               " required  
          21. filetype plugin indent on       " required  
-      3. Add any other plugins you want.  The above example establishes these two  
+      5. Add any other plugins you want.  The above example establishes these two  
          1. Plugin 'scrooloose/nerdtree'  
          2. Plugin 'valloric/youcompleteme'  
-      4. Then in vim, type :PluginInstall     in order to install the plug ins  
-      5. (Ignore anything on the net that refers to .vimrc \- that’s not applicable if using nvim.
+      6. Run vim and type :PluginInstall     in order to install the plug ins.  It will take a few moments to process.  
+      7. (Ignore anything on the net that refers to .vimrc \- that’s not applicable if using nvim.
 
-Example .zshrc file:  
+Example .zshrc file – The highlighted bits at the end should be the only thing you need to add:  
 \# If you come from bash you might have to change your $PATH.  
 export PATH=.:/$HOME/bin:/usr/local/bin:$PATH
 

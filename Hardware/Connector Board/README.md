@@ -34,6 +34,11 @@ Please consider supporting this work and the DIY LM project here: <https://ko-fi
 
 **Final view of top/bottom of completed PCB:**
 
+![image](https://github.com/user-attachments/assets/7a54ad2d-1baa-4b5b-b4bf-d26b5a67e94e)
+
+![image](https://github.com/user-attachments/assets/fc84db4c-f43e-41be-bc8f-8edf2c7179b1)
+
+
 **NOTE:** Don’t be like the people who made the above boards. For example, use flux-cleaner to get rid of the excess flux when you are done!
 
 **Assembly Notes (see supporting images of the board):**

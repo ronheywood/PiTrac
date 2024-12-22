@@ -254,6 +254,10 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
           2. Do not install boost dev as a prerequisite- we built it already above  
           3. When done (after the install step), do sudo ldconfig to refresh the shared libraries  
           4. On the Pi 4 (if it has less than 6GB memory), add “-j 2” at the end of the ninja \-C build command to limit the amount of memory used during the build.  E.g., ninja \-C build \-j2  
+       2. If the build fails at the last install step, see: [https://github.com/mesonbuild/meson/issues/7345](https://github.com/mesonbuild/meson/issues/7345) for a possible solution.  Specifically, exporting the following environment variable and re-building.   
+          1. \`export PKEXEC\_UID=99999\`   
+          2. \`cd build && sudo ninja install\`  
+       3.   
 17. Build rpicam-apps:  
     1. See the following for instructions, but with a couple exceptions…[https://www.raspberrypi.com/documentation/computers/camera\_software.html\#building-libcamera-and-rpicam-apps](https://www.raspberrypi.com/documentation/computers/camera_software.html#building-libcamera-and-rpicam-apps)  
        1. BUT, we will add `-Denable_opencv=enabled` to the meson build step because we have installed OpenCV and will wish to use OpenCV-based post-processing stages  
@@ -444,7 +448,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
     1. cd \~  
     2. mkdir WebAppDev  
     3. cd WebAppDev  
-    4. vi refresh\_from\_dev.sh     and put this in it:  
+    4. vi refresh\_from\_dev.sh     (a new file) and put this in it:  
        1. \# After running this script, then do a "mvn package" to compile and then  
        2. \# /opt/tomee/bin/restart.sh  
        3.   
@@ -455,8 +459,11 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        8. cp $PITRAC\_ROOT//ImageProcessing/golfsim\_tomee\_webapp/pom.xml .  
        9. \# Also pull over the current .json configuration file to make sure that the webapp is looking at the correct version.  
        10. cp $PITRAC\_ROOT//ImageProcessing/golf\_sim\_config.json  \~/LM\_Shares/GolfSim\_Share/  
-       11.   
-    5. Create the “.war” package for Tomee  
+    5. Tell the MonitorServlet where to find its configuration file  
+       1. vi ./src/main/webapp/index.html  
+       2. Change the FPITRAC\_USERNAME to be whatever the PiTrac user’s name is on the system.  That line in the index.html file tells the java servlet where to find the json configuration file.    
+          1. Alternatively, you can just create a browser bookmark to point to the servlet with the correct filename  
+    6. Create the “.war” package for Tomee  
        1. mvn package  
        2. NOTE:  The first time this is performed, it will take a few minutes to gather up all the required packages from the internet  
        3. This process will create a “golfsim.war” file in the “target” directory.  That file will then have to be “deployed” into tomee by using the manager console at http://\<Pi-with-Tomee\>:8080/manager/html  

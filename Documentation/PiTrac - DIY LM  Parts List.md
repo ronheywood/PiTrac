@@ -4,7 +4,7 @@
 
 | Quantity | Hardware | Purpose |
 | :---- | :---- | :---- |
-| 1 | [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) and power supply, 4 GB minimum, 8 GB recommended. | Getting a bundled kit with the Pi and power supply and some other things can be economical if you don’t have any Pi-related stuff yet. |
+| 1 | [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) and power supply, 4 GB minimum, 8 FB recommended. | Getting a bundled kit with the Pi and power supply and some other things can be economical if you don’t have any Pi-related stuff yet. |
 | 1 | [Raspberry Pi 4 Model B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) and power supply, 4 GB minimum.  It may also make sense for a little more money just to get a second Pi 5\. |  |
 | 1 | [Pimoroni NVMe Base for Raspberry Pi 5 \- PIM699](https://www.adafruit.com/product/5845) ((optional, but recommended for speed and longevity).   [This board](https://www.amazon.com/gp/product/B0CQ4D2C9S/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1) works well, too. | For the Pi 5, this allows use of an NVMe memory drive instead of an MicroSD card. |
 | 1 | An [NVMe solid state (SSD) memory drive](https://www.amazon.com/gp/product/B0BGFRZDTB/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1) (optional, but recommended for speed and longevity) | Typically with an M.2 M key edge connector, in the 2230 and 2242 form factors.  Should probably get at least 256 GB capacity. |
@@ -44,7 +44,7 @@
 | :---- | :---- | :---- |
 | 1 | [Raspberry Pi 5 FPC Camera Cable \- 22-pin 0.5mm to 15-pin 1mm \- 300mm long](https://www.adafruit.com/product/5819) | The current Pi Cameras have a CSI cable that needs a conversion to fit into the smaller CSI ports on the Pi 5\.  The 200mm should probably work as well. |
 |  | [200 mm Flex Cable for Pi 4](https://www.adafruit.com/product/2087) | This likely comes with most Pi Cameras, so may not be necessary |
-| 1 | [6mm 3MP Wide Angle Lens for Raspberry Pi HQ Camera \- 3MP](https://www.adafruit.com/product/4563) | Wide angle lens for the Pi GS camera (which comes without a lens) |
+| 2 | [6mm 3MP Wide Angle Lens for Raspberry Pi HQ Camera \- 3MP](https://www.adafruit.com/product/4563) | Wide angle lens for the Pi GS cameras (which come without a lens) |
 | 1 | [1" x 1", Optical Cast Plastic IR Longpass Filter](https://www.edmundoptics.com/p/1quot-x-1quot-optical-cast-plastic-ir-longpass-filter/5421/) (1.5mm nominal thickness) | Blocks visible light from entering the Camera 2 sensor |
 |  |  |  |
 | 1 | [60 / 120 Degree LED Lens Optical Glass 44mm \+ Reflector Collimator \+ Fixed Bracket for 20W 30W 50W 100W COB High Power Chip (60Degree 100W len kit)](https://www.amazon.com/dp/B09XK7QTV5?ref=ppx_yo2ov_dt_b_fed_asin_title)  | The lens helps focus the infrared IR light.  NOTE \- this device can get very hot if left constantly on for even a few seconds.  PiTrac just uses it in short pulses. |

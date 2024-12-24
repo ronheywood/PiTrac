@@ -171,7 +171,13 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        4. force\_turbo=1  
     5. For Pi 5 also add  
        1. arm\_boost=1 in /boot/firmware/config.txt   
-13. Install and build OpenCV \- for both python and C++    
+13. Enable the SPI pins on the Pi  
+    1. sudo raspi-config  
+    2. Select 3 Interface Option  
+    3. Select 14 SPI Enable/Disable  
+    4. Select Yes on the next screen  
+    5. Finish  
+14. Install and build OpenCV \- for both python and C++    
     1. Latest version of OpenCV as of this writing (late 2024\) is 4.10  
     2. See e.g., [https://itslinuxfoss.com/install-opencv-debian/](https://itslinuxfoss.com/install-opencv-debian/) for more information on installing  
     3. If necessary, increase swap space to have around 6 Gig of usable space.  For a 4 Gig or larger Pi, you can skip this step and just go to compiling  
@@ -195,7 +201,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
           3. In addition, if your Pi only has 4 GB or less, change the “-j4” to “-j 2” to prevent the compile process from consuming all the memory.  
           4. Run the script and review the output to make sure there were no errors.  The script takes quite a while to run on some Pi’s.  
        5. Ensure the script runs the sudo make install step at the end after the script runs  
-14. Install Boost (a set of utilities that PiTrac uses)  
+15. Install Boost (a set of utilities that PiTrac uses)  
     1. Install the current version of the boost development environment  
        1. sudo apt-get install libboost1.74-all  
     2. Create a boost.pc file to tell meson how to find boost files when PiTrac is compiled  
@@ -218,7 +224,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        1. sudo vi /usr/include/boost/asio/awaitable.hpp  
        2. This is a hack, but works for now.
 
-15. Install and build lgpio (this is a library to work with the GPIO pins of the Pi)  
+16. Install and build lgpio (this is a library to work with the GPIO pins of the Pi)  
     1. cd \~/Dev   
     2. wget http://abyz.me.uk/lg/lg.zip  
     3. unzip lg.zip  
@@ -238,7 +244,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        10. Version: 1.0.0  
        11. Libs: ${exec\_prefix}/lib/liblgpio.so   
        12. Cflags: \-I${includedir}  
-16. Install and build libcamera (for c++ camera control)  
+17. Install and build libcamera (for c++ camera control)  
     1. Install Prerequisites  
        1. sudo apt-get install \-y libevent-dev  
        2. sudo apt install \-y pybind11-dev  
@@ -258,7 +264,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
           1. \`export PKEXEC\_UID=99999\`   
           2. \`cd build && sudo ninja install\`  
        3.   
-17. Build rpicam-apps:  
+18. Build rpicam-apps:  
     1. See the following for instructions, but with a couple exceptions…[https://www.raspberrypi.com/documentation/computers/camera\_software.html\#building-libcamera-and-rpicam-apps](https://www.raspberrypi.com/documentation/computers/camera_software.html#building-libcamera-and-rpicam-apps)  
        1. BUT, we will add `-Denable_opencv=enabled` to the meson build step because we have installed OpenCV and will wish to use OpenCV-based post-processing stages  
        2. Also, we don’t need to re-install most of the prerequisites listed in the Pi website.  Just do:  
@@ -271,9 +277,9 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        5. meson compile \-C build  
        6. sudo meson install \-C build  
        7. sudo ldconfig \# this is only necessary on the first build  
-18. Install recent java (for activeMQ)  
+19. Install recent java (for activeMQ)  
     1. sudo apt install openjdk-17-jdk openjdk-17-jre  
-19. Install msgpack  
+20. Install msgpack  
     1. Info at:  [https://github.com/msgpack/msgpack-c/wiki/v1\_1\_cpp\_packer\#sbuffer](https://github.com/msgpack/msgpack-c/wiki/v1_1_cpp_packer#sbuffer)   
     2. cd \~/Dev  
     3. git clone [https://github.com/msgpack/msgpack-c.git](https://github.com/msgpack/msgpack-c.git)  
@@ -283,7 +289,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
     7. cmake \-DMSGPACK\_CXX20=ON .  
     8. sudo cmake \--build . \--target install  
     9. sudo /sbin/ldconfig  
-20. Install ActiveMQ C++ CMS messaging system (on both Pi’s)  
+21. Install ActiveMQ C++ CMS messaging system (on both Pi’s)  
     1. This code allows PiTrac to talk to the ActiveMQ message broker  
     2. Pre-requisites:  
        1. sudo apt \-y install libtool  
@@ -303,7 +309,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
     8. ./configure  
     9. make  
     10. sudo make install  
-21. Install ActiveMQ Broker (need only do on the Pi 2 system, as it is the only system that will be running the broker ?)   
+22. Install ActiveMQ Broker (need only do on the Pi 2 system, as it is the only system that will be running the broker ?)   
     1. We will install the binary (non-source code version)  
     2. Get Apache Pre-Reqs (most should already have been installed)  
        1. sudo apt \-y install libapr1-dev  
@@ -357,9 +363,9 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
           5. sudo reboot now   (to test the auto-start)  
           6. After the system comes back, do the following to verify it’s working:  
              1. sudo /opt/apache-activemq-6.1.4/bin/activemq status  (should say it’s running)  
-22. Install maven for building servlets on Tomcat/Tomee  
+23. Install maven for building servlets on Tomcat/Tomee  
     1. sudo apt \-y install maven  
-23. Install Tomee (on the cam2 system only)  
+24. Install Tomee (on the cam2 system only)  
     1. Use the “Plume” version that supports JMS  
     2. Get the Tomee binary here:  [https://tomee.apache.org/download.html](https://tomee.apache.org/download.html)  
     3. cd /opt  
@@ -402,7 +408,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
         1. Edit conf/server.xml and just before the /Host\> near the end of the file, put:  
         2. \<Context docBase="/home/\<PiTracUserName\>/LM\_Shares/Images" path="/golfsim/Images" /\>  
         3. This will allow the Tomee system to access a directory that is outside of the main Tomee installation tree.  This directory will be used to get debugging images from the other Pi into the web-based GUI that this Pi will be serving up.  
-        4. NOTE \- if the shared directory that is mounted off of the other Pi does not exist, Tomee may not be able to start  
+           1. **NOTE** \- if the shared directory that is mounted off of the other Pi does not exist, Tomee may not be able to start  
     13. Allow symbolic linking.  In conf/context.xml, add before the end:  
         1. \<Resources allowLinking="true" /\>  
     14. Install the systemctl siervice we just created and start it:    
@@ -412,12 +418,12 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
         4. sudo systemctl status tomee.service  
         5. Try the following to see how things are starting and to fix any problems:  
            1. sudo tail \-f /opt/tomee/logs/catalina.out  
-        6. Next login from a web console:   http://\<Pi-with-Tomee\>:8080/manager/html  
-           1. user-name/pwd is by default tomcat/tomcat  
-24. Install other Launch Monitor dependencies  
+    15. Ensure you can log into the Tomee manager GUI  
+        1.   
+25. Install other Launch Monitor dependencies  
     1. Formatting library because the currently-packaged gcc12.2 in Debian unix doesn’t have the c++20 format capability yet  
        1. **`sudo apt`** `-y install libfmt-dev`  
-25. **Build Launch Monitor\!**  
+26. **Build Launch Monitor\!**  
     1. Prerequisites:  
        1. Setup the PITRAC\_ROOT environment variable to point to the “LM” directory of the PiTrac build.  That is one directory “up” from the directory that has the meson.build file in it.  
           1. E.g., include in your .zshrc or .bashrc or whatever shell you use:  
@@ -444,9 +450,12 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
     4. ninja \-C build       (add \-j 2 if compiling in 4GB or less)  
     5. TBD \- Github doesn’t seem to preserve the runnability (-x) status of the scripots, so we have to do this manually  
        1. chmod 755 CameraTools/\*.sh RunScripts/\*.sh  
-26. Setup the PiTrac-specific code package for the PiTrac GUI on the Tomee server  
+27. Setup the golf\_sim\_config.json configuration file  
+    1. The PiTrac configuration file has over a hundred parameters.  However, to get started, the main parameters to change are just those associated with the IP addresses for the two Raspberry Pi’s.  For example, PiTrac needs to know the IP address of the Pi that will be hosting the ActiveMQ inter-process communication (IPC) system.   Accordingly, make sure the following IP addresses are correct:  
+       1.   
+28. Setup the PiTrac-specific code package for the PiTrac GUI on the Tomee server  
     1. cd \~  
-    2. mkdir WebAppDev  
+    2. mkdir WebAppDev    ← this will be where you build the web-based PiTrac GUI  
     3. cd WebAppDev  
     4. vi refresh\_from\_dev.sh     (a new file) and put this in it:  
        1. \# After running this script, then do a "mvn package" to compile and then  
@@ -464,16 +473,30 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        2. Change the FPITRAC\_USERNAME to be whatever the PiTrac user’s name is on the system.  That line in the index.html file tells the java servlet where to find the json configuration file.    
           1. Alternatively, you can just create a browser bookmark to point to the servlet with the correct filename  
     6. Create the “.war” package for Tomee  
-       1. mvn package  
-       2. NOTE:  The first time this is performed, it will take a few minutes to gather up all the required packages from the internet  
-       3. This process will create a “golfsim.war” file in the “target” directory.  That file will then have to be “deployed” into tomee by using the manager console at http://\<Pi-with-Tomee\>:8080/manager/html  
-       4. Copy the .war file to a place that is visible from where the browser is logged into the tomee console.   
-       5. Select “Choose File” in the section in the console labeled “WAR file to deploy”.  Select the .war file and then wait a moment until it’s name is displayed.  Then push the “Deploy” button.  
-       6. In a moment, the “golfsim” app should show up on the list.  Click it.  
+       1. cd \~WebAppDev   (if necessary)  
+       2. Run the following from the command line:  
+          1.  mvn package  
+       3. NOTE:  The first time this maven packaging is performed, it will take a few minutes to gather up all the required packages from the internet  
+       4. This process will create a “golfsim.war” file in the “target” directory.  That file will then have to be “deployed” into tomee either by moving the .war file into place, or by using the manager console at http://\<Pi-with-Tomee\>:8080/manager/html  
+       5. Install (deploy) the PiTrac monitor servlet into tomee:  
+          1. Tomee continually looks at its /opt/tomee/webapps directory for new /war files.  So, to install the monitor software that was previously made using “mvn package”, simply copy the .war file in the “target” directory  
+             1. You may have to sudo chmod 777 the /opt/tomee/webapps directory to be able to copy the file  
+             2. Wait \~30 seconds for tomee to find the file and deploy it  
+          2. Next, login from a web console:   http://\<Pi-with-Tomee\>:8080/manager/html  
+             1. user-name/pwd is by default tomcat/tomcat  
+             2. Check the list of   
+       6. Alternatively, you can use the Tomee GUI to deploy  
+          1. Copy the .war file to a place that is visible from where the browser is logged into the tomee console.   
+          2. Select “Choose File” in the section in the console labeled “WAR file to deploy”.  Select the .war file and then wait a moment until it’s name is displayed.  Then push the “Deploy” button.  
+          3. In a moment, the “golfsim” app should show up on the list.  Click it.  
+          4. Then, click on the “PiTrac Monitor” link that should appear.  The “Test Monitor” link is a much simpler app that just checks for basic Tomee functionality.  
        7. If you get a “HTTP Status 404 – Not Found” error, try:  
           1. cd /opt/tomee/webapps  
           2. sudo chmod \-R 777 golfsim  
-          3. sudo systemctl restart tomee  (the first error will ‘stick’ otherwise)
+          3. sudo systemctl restart tomee  (the first error will ‘stick’ otherwise)  
+       8. If you get “Could not connect to broker URL: tcp://10.0.0.65:61616. Reason: java.net.NoRouteToHostException: No route to host” it means that PiTrac can’t find the ActiveMQ system.  In that case, change the following entry in the golf\_sim\_config.json to whatever the IP address is of the machine running activeMQ (and also Tomee).  
+          1. "ipc\_interface": {  
+          2.         "kWebActiveMQHostAddress": "tcp://10.0.0.41:61616",
 
 **Nice-to-Haves for an easy-to-use development environment**
 

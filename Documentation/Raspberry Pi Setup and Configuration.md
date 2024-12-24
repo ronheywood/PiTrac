@@ -284,7 +284,13 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        9. Description: Open Source GPIO library  
        10. Version: 1.0.0  
        11. Libs: ${exec\_prefix}/lib/liblgpio.so   
-       12. Cflags: \-I${includedir}  
+       12. Cflags: \-I${includedir}
+    8. Enable the SPI pins on the Pi
+       1. sudo raspi-config
+       2. Select 3 Interface Option
+       3. Select 14 SPI Enable/Disable
+       4. Select Yes on the next screen
+       5. Finish 
 #### Build and Install Libcamera
 16. Install and build libcamera (for c++ camera control)  
     1. Install Prerequisites  

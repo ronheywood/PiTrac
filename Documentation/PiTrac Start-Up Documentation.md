@@ -1,12 +1,12 @@
-**PiTrac Start-Up Documentation**
+**PiTrac Testing and Start-Up Documentation**
 
-If you are at this point, you should have PiTrac compiled on both Pi’s, your enclosure built and your cameras calibrated.  If that’s not quite done yet, see the [START HERE](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20%E2%80%93%20START%20HERE.md) document to determine where to go first.
+If you are at this point, you should have PiTrac compiled on both Pi’s, your enclosure built, and your cameras calibrated.  If that’s not quite done yet, see the [START HERE](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20%E2%80%93%20START%20HERE.md) document to determine where to go first.
 
 **Start-up and Sanity Checks:**
 
 1. Ensure that each account that you will run PiTrac in has the PITRAC\_ROOT set to the directory above the “ImageProcessing” directory where the meson.build file exists.  
    1. Typically, export PITRAC\_ROOT=/Dev/PiTrac/Software  
-2. Ensure the golf\_sim\_config.json file is correctly set up.  If not sure, follow the Configuration File documentation.  
+2. Ensure the golf\_sim\_config.json file is correctly set up.  If not sure, follow the [Configuration File documentation](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20configuration%20and%20the%20golf_sim_config.json%20file.md).  
 3. Check that the executable at least runs by itself:  
    1. cd $PITRAC\_ROOT/ImageProcessing  
    2. build/pitrac\_lm \--help  
@@ -29,15 +29,17 @@ If you are at this point, you should have PiTrac compiled on both Pi’s, your e
    1. When the system is running normally, the shutter for Camera 2 is triggered by a pulse from the Pi 1\.  The correct functioning of this signal pathway should be confirmed before starting the system in full.  
    2. To check the triggering, we will set the Pi 2 camera in an “external” triggering mode, where its shutter is controlled by the XTR signal that is sent to the camera from Pi 1 through the connector board.  
    3. On the Pi 2, cd $PITRAC\_ROOT/ImageProcessing  
-   4. ./CameraTools/setCameraTriggerExternal.sh  
-   5. .//RunScripts/runCam2Still.sh  
-   6. Normally, the camera would not take a picture because it is waiting for a signal from the Pi 1\.  
-   7. On the Pi 1, do:  
+   4. sudo ./CameraTools/setCameraTriggerExternal.sh  
+   5. rpicam-hello  
+   6. ./RunScripts/runCam2Still.sh  
+   7. Normally, the camera would not take a picture because it is waiting for a signal from the Pi 1\.  Instead, the system’s rpicam-hello program should hang and not do anything while external triggering is set, but then should take a picture as soon as the runPulseTest.sh script is run  
+   8. On the Pi 1, do:  
       1. /RunScripts/runPulseTest.sh  
-   8. As soon as the Pi 1 script starts sending pulses to the Camera 2 (as well as pulses to the LED strobe array), the Camera 2 program that is running should take a picture.  
-   9. If having problems, you can also just run the system’s rpicam-hello program, which should hang and not do anything while external triggering is set, but then should take pictures as soon as the runPulseTest.sh script is run  
+   9. As soon as the Pi 1 script starts sending pulses to the Camera 2 (as well as pulses to the LED strobe array), the Camera 2 program that is running should take a picture.  Of course, the resulting picture is likely to be pretty dark if you have the IR filter on it.  
    10. Finally, return the triggering to internal on the Pi 2:  
        1. $PITRAC\_ROOT/CameraTools/setCameraTriggerInternal.sh  
-   11. 
+6. Full System Startup  
+   1. To run PiTrac, just start the runCam1.sh on Pi 1 and runCam2.sh on Pi 2\.  At least the Pi 2 executable should be run with \=info or hight (e.g., warning).  Setting the Pi 2 executable at DEBUG or TRACE may slow the system down so much that it will not reliably take the images quickly enough to catch the flight of the golf ball.  
+   2. Generally start the Pi 2 executable first to ensure it’s ready to take strobed images as soon as the Pi 1 system comes up.
 
   

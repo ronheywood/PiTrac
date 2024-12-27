@@ -1,5 +1,6 @@
 **Connecting PiTrac to TruGolf(\*)**     
-**![][image1]**
+![image](https://github.com/user-attachments/assets/e67be93e-dcd3-499c-803f-0fab11ae232c)
+
 
 1. First, ensure that TruGolf \- E6 Connect is set up on whatever computer you are using for it.  Third-party Golf Simulators do not run on the PiTrac’s Pi processors, and are typically installed on a PC with a higher-quality graphics card.  Do not start the simulator yet.  
 2. Determine the IP address of the PC.  If you’re not certain, watch [this video](https://www.youtube.com/watch?v=znEWmcrpoUc).  
@@ -22,10 +23,12 @@
          2. "\<TruGolfInstallDir\>/Tracking/TruSimAPI/Images/PiTrac\_Logo\_256x50.png",  
    5.    
 6. Start E6/TruGolf  
-   1. Click on the settings icon  
-      1. ![][image2]  
+   1. Click on the "gears" settings icon  
+      1. ![image](https://github.com/user-attachments/assets/053d73d3-c5fd-45f5-9e47-35a107f914a9)
+ 
    2. Select Simulator/Tracking System and then “Configure” for the TruSimAPI  
-      1. ![][image3]  
+      1. ![image](https://github.com/user-attachments/assets/b0a7be7a-8afd-484a-9ccb-d6b1dc95d5bb)
+  
    3. Ensure that the IP address is the IP for the PC and that the port is 2483  
 7. Test Playing  
    1. Start TruGolf  
@@ -33,7 +36,8 @@
    3. Click Next a few times to start the Tee-Off process  
    4. On the Pi 1 system, run RunScripts/runTestExternalSimMessage.sh to send a test shot to the sim.  This test program will wait for a message from TruGolf saying that it is ready for the next shot.  As soon as TruGolf is ready, the PiTrac test program will send a first shot.  
    5. After the first shot, PiTrac will wait for TruGolf to re-arm.  To do that, just select the club (button in lower-left), and PiTrac will send a second shot.  
-      1. ![][image4]
+      1. ![image](https://github.com/user-attachments/assets/a93c86c9-36fd-4039-b695-36f0295ede1c)
+
 
    6. TruGolf should show the shot in its display.  If that works, the simulator interface is working.  
    7. If there are any issues, turn on the logging level in the RunScripts/runTestExternalSimMessage.sh to “trace”:   \--logging\_level=trace  and see where that leads.

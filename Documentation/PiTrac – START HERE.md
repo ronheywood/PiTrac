@@ -29,7 +29,7 @@ If you haven’t already done so, download the entire current PiTrac repository.
 
 # 2\. Gather the Parts You’ll Need {#2.-gather-the-parts-you’ll-need}
 
-We’ve listed the basic components that you’ll need to build a PiTrac in the [Parts List here](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20-%20DIY%20LM%20%20Parts%20List%20.md).  We (at least currently) don’t sell any of these components. 
+We’ve listed the basic components that you’ll need to build a PiTrac in the [Parts List here](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20-%20DIY%20LM%20%20Parts%20List.md).  We (at least currently) don’t sell any of these components. 
 
 The one component that you won’t be able to just buy off the shelf is the little Connector Board printed circuit board.  However, the manufacturing input files are [here](https://github.com/jamespilgrim/PiTrac/tree/main/Hardware/Connector%20Board), and if you send those to a company like [www.jlcpcb.com](http://www.jlcpcb.com/) or [www.pcbway.com](http://www.pcbway.com/), they will often include a small run of this PCB on the unused parts of larger boards they are making for other customers.  This is usually available for only a few dollars, and the slowest shipping option to the US (for example) is also only a few dollars.  It can take a couple of weeks for this process, so you might want to get it going soonest.
 

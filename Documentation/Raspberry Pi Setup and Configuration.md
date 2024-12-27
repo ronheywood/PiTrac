@@ -340,6 +340,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
           2. Do not install boost dev as a prerequisite- we built it already above  
           3. When done (after the install step), do sudo ldconfig to refresh the shared libraries  
           4. On the Pi 4 (if it has less than 6GB memory), add “-j 2” at the end of the ninja \-C build command to limit the amount of memory used during the build.  E.g., ninja \-C build \-j2  
+             - On low-memory Pi’s, if you run out of memory, the computer will often just freeze and hang, requiring a hard-reboot  
        2. If the build fails at the last install step, see: [https://github.com/mesonbuild/meson/issues/7345](https://github.com/mesonbuild/meson/issues/7345) for a possible solution.  Specifically, exporting the following environment variable and re-building.  
           1. `export PKEXEC\_UID=99999`  
           2. `cd build && sudo ninja install`
@@ -553,14 +554,15 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
              8. "camera\_timeout\_value\_ms": 1000000,  
           5. The first file deals with the local file from the libcamera build, and the second one is the for libcamera that is installed with the O/S.  We will set both, just in case.  
        2. Get the latest imx296\_noir.json into /usr/share/libcamera/ipa/rpi/pisp  
-    2. cd $PITRAC\_ROOT/ImageProcessing  
-    3. Edit the meson.build file and ensure that the following line is NOT commented out if compiling on a Pi 4 (and IS commented out if compiling on a Pi 5):  
-       1. add\_global\_arguments('-DPITRAC\_COMPILING\_ON\_PI\_4', language : 'cpp')  
-       2. TBD \- This requirement should go away once we have the latest rpicam-app code integrated into the system.  
-    4. meson setup build \-Denable\_recompile\_closed\_source=false  
-       1. If there are any missing libraries, ensure that the pre-requisites were all successfully build and installed and that any corresponding pkgconfig files were created correctly.  
-    5. ninja \-C build       (add \-j 2 if compiling in 4GB or less)  
-    6. If the build completes successfully, try a quick sanity check to ensure that any shared libraries are correctly linked at that the PiTrac application can at least run:  
+    2. Go to the directory called ImageProcessing in whatever directory path you will be using to compile.  E.g.,   
+       1. cd $PITRAC\_ROOT/ImageProcessing  
+    3. meson setup build  
+       1. **~~NOTE \- (Pi4-Specific)~~** ~~\- If compiling on a Pi 4, add the following build flag:~~  
+          1. ~~meson setup build \-Denable\_compile\_on\_pi4=true~~  
+       2. ~~TBD \- This requirement should go away once we have the latest rpicam-app code integrated into the system.~~  
+       3. If there are any missing libraries, ensure that the pre-requisites were all successfully built and installed and that any corresponding pkgconfig files were created correctly per the steps above.  
+    4. ninja \-C build       (add \-j 2 if compiling in 4GB or less)  
+    5. If the build completes successfully, try a quick sanity check to ensure that any shared libraries are correctly linked at that the PiTrac application can at least run:  
        1. build/pitrac\_lm –help  
        2. The app should return the available command-line options
 
@@ -596,13 +598,15 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        7. If you get a “HTTP Status 404 – Not Found” error, try:  
           1. cd /opt/tomee/webapps  
           2. sudo chmod \-R 777 golfsim  
-          3. sudo systemctl restart tomee  (the first error will ‘stick’ otherwise)
+          3. sudo systemctl restart tomee  (the first error will ‘stick’ otherwise)r
+
+**CONGRATULATIONS\!** \- At this point, you’ve (hopefully) built the PiTrac software.  Please see the [Startup Documentation](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20Start-Up%20Documentation.md) for how to get PiTrac working\!
 
 ### Nice-To-Haves
 
 **Nice-to-Haves for an easier-to-use development environment**
 
-2. The following steps are only for someone who’s a little new to linux and doesn’t already have a development environment setup the way they like it.  The following are just a few tools that (for the authors of the PiTrac project) seem to make things a little more efficient.  
+2. The following steps are only for someone who’s a little new to linux and doesn’t already have a development environment setup the way they like it.  The following are just a few tools that (for the authors of the PiTrac project) seem to make things a little more efficient.  This setup deals with things like easy command-recall, file and command completion,making vi a little more like Visual Studio (for better or worse\!), etc.  
 3. Z-shell and OhMyZa  
    1. Connect to your raspberry Pi with SSH  
    2. Install zsh :  

@@ -103,7 +103,7 @@ bool GolfSimOptions::Parse(int argc, char *argv[])
 	if (help_)
 	{
 		std::cout << options_;
-		return false;
+		return true;
 	}
 
 	if (version_)

@@ -2362,7 +2362,7 @@ namespace golf_sim {
 
             non_overlapping_balls_and_timing = return_balls_and_timings;
 
-            for (int i = (int)non_overlapping_balls_and_timing.size() - 1; i >= 0; i--) {
+            for (int i = (int)(non_overlapping_balls_and_timing.size() - 1); i >= 0; i--) {
                 GsBallAndTimingElement& be = non_overlapping_balls_and_timing[i];
 
                 bool ball_is_in_non_overlapping_vector = false;
@@ -2378,7 +2378,7 @@ namespace golf_sim {
                     // because it was removed from the ball-only vector.
                     // Before we do so, Add it's left-most interval time to the left-most
                     // interval time of the ball to the right (if such ball exists)
-                    if (i < (int)non_overlapping_balls_and_timing.size() - 1) {
+                    if (i < (int)(non_overlapping_balls_and_timing.size() - 1)) {
                         non_overlapping_balls_and_timing[i + 1].time_interval_before_ball_ms += be.time_interval_before_ball_ms;
                     }
 

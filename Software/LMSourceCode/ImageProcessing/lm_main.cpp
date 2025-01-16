@@ -1727,6 +1727,13 @@ int main(int argc, char *argv[])
             return 0;
         }
 
+	// If we're just showing the help information, that's already been
+	// done when we called parse.  So just exit.
+	if (GolfSimOptions::GetCommandLineOptions().help_)
+	{
+		return 1;
+	}
+
         LoggingTools::InitLogging();
 
         GS_LOG_MSG(info, "Golf Sim Launch Monitor Started");

@@ -107,10 +107,10 @@ namespace golf_sim {
 					"Amount of gain for taking pictures")
 				("msg_broker_address", value<std::string>(&msg_broker_address_)->default_value(""),
 					"Specify the full hostname or ip address and port of the host of the Active MQ broker. For example: tcp://10.0.0.41:61616 . Default is: <empty string>")
-				("base_image_logging_dir", value<std::string>(&base_image_logging_dir_)->default_value("./"),
-					"Specify the full path (with an ending '/') where diagnostic images are to be written. Default is: ./   (current dir)")
-				("web_server_share_dir", value<std::string>(&web_server_share_dir_)->default_value("./"),
-					"Specify the full path (with an ending '/') where diagnostic images are to be written. Default is: ./   (current dir)")
+				("base_image_logging_dir", value<std::string>(&base_image_logging_dir_)->default_value(""),
+					"Specify the full path (with an ending '/') where diagnostic images are to be written. Default is: <empty>")
+				("web_server_share_dir", value<std::string>(&web_server_share_dir_)->default_value(""),
+					"Specify the full path (with an ending '/') where diagnostic images are to be written. Default  is: <empty>")
 				("e6_host_address", value<std::string>(&e6_host_address_)->default_value(""),
 					"Specify the name or IP address of the host PC that is running the E6 simulator.  Default is: <empty string>, indicating no TruGolf sim is connected.")
 				("gspro_host_address", value<std::string>(&gspro_host_address_)->default_value(""),

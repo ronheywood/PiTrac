@@ -371,7 +371,6 @@ bool Options::Parse(int argc, char *argv[])
 	bool log_env_set = getenv("LIBCAMERA_LOG_LEVELS");
 	// Unconditionally set the logging level to error for a bit.
 	if (!log_env_set) {
-		std::cout << "Set libcamera::logSetLevel to ERROR" << std::endl;
 		libcamera::logSetLevel("*", "ERROR");
 	}
 
@@ -514,7 +513,6 @@ bool Options::Parse(int argc, char *argv[])
 
 	// Reset log level to something low.
 	if (verbose && !log_env_set) {
-		std::cout << "Set libcamera::logSetLevel to WARN" << std::endl;
 		libcamera::logSetLevel("*", "WARN");
 	}
 

@@ -4,8 +4,22 @@ If you are at this point, you should have PiTrac compiled on both Pi’s, your e
 
 **Start-up and Sanity Checks:**
 
-1. Ensure that each account that you will run PiTrac in has the PITRAC\_ROOT set to the directory above the “ImageProcessing” directory where the meson.build file exists.  
-   1. Typically, export PITRAC\_ROOT=/Dev/PiTrac/Software  
+1. Ensure that each account that you will run PiTrac in has the PITRAC\_ROOT set to the directory above the “ImageProcessing” directory where the meson.build file exists, as well as setting the other required environment variables. A typical .zshrc file in your user’s root directory will look like:  
+   \`\`\`  
+   export PITRAC\_ROOT=/Dev/PiTrac/Software  
+   \# Note that the \~ symbol is only expanded by the shell, so  
+   \# may not work if it is pulled directly into PiTrac code. However,  
+   \# these variables are expanded before being injected into PiTrac  
+   \# via command-line parameters  
+   export PITRAC\_ROOT=/mnt/PiTracShare/Dev/PiTrac/Software/LMSourceCode  
+   export PITRAC\_BASE\_IMAGE\_LOGGING\_DIR=\~/LM\_Shares/Images/  
+   export PITRAC\_WEBSERVER\_SHARE\_DIR=\~/LM\_Shares/WebShare/  
+   export PITRAC\_MSG\_BROKER\_FULL\_ADDRESS=tcp://10.0.0.41:61616  
+   \# Only uncomment and set the following if connecting to the  
+   \# respective golf sim (e.g., E6/TruGolf, GSPro, etc.)  
+   \#export PITRAC\_E6\_HOST\_ADDRESS=10.0.0.29  
+   \#export PITRAC\_GSPRO\_HOST\_ADDRESS=10.0.0.29   
+   \`\`\`  
 2. Ensure the golf\_sim\_config.json file is correctly set up.  If not sure, follow the [Configuration File documentation](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20configuration%20and%20the%20golf_sim_config.json%20file.md).  
 3. Check that the executable at least runs by itself:  
    1. cd $PITRAC\_ROOT/ImageProcessing  
@@ -41,8 +55,8 @@ If you are at this point, you should have PiTrac compiled on both Pi’s, your e
    10. Finally, return the triggering to internal on the Pi 2:  
        1. $PITRAC\_ROOT/CameraTools/setCameraTriggerInternal.sh  
 8. Full System Startup  
-   1. To run PiTrac, just start the runCam1.sh on Pi 1 and runCam2.sh on Pi 2\.  At least the Pi 2 executable should be run with \=info or hight (e.g., warning).  Setting the Pi 2 executable at DEBUG or TRACE may slow the system down so much that it will not reliably take the images quickly enough to catch the flight of the golf ball.  
-   2. Generally start the Pi 2 executable first to ensure it’s ready to take strobed images as soon as the Pi 1 system comes up.  
-   3. For problems, please see the still-under-construction troubleshooting guide here.
+   1. To run PiTrac, just start the runCam1.sh on Pi 1 and runCam2.sh on Pi 2\.  Start the Pi 2 executable first so that it’s ready to take a picture as soon as Pi 1 determines the ball has shown up.    
+   2. The executables should be run with \--logging\_level=info or higher (e.g., warning).  Setting the executables at DEBUG or TRACE may slow the system down so much that it will not reliably take the images quickly enough to catch the flight of the golf ball.  However, the information from trace-level is often still useful.  
+   3. For problems, please see the still-under-construction [troubleshooting guide](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20Troubleshooting.md).
 
   

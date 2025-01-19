@@ -620,17 +620,18 @@ export PITRAC_E6_HOST_ADDRESS=10.0.0.29
     5. `cd WebAppDe`v  
     6. `vi refresh_from_dev.sh`     (a new file) and put this in it:
       <font color=#FF0000>Note:</font> Update your Broker IP address located in `MonitorServlet.java` class before creating the file below. <i>Will be improved in the future.</i>
-       ``` bash
-       # After running this script, then do a "mvn package" to compile and then  
-       # /opt/tomee/bin/restart.sh  
-       mkdir -p src/main/{webapp/WEB-INF,java/com/verdanttechs/jakarta/ee9}  
-       cp $PITRAC_ROOT/ImageProcessing/golfsim_tomee_webapp/src/main/java/com/verdanttechs/jakarta/ee9/MonitorServlet.java ./src/main/java/com/verdanttechs/jakarta/ee9/  
-       cp $PITRAC_ROOT/ImageProcessing/golfsim_tomee_webapp/src/main/webapp/WEB-INF/*.jsp ./src/main/webapp/WEB-INF  
-       cp $PITRAC_ROOT/ImageProcessing/golfsim_tomee_webapp/src/main/webapp/*.html ./src/main/webapp  
-       cp $PITRAC_ROOT/ImageProcessing/golfsim_tomee_webapp/pom.xml .  
-       # Also pull over the current .json configuration file to make sure that the webapp is looking at the correct version.  
-       cp $PITRAC_ROOT/ImageProcessing/golf_sim_config.json ~/LM_Shares/WebShare/  
-       ```
+```
+sed -i s/PITRAC_WEBSERVER_SHARE_DIR/$PITRAC_WEBSERVER_SHARE_DIR/g ./src/main/webapp/index.html
+
+<a href="monitor?config_filename=PITRAC_WEBSERVER_SHARE_DIR/golf_sim_config.json">Monitor</a>
+
+echo $PITRAC_WEBSERVER_SHARE_DIR > webserver_name.tmp.txt
+sed -i 's/\//%2F/g' webserver_name.tmp.txt
+
+sed -i 's@PITRAC_WEBSERVER_SHARE_DIR@'`cat webserver_name.tmp.txt`'@g' ./src/main/webapp/index.html
+
+rm webserver_name.tmp.txt
+```
     2. Run the new script to bring over the java and other web-based GUI files:   
        1. `chmod 755 refresh_from_dev.sh;./refresh_from_dev.sh`  
        2. NOTE that the above script will also move a copy of the golf\_sim\_config.json file into the shared directory that the GUI can access in order to get information about its run-time environment.  

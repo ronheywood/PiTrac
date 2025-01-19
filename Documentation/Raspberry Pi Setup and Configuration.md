@@ -562,11 +562,11 @@ WantedBy=multi-user.target
           1. E.g., include in your .zshrc or .bashrc or whatever shell you use:  
 	  ```
 export PITRAC_ROOT=/Dev/PiTrac/Software/LMSourceCode  
-export PITRAC_BASE_IMAGE_LOGGING_DIR=~/LM_Shares/Images/
+export PITRAC_BASE_IMAGE_LOGGING_DIR=\~/LM_Shares/Images/
 export PITRAC_WEBSERVER_SHARE_DIR=~/LM_Shares/WebShare/
 export PITRAC_MSG_BROKER_FULL_ADDRESS=tcp://10.0.0.41:61616
-# Only uncomment and set the following if connecting to the
-# respective golf sim (e.g., E6/TruGolf, GSPro, etc.)
+\# Only uncomment and set the following if connecting to the
+\# respective golf sim (e.g., E6/TruGolf, GSPro, etc.)
 export PITRAC_E6_HOST_ADDRESS=10.0.0.29
 #export PITRAC_GSPRO_HOST_ADDRESS=10.0.0.29
 ```

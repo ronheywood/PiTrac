@@ -5,7 +5,7 @@ If you are at this point, you should have PiTrac compiled on both Pi’s, your e
 **Start-up and Sanity Checks:**
 
 1. Ensure that each account that you will run PiTrac in has the PITRAC\_ROOT set to the directory above the “ImageProcessing” directory where the meson.build file exists, as well as setting the other required environment variables. A typical .zshrc file in your user’s root directory will look like:  
-   \`\`\`  
+   ```  
    export PITRAC\_ROOT=/Dev/PiTrac/Software  
    \# Note that the \~ symbol is only expanded by the shell, so  
    \# may not work if it is pulled directly into PiTrac code. However,  
@@ -19,7 +19,7 @@ If you are at this point, you should have PiTrac compiled on both Pi’s, your e
    \# respective golf sim (e.g., E6/TruGolf, GSPro, etc.)  
    \#export PITRAC\_E6\_HOST\_ADDRESS=10.0.0.29  
    \#export PITRAC\_GSPRO\_HOST\_ADDRESS=10.0.0.29   
-   \`\`\`  
+   ```  
 2. Ensure the golf\_sim\_config.json file is correctly set up.  If not sure, follow the [Configuration File documentation](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20configuration%20and%20the%20golf_sim_config.json%20file.md).  
 3. Check that the executable at least runs by itself:  
    1. cd $PITRAC\_ROOT/ImageProcessing  

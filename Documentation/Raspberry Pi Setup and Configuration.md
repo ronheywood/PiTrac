@@ -637,7 +637,7 @@ rm webserver_name.tmp.txt
        2. NOTE that the above script will also move a copy of the golf\_sim\_config.json file into the shared directory that the GUI can access in order to get information about its run-time environment.  
     3. Tell the MonitorServlet where to find its configuration file  
        1. `vi ./src/main/webapp/index.html`  
-       2. Change the `FPITRAC_USERNAME` to be whatever the PiTrac user’s name is on the system.  That line in the index.html file tells the java servlet where to find the json configuration file.  
+       2. Ensure that the line that begins with "<a href="monitor?config_filename" points to the correct webserver share direcory (typically ~/LM_Share/WebShare)
           1. Alternatively, you can just create a browser bookmark to point to the servlet with the correct filename 
       ![](snapshots/index_replace_name.png)
     2. Create the “.war” package for Tomee  

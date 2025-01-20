@@ -159,7 +159,7 @@
 		},
 
 		"ipc_interface": {
-			"kWebActiveMQHostAddress": "USE CMD LINE - Example:  --msg_broker_address tcp://10.0.0.41:61616",
+			"kWebActiveMQHostAddress": "PITRAC_MSG_BROKER_FULL_ADDRESS",
 			"kMaxCam2ImageReceivedTimeMs": 40000
 		},
 

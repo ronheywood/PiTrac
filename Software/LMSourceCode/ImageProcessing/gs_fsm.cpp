@@ -592,6 +592,9 @@ namespace golf_sim {
 
             // In any case, also save the image with a non-unique name that will be overwritten on the next show, but that the GUI
             // will be able to depend on the name of.
+
+            // REMOVE THE TRACE - TBD
+            GS_LOG_TRACE_MSG(trace, "Image saving using GolfSimOptions::GetCommandLineOptions().base_image_logging_dir_ = " + GolfSimOptions::GetCommandLineOptions().base_image_logging_dir_);
             LoggingTools::LogImage("", image, std::vector < cv::Point >{}, true, kWebServerCamera2Image);
         }
 

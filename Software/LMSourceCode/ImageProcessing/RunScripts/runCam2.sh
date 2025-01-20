@@ -9,4 +9,5 @@
 
 #rm -f Logs/*.log
 
-$PITRAC_ROOT/ImageProcessing/build/pitrac_lm  --system_mode camera2 $PITRAC_COMMON_CMD_LINE_ARGS  --camera_gain 3.0 --logging_level=info
+$PITRAC_ROOT/ImageProcessing/build/pitrac_lm  --system_mode camera2 $PITRAC_COMMON_CMD_LINE_ARGS  --camera_gain 3.0 --logging_level=info --artifact_save_level=final_results_only
+

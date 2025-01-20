@@ -82,6 +82,17 @@ namespace golf_sim {
         boost::log::add_common_attributes();
         boost::log::core::get()->add_global_attribute("Scope", boost::log::attributes::named_scope());
 
+        if (!GolfSimOptions::GetCommandLineOptions().base_image_logging_dir_.empty()) {
+            kBaseImageLoggingDir = GolfSimOptions::GetCommandLineOptions().base_image_logging_dir_;
+        }
+        else {
+#ifdef __unix__
+            LoggingTools::kBaseImageLoggingDir = "VALUE_NOT_SET";
+#else
+            LoggingTools::kBaseImageLoggingDir = "VALUE_NOT_SET";
+#endif
+        }
+
         switch (GolfSimOptions::GetCommandLineOptions().logging_level_) {
             case kTrace: {
                 boost::log::core::get()->set_filter(

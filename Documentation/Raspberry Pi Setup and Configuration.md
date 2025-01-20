@@ -617,8 +617,9 @@ export PITRAC_E6_HOST_ADDRESS=10.0.0.29
        1. `sudo systemctl status tomee`   (hit ‘q’ to exit)  
     3. `cd ~/Dev`   (or whatever the root of your development environment is)  
     4. `mkdir WebAppDev`  
-    5. `cd WebAppDe`v  
-    6. `vi refresh_from_dev.sh`     (a new file) and put this in it:
+    5. `cd WebAppDev`
+    6. `cp $PITRAC_ROOT/ImageProcessing/golfsim_tomee_webapp/refresh_from_dev.sh .`  
+    7. If necessary, create the refresh file yourself by doing: `vi refresh_from_dev.sh`     (a new file) and put this in it:
       <font color=#FF0000>Note:</font> Update your Broker IP address located in `MonitorServlet.java` class before creating the file below. <i>Will be improved in the future.</i>
 ```
 sed -i s/PITRAC_WEBSERVER_SHARE_DIR/$PITRAC_WEBSERVER_SHARE_DIR/g ./src/main/webapp/index.html
@@ -632,9 +633,10 @@ sed -i 's@PITRAC_WEBSERVER_SHARE_DIR@'`cat webserver_name.tmp.txt`'@g' ./src/mai
 
 rm webserver_name.tmp.txt
 ```
-    2. Run the new script to bring over the java and other web-based GUI files:   
-       1. `chmod 755 refresh_from_dev.sh;./refresh_from_dev.sh`  
-       2. NOTE that the above script will also move a copy of the golf\_sim\_config.json file into the shared directory that the GUI can access in order to get information about its run-time environment.  
+    2. Run the refresh script to bring over the java and other web-based GUI files:   
+       1. You can ignore and errors from the 'sed' program regarding file permissions.
+       2. `chmod 755 refresh_from_dev.sh;./refresh_from_dev.sh`  
+       3. NOTE that the above script will also move a copy of the golf\_sim\_config.json file into the shared directory that the GUI can access in order to get information about its run-time environment.  The PiTrac GUI in particular needs the "kWebServerTomcatShareDirectory" value in order to know where to find diagnostic images.  
     3. Tell the MonitorServlet where to find its configuration file  
        1. `vi ./src/main/webapp/index.html`  
        2. Ensure that the line that begins with "<a href="monitor?config_filename" points to the correct webserver share direcory (typically ~/LM_Share/WebShare)
@@ -643,19 +645,19 @@ rm webserver_name.tmp.txt
     2. Create the “.war” package for Tomee  
        1. `mvn package`  
        2. NOTE:  The first time this is performed, it will take a few minutes to gather up all the required packages from the internet  
-       3. This process will create a “golfsim.war” file in the “target” directory.  That file will then have to be “deployed” into tomee by using the manager console at `http://<Name-or-IP-address-of-Pi-with-Tomee>:8080/manager/html`  
-       4. Your browser should have a window titled “Tomcat Web Application Manager”.  You may have to use the default login of tomcat/tomcat  
-       5. Copy the .war file to a place that is visible on the computer from where your browser is logged into the tomee console.  
-       6. Select “Choose File” in the section in the Tomee manager console labeled “WAR file to deploy”.  Select the .war file and then wait a moment until it’s name is displayed.  Then push the “Deploy” button.  
-       7. In a moment, the “golfsim” app should show up on the list.  Click it.  
-       8. If you get a “HTTP Status 404 – Not Found” error, try:  
+       3. This process will create a “golfsim.war” file in the “target” directory.  That file will then have to be “deployed” into tomee.
+       4. Usually, you can just manually move the .war file into place and Tomee should pick it up.  Wait 30 seconds or so after doing this to give Tomee a moment to see the new war file and deploy it. For example,  
+          1. `cd /opt/tomee/webapps`  
+          2. `sudo cp ~/Dev/WebAppDev/target/golfsim.war .`  
+       5. Alternatively, you can use the Tomee management app to deploy.  To do so, open the manager console at `http://<Name-or-IP-address-of-Pi-with-Tomee>:8080/manager/html`  Your browser should have a window titled “Tomcat Web Application Manager”.  You may have to use the default login of tomcat/tomcat  
+       6. Copy the .war file to a place that is visible on the computer from where your browser is logged into the tomee console.  
+       7. Select “Choose File” in the section in the Tomee manager console labeled “WAR file to deploy”.  Select the .war file and then wait a moment until it’s name is displayed.  Then push the “Deploy” button.  
+       8. In a moment, the “golfsim” app should show up on the list.  Click it.  
+       9. If you get a “HTTP Status 404 – Not Found” error, try:  
           1. `cd /opt/tomee/webapps`  
           2. `sudo chmod -R 777 golfsim`  
           3. `sudo systemctl restart tomee`  (the first error will ‘stick’ otherwise)  
-       9. Alternatively, you can just manually move the .war file into place and Tomee should pick it up.  Wait 30 seconds or so after doing this to give Tomee a moment to see the new war file and deploy it.  
-          1. `cd /opt/tomee/webapps`  
-          2. `sudo cp ~/Dev/WebAppDev/target/golfsim.war .`  
-       10. Confirm you can see the PiTrac GUI by entering the following into your browser:  
+       10. However you deploy the app, confirm you can see the PiTrac GUI by entering the following into your browser:  
            1. `http://<The-Pi-2-name-or-IP>:8080/golfsim/monitor?config_filename=%2Fhome%2Fmleary%2FLM_Shares%2FWebShare%2Fgolf_sim_config.json`  
        11. You should see the PiTrac GUI
 

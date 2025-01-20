@@ -612,7 +612,7 @@ export PITRAC_E6_HOST_ADDRESS=10.0.0.29
 26. First, make sure you’ve setup the required IP and directory values in the golf\_sim\_config.json file.  Instructions are [here](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20configuration%20and%20the%20golf_sim_config.json%20file.md).  
     1. The value tells the web-based PiTrac GUI where to look for the .json configuration file, which the GUI in turn uses to know where to look for certain shared image files.  
 27. Setup the PiTrac-specific code package for the PiTrac GUI on the Tomee server  
-    1. Log into the Pi 2 computer where the Tomee instance is running and make sure that $PITRAC_ROOT is set correctly as described above (can run "env | grep PITRAC") 
+    1. Log into the Pi 2 computer where the Tomee instance is running and make sure that $PITRAC_ROOT and other PITRAC_xxxx environment variables are set correctly as described above (can run "env | grep PITRAC") 
     2. Make sure Tomee is running:  
        1. `sudo systemctl status tomee`   (hit ‘q’ to exit)  
     3. `cd ~/Dev`   (or whatever the root of your development environment is)  

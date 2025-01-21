@@ -61,7 +61,7 @@ namespace golf_sim {
 
     int BallImageProc::kCoarseXRotationDegreesIncrement = 6;
     int BallImageProc::kCoarseXRotationDegreesStart = -42;
-    int BallImageProc::kCoarseXRrotationDegreesEnd = 42;
+    int BallImageProc::kCoarseXRotationDegreesEnd = 42;
     int BallImageProc::kCoarseYRotationDegreesIncrement = 5;
     int BallImageProc::kCoarseYRotationDegreesStart = -30;
     int BallImageProc::kCoarseYRotationDegreesEnd = 30;
@@ -107,6 +107,9 @@ namespace golf_sim {
     double BallImageProc::kStrobedBallsAltHoughDpParam1 = 1.5;
     double BallImageProc::kStrobedBallsAltParam2Increment = 0.05;
 
+    bool BallImageProc::kUseCLAHEProcessing;
+    int BallImageProc::kCLAHEClipLimit;
+    int BallImageProc::kCLAHETilesGridSize;
 
     double BallImageProc::kPuttingBallStartingParam2 = 40;
     double BallImageProc::kPuttingBallMinParam2 = 30;
@@ -188,7 +191,7 @@ namespace golf_sim {
         // The following constants are only used internal to the GolfSimCamera class, and so can be initialized in the constructor
         GolfSimConfiguration::SetConstant("gs_config.spin_analysis.kCoarseXRotationDegreesIncrement", kCoarseXRotationDegreesIncrement);
         GolfSimConfiguration::SetConstant("gs_config.spin_analysis.kCoarseXRotationDegreesStart", kCoarseXRotationDegreesStart);
-        GolfSimConfiguration::SetConstant("gs_config.spin_analysis.kCoarseXRrotationDegreesEnd", kCoarseXRrotationDegreesEnd);
+        GolfSimConfiguration::SetConstant("gs_config.spin_analysis.kCoarseXRotationDegreesEnd", kCoarseXRotationDegreesEnd);
         GolfSimConfiguration::SetConstant("gs_config.spin_analysis.kCoarseYRotationDegreesIncrement", kCoarseYRotationDegreesIncrement);
         GolfSimConfiguration::SetConstant("gs_config.spin_analysis.kCoarseYRotationDegreesStart", kCoarseYRotationDegreesStart);
         GolfSimConfiguration::SetConstant("gs_config.spin_analysis.kCoarseYRotationDegreesEnd", kCoarseYRotationDegreesEnd);
@@ -235,6 +238,10 @@ namespace golf_sim {
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kStrobedBallsAltCurrentParam1", kStrobedBallsAltCurrentParam1);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kStrobedBallsAltHoughDpParam1", kStrobedBallsAltHoughDpParam1);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kStrobedBallsAltParam2Increment", kStrobedBallsAltParam2Increment);
+
+        GolfSimConfiguration::SetConstant("gs_config.ball_identification.kUseCLAHEProcessing", kUseCLAHEProcessing);
+        GolfSimConfiguration::SetConstant("gs_config.ball_identification.kCLAHEClipLimit", kCLAHEClipLimit);
+        GolfSimConfiguration::SetConstant("gs_config.ball_identification.kCLAHETilesGridSize", kCLAHETilesGridSize);
 
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kPuttingBallStartingParam2", kPuttingBallStartingParam2);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kPuttingBallMinParam2", kPuttingBallMinParam2);
@@ -440,6 +447,35 @@ namespace golf_sim {
 
             case kStrobed: {
 
+                // Create a CLAHE object
+
+                if (kUseCLAHEProcessing) {
+                    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+
+                    // Set CLAHE parameters
+
+                    if (kCLAHETilesGridSize < 1) {
+                        kCLAHETilesGridSize = 1;
+                        GS_LOG_MSG(warning, "kCLAHETilesGridSize was < 1 - Resetting to 1.");
+                    }
+                    if (kCLAHEClipLimit < 1) {
+                        kCLAHEClipLimit = 1;
+                        GS_LOG_MSG(warning, "kCLAHEClipLimit was < 1 - Resetting to 1.");
+                    }
+
+                    GS_LOG_TRACE_MSG(trace, "Using CLAHE Pre-processing with GridSize = " + std::to_string(kCLAHETilesGridSize) + 
+                                            ", ClipLimit = " + std::to_string(kCLAHEClipLimit));
+
+                    clahe->setClipLimit(kCLAHEClipLimit);
+                    clahe->setTilesGridSize(cv::Size(kCLAHETilesGridSize, kCLAHETilesGridSize));
+
+                    // Apply CLAHE
+                    cv::Mat equalizedImage;
+                    clahe->apply(search_image, search_image);
+
+                    LoggingTools::DebugShowImage(image_name_ + "  Strobed Ball Image - After CLAHE equalization", search_image);
+                }
+
                 double canny_lower = 0.0;
                 double canny_upper = 0.0;
                 int pre_canny_blur_size = 0;
@@ -472,7 +508,7 @@ namespace golf_sim {
                 }
 
 
-                GS_LOG_MSG(info, "Main HoughCircle Image Prep - Performing Pre-Hough Bur and Canny for kStrobed mode.");
+                GS_LOG_MSG(info, "Main HoughCircle Image Prep - Performing Pre-Hough Blur and Canny for kStrobed mode.");
                 GS_LOG_MSG(info, "  Blur Parameters are: pre_canny_blur_size = " + std::to_string(pre_canny_blur_size) +
                         ", pre_hough_blur_size " + std::to_string(pre_hough_blur_size));
                 GS_LOG_MSG(info, "  Canny Parameters are: canny_lower = " + std::to_string(canny_lower) +
@@ -2679,7 +2715,7 @@ namespace golf_sim {
         // Initial angle search will be fairly coarse
         initialSearchSpace.anglex_rotation_degrees_increment = kCoarseXRotationDegreesIncrement;
         initialSearchSpace.anglex_rotation_degrees_start = kCoarseXRotationDegreesStart;
-        initialSearchSpace.anglex_rotation_degrees_end = kCoarseXRrotationDegreesEnd;
+        initialSearchSpace.anglex_rotation_degrees_end = kCoarseXRotationDegreesEnd;
         initialSearchSpace.angley_rotation_degrees_increment = kCoarseYRotationDegreesIncrement;
         initialSearchSpace.angley_rotation_degrees_start = kCoarseYRotationDegreesStart;
         initialSearchSpace.angley_rotation_degrees_end = kCoarseYRotationDegreesEnd;

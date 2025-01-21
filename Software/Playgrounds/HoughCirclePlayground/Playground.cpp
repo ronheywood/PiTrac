@@ -39,9 +39,9 @@ int hsv_lower_v = 114;
 int hsv_upper_v = 255;
 
 int kStrobedEnvironmentCannyLower = 35; //  41 for external;
-int kStrobedEnvironmentCannyUpper = 81;  // 44 for external 98;
+int kStrobedEnvironmentCannyUpper = 80;  // 44 for external 98;
 int kStrobedEnvironmentPreCannyBlurSizeInt = 11;
-int kStrobedEnvironmentPreHoughBlurSizeInt = 16;
+int kStrobedEnvironmentPreHoughBlurSizeInt = 11;  // 16 also worked well
 
 int kStrobedEnvironmentHoughDpParam1Int = 8;  //  Will be divided by 10 if using HOUGH_GRADIENT_ALT.   Either 1.7 or *1.8* tremendously helps the accuracy! 1.9 can work ok for external.  1.3 is good for stationary ball (cam1)
 int kStrobedEnvironmentBallCurrentParam1Int = 130;
@@ -49,8 +49,8 @@ int kStrobedEnvironmentBallMinParam2Int = 28; // 60 for external
 int kStrobedEnvironmentBallMaxParam2Int = 140;
 int kStrobedEnvironmentBallStartingParam2Int = 65;
 int kStrobedEnvironmentBallParam2IncrementInt = 4;
-int kStrobedEnvironmentMinimumSearchRadiusInt = 48; // 59; //  60;  // gets bad fast as this widens.  I'd try 56 and 85 for now
-int kStrobedEnvironmentMaximumSearchRadiusInt = 120;  // 148;  // 80;
+int kStrobedEnvironmentMinimumSearchRadiusInt = 52; // 59; //  60;  // gets bad fast as this widens.  I'd try 56 and 85 for now
+int kStrobedEnvironmentMaximumSearchRadiusInt = 128;  // 148;  // 80;
 
 // The following are specific to an experiment designed to remove Uneekor strobe artifacts
 int kStrobedEnvironmentHoughLineIntersections = 58;
@@ -59,6 +59,9 @@ int kStrobedEnvironmentMaximumHoughLineGap = 7;
 int kStrobedEnvironmentLinesAngleLower = 190;  // 180 is a horizontal line
 int kStrobedEnvironmentLinesAngleUpper = 290;  // 280 is a vertical line
 
+// The following defaults seem to perform well
+int kCLAHEClipLimit = 6;
+int kCLAHETileGridSize = 8;
 
 int kStrobedEnvironmentBottomIgnoreHeight = 0; //  80;
 
@@ -238,8 +241,10 @@ bool process_window_ready = false;
             return;
         }
 
+
         int h = src_f.rows;
         int w = src_f.cols;
+
 
         // Filtering out long lines (usually of the golf shaft)
 
@@ -247,6 +252,25 @@ bool process_window_ready = false;
         cv::Mat cannyOutput;
 
         cv::cvtColor(src_f, src_f_gray, cv::COLOR_BGR2GRAY);
+
+        // TBD - Experimental CLAHE pre-processing
+        // Create a CLAHE object
+        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+
+        // Set CLAHE parameters (optional)
+        // Do not perform CLAHE processing if the grid size is set to 0
+        if (kCLAHETileGridSize > 0) {
+            clahe->setClipLimit(kCLAHEClipLimit);
+            clahe->setTilesGridSize(cv::Size(kCLAHETileGridSize, kCLAHETileGridSize));
+
+            // Apply CLAHE
+            cv::Mat equalizedImage;
+            clahe->apply(src_f_gray, src_f_gray);
+        }
+
+        cv::imshow("Initial CLAHE output", src_f_gray);
+        sizeWindow("Initial CLAHE output", src_f_gray);
+
 
         cv::Scalar black_color{ 0,0,0 };
         cv::Scalar white_color{ 255,255,255 };
@@ -440,15 +464,15 @@ bool process_window_ready = false;
 
 
         // const std::string kBaseTestDir = "D:/GolfSim/C++Code/UneekorComparePlayground/CircleIDPlayground/Images/";
-        const std::string kBaseTestDir = "M:/Dev/PiTrac/Software/LMSourceCode/Images/";
+        const std::string kBaseTestDir = "L:/SavedImages/Test_For_Histogram/";
 
 
-        const std::string kTestImageFileName = kBaseTestDir + "log_cam2_last_strobed_img_232_fast.png";  // "log_cam2_last_strobed_img_17_2024-Jun-24_13.17.33.png";
+        const std::string kTestImageFileName = kBaseTestDir + "gs_log_img__log_cam2_last_strobed_img_Shot_2_2025-Jan-20_15.44.24.png";  // "log_cam2_last_strobed_img_17_2024-Jun-24_13.17.33.png";
 
         src_f = cv::imread(kTestImageFileName, cv::IMREAD_COLOR);
 
         cv::namedWindow(processWindowName, 1);
-        cv::resizeWindow(processWindowName, 700, 400);
+        cv::resizeWindow(processWindowName, 700, 500);
         
         // OpenCV trackbars have some weird limitation where they truncate the bar label to 10 characters
         // We'll just shorten ours for now
@@ -464,6 +488,10 @@ bool process_window_ready = false;
         cv::createTrackbar("MinRadius", processWindowName, &kStrobedEnvironmentMinimumSearchRadiusInt, 100, Process);
         cv::createTrackbar("MaxRadius", processWindowName, &kStrobedEnvironmentMaximumSearchRadiusInt, 120, Process);
         cv::createTrackbar("CircDist", processWindowName, &min_hough_circle_distance, 30, Process);
+
+        cv::createTrackbar("ClipLimit", processWindowName, &kCLAHEClipLimit, 60, Process);
+        cv::createTrackbar("GridSize", processWindowName, &kCLAHETileGridSize, 30, Process);
+
 
 
         process_window_ready = true;

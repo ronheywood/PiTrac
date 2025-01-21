@@ -5,7 +5,7 @@
 			"kLogIntermediateExposureImagesToFile": 1,
 			"kLogIntermediateSpinImagesToFile": 0,
 			"kLogWebserverImagesToFile": 1,
-			"kLogDiagnosticImagesToUniqueFiles": 0,
+			"kLogDiagnosticImagesToUniqueFiles": 1,
 			"kLinuxBaseImageLoggingDir": "./",
 			"kPCBaseImageLoggingDir": "D:\\GolfSim\\LM\\Images\\"
 		},
@@ -36,13 +36,17 @@
 			"kStrobedBallsAltCannyUpper": 80,
 			"kStrobedBallsAltPreCannyBlurSize": 11,
 			"kStrobedBallsAltPreHoughBlurSize HAS TO BE ODD": 0,
-			"kStrobedBallsAltPreHoughBlurSize": 11,
+			"kStrobedBallsAltPreHoughBlurSize": 17,
 			"kStrobedBallsAltMinParam2": 0.5,
 			"kStrobedBallsAltMaxParam2": 1.0,
 			"kStrobedBallsAltStartingParam2": 0.65,
 			"kStrobedBallsAltParam2Increment": 0.05,
 			"kStrobedBallsAltCurrentParam1": 130.0,
 			"kStrobedBallsAltHoughDpParam1": 0.8,
+
+			"kUseCLAHEProcessing": 1,
+			"kCLAHEClipLimit": 6,
+			"kCLAHETilesGridSize": 8,
 
 			"kPuttingBallMinParam2": 0.8,
 			"kPuttingBallMaxParam2": 1.0,
@@ -149,7 +153,7 @@
 			"kGaborMinWhitePercent": 39,
 			"kCoarseXRotationDegreesIncrement": 3,
 			"kCoarseXRotationDegreesStart": -33,
-			"kCoarseXRrotationDegreesEnd": 33,
+			"kCoarseXRotationDegreesEnd": 33,
 			"kCoarseYRotationDegreesIncrement": 5,
 			"kCoarseYRotationDegreesStart": -5,
 			"kCoarseYRotationDegreesEnd": 5,
@@ -297,8 +301,9 @@
 		},
 
 		"testing": {
-			"kTwoImageTestTeedBallImage": "gs_log_img__log_ball_final_found_ball_img.png",
-			"kTwoImageTestStrobedImage": "log_cam2_last_strobed_img.png",
+			"kBaseTestImageDir": "L:/SavedImages/",
+			"kTwoImageTestTeedBallImage": "Test_For_Histogram/gs_log_img__log_ball_final_found_ball_img_Shot_1_2025-Jan-20_15.44.18.png",
+			"kTwoImageTestStrobedImage": "Test_For_Histogram/gs_log_img__log_cam2_last_strobed_img_Shot_2_2025-Jan-20_15.44.24.png",
 
 			"kExternallyStrobedEnvNumber_bits_for_fast_on_pulse_": 5,
 

@@ -333,6 +333,13 @@ bool read_test_images(const std::string& img1BaseFileName, const std::string& im
 #endif
     }
 
+    // If a base directory for test images exists, use it to override the kBaseTestDir
+    std::string separate_base_test_dir;
+    GolfSimConfiguration::SetConstant("gs_config.testing.kBaseTestImageDir", separate_base_test_dir);
+    if (!separate_base_test_dir.empty()) {
+        kBaseTestDir = separate_base_test_dir;
+    }
+
 
     std::string img1FileName = kBaseTestDir + img1BaseFileName;
     std::string img2FileName = kBaseTestDir + img2BaseFileName;
@@ -846,7 +853,7 @@ bool TestSpin() {
 
 bool testAnalyzeStrobedBalls() {
 
-    // Have to call this here because we are not starting the FSM, but need (simulated) pulse informatiom
+    // Have to call this here because we are not starting the FSM, but need (simulated) pulse information
     PulseStrobe::InitGPIOSystem();
 
     std::string kTwoImageTestTeedBallImage;

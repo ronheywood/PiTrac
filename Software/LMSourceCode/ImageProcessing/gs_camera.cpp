@@ -3480,7 +3480,7 @@ namespace golf_sim {
 
                     // The 13.6 and 8 just allows the too-big-of-a-radius-change limit to be relative to the
                     // number of pixels we have to work with.  Should be about 08.
-                    radius_similarity_score = std::max(0.0, (img.rows / 13.6) - pow(5.0 * (ball1.measured_radius_pixels_ - ball2.measured_radius_pixels_), 2.0)) / 8.;
+                    radius_similarity_score = std::max(0.0, (img.rows / 13.6) - 3.0 * pow((ball1.measured_radius_pixels_ - ball2.measured_radius_pixels_), 2.0)) / 8.;
 
                     // Not implemented yet - TBD
                     if (GolfSimOptions::GetCommandLineOptions().golfer_orientation_ == GolferOrientation::kRightHanded) {
@@ -3533,10 +3533,6 @@ namespace golf_sim {
 
                 GS_LOG_TRACE_MSG(trace, "Potential Spin Ball Combination of balls ( " + std::to_string(ball_pair_element.ball1_index) + ", " + std::to_string(ball_pair_element.ball2_index) + ") scored: " + spin_ball_score_text);
             }
-
-            // TBD - REMOVE?  Still necessary?
-            GolfBall averaged_ball;
-            GolfBall::AverageBalls(balls, averaged_ball);
 
             // Find the balls with the two highest scores
 

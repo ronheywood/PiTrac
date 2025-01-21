@@ -50,7 +50,7 @@ public:
 
     static int kCoarseXRotationDegreesIncrement;
     static int kCoarseXRotationDegreesStart;
-    static int kCoarseXRrotationDegreesEnd;
+    static int kCoarseXRotationDegreesEnd;
     static int kCoarseYRotationDegreesIncrement;
     static int kCoarseYRotationDegreesStart;
     static int kCoarseYRotationDegreesEnd;
@@ -96,6 +96,9 @@ public:
     static double kStrobedBallsAltHoughDpParam1;
     static double kStrobedBallsAltParam2Increment;
 
+    static bool kUseCLAHEProcessing;
+    static int kCLAHEClipLimit;
+    static int kCLAHETilesGridSize;
 
     static double kPuttingBallStartingParam2;
     static double kPuttingBallMinParam2;

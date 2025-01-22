@@ -74,7 +74,13 @@ namespace golf_sim {
         // setup a keep-alive ping to the GSPro system.
         GS_LOG_TRACE_MSG(trace, "GsGSProInterface Initialize called.");
 
-        GolfSimConfiguration::SetConstant("gs_config.golf_simulator_interfaces.GSPro.kGSProConnectAddress", socket_connect_address_);
+        if (!GolfSimOptions::GetCommandLineOptions().gspro_host_address_.empty()) {
+            socket_connect_address_ = GolfSimOptions::GetCommandLineOptions().gspro_host_address_;
+        }
+        else {
+            GolfSimConfiguration::SetConstant("gs_config.golf_simulator_interfaces.GSPro.kGSProConnectAddress", socket_connect_address_);
+        }
+
         GolfSimConfiguration::SetConstant("gs_config.golf_simulator_interfaces.GSPro.kGSProConnectPort", socket_connect_port_);
 
         if (!GsSimSocketInterface::Initialize()) {

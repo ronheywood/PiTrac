@@ -75,4 +75,11 @@ private:
 	// If true, the Processing will no longer spend time looking for differences between
 	// frames.  This accommodates post-club-strike image processing.
 	bool detectionPaused_;
+
+	// If true, the processing will save the first image received to the 
+	// base_image_logging_dir_ set from the command line.  After logging the
+	// image, the flag will be set back to false.
+	// Will be set to true in the Configure method depending on the artifact 
+	// logging level
+	bool need_to_log_first_image_ = false;
 };

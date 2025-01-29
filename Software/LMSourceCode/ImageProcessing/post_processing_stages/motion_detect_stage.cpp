@@ -102,6 +102,7 @@ void MotionDetectStage::Configure()
 {
 	GS_LOG_MSG(trace, "MotionDetectStage::Configure");
 
+	// Use the kNumberFramesToSaveBeforeHit to size the circular buffer.
 	if (gs::GolfSimClubData::kGatherClubData) {
 		int final_frame_buffer_size = 1 + gs::GolfSimClubData::kNumberFramesToSaveBeforeHit + 
 			gs::GolfSimClubData::kNumberFramesToSaveAfterHit;
@@ -158,7 +159,15 @@ void MotionDetectStage::Configure()
 	motion_detected_ = false;
 	detectionPaused_ = false;
 	postMotionFramesToCapture_ = 0;   // Will be set later
-	// TBD - Need to use the kNumberFramesToSaveBeforeHit, for example to size the circular buffer.
+
+	if (gs::GolfSimOptions::GetCommandLineOptions().artifact_save_level_ != gs::ArtifactSaveLevel::kNoArtifacts) {
+		GS_LOG_MSG(trace, "Setting need_to_log_first_image_ = true");
+		need_to_log_first_image_ = true;
+	}
+	else {
+		GS_LOG_MSG(trace, "Setting need_to_log_first_image_ = false");
+		need_to_log_first_image_ = false;
+	}
 }
 
 bool MotionDetectStage::Process(CompletedRequestPtr &completed_request)
@@ -357,6 +366,11 @@ bool MotionDetectStage::Process(CompletedRequestPtr &completed_request)
 
 		if (enqueuedFrameInfo.mat.empty()) {
 			GS_LOG_MSG(error, "Enqueued a null club data image");
+		}
+
+		if (need_to_log_first_image_) {
+			gs::LoggingTools::LogImage("", mat, std::vector < cv::Point >{}, true, "log_first_cropped_image_of_teed_ball.png");
+			need_to_log_first_image_ = false;  // Don't save again
 		}
 
 		// continue the countdown if we're post-motion

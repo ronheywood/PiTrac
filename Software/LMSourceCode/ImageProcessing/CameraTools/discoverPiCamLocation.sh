@@ -1,5 +1,5 @@
 #!/bin/bash
-for((m=1; m<=5; ++m))
+for((m=0; m<=5; ++m))
 do
     media-ctl -d "/dev/media$m" --print-dot | grep imx > discover_media.txt
     awk -F"imx296 " '{print $2}' < discover_media.txt | cut -d- -f1 > discover_device.txt

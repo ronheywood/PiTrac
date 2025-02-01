@@ -74,6 +74,11 @@ namespace golf_sim {
 		// The first (0th) element in the array is for camera1, the second for camera2
 		static CameraConfiguration libcamera_configuration_[];
 		static LibcameraJpegApp* libcamera_app_[];
+
+		// True (or set to a non-negative number) if we've already figured out the media and device number for the camera;
+		static bool camera_location_found_;
+		static int previously_found_media_number_;
+		static int previously_found_device_number_;
 	};
 
 	bool CheckForBall(GolfBall& ball, cv::Mat& return_image);
@@ -101,6 +106,9 @@ namespace golf_sim {
 	bool ConfigureLibCameraOptions(RPiCamEncoder& app, const cv::Vec2i& cropping_window_size, uint cropped_frame_rate_fps_fps);
 
 	std::string GetCmdLineForMediaCtlCropping(cv::Vec2i croppedHW, cv::Vec2i cropOffsetXY);
+
+	// Determine where the camera is, such as /dev/media2 at device 6
+	bool DiscoverCameraLocation(int& media_number, int& device_number);
 
 	bool RetrieveCameraInfo(cv::Vec2i& resolution, uint& frameRate, bool restartCamera = false);
 

@@ -68,6 +68,9 @@ namespace golf_sim {
 
     LibcameraJpegApp* LibCameraInterface::libcamera_app_[] = {nullptr, nullptr};
 
+    bool camera_location_found_ = false;
+    int previously_found_media_number_ = -1;
+    int previously_found_device_number_ = -1;
 
     void SetLibCameraLoggingOff() {
         GS_LOG_TRACE_MSG(trace, "SetLibCameraLoggingOff");
@@ -374,6 +377,149 @@ namespace golf_sim {
     }
 
 
+bool DiscoverCameraLocation(int& media_number, int& device_number) {
+
+    GS_LOG_TRACE_MSG(trace, "DiscoverCameraLocation");
+
+    // The camera location won't change during the course of a single exceution, so 
+    // no need to figure this out more than once - re-use the earlier values if we can
+    if (camera_location_found_) {
+        media_number = previously_found_media_number_;
+        device_number = previously_found_device_number_;
+
+        return true;
+    }
+
+    // Otherwise, go out and search all of the possible places to search for the camera
+    const std::string pitrac_root = std::getenv("PITRAC_ROOT");
+
+    if (pitrac_root.empty()) {
+        GS_LOG_TRACE_MSG(error, "DiscoverCameraLocation - could not get PITRAC_ROOT environment variable");
+        return false;
+    }
+
+    const std::string kOutputFileName = pitrac_root + "/pi_cam_location.txt";
+
+    std::string s;
+
+    s += "#!/bin/bash\n";
+    s += "for ((m = 0; m <= 5; ++m))\n";
+    s += "    do\n";
+    s += "        media-ctl -d \"/dev/media$m\" --print-dot | grep imx > discover_media.txt\n";
+    s += "        awk -F\"imx296 \" '{print $2}' < discover_media.txt | cut -d- -f1 > discover_device.txt\n";
+    s += "        echo -n -e \"$m \" > discover_result.txt\n";
+    s += "        cat discover_device.txt >> discover_result.txt\n";
+
+    s += "       if  grep imx discover_media.txt > /dev/null;  then  cat discover_result.txt > " + kOutputFileName + "; break;  fi\n";
+    s += "            done\n";
+
+    s += "#            rm -f discover_media.txt discover_device.txt discover_result.txt\n";
+
+    const std::string script_name = pitrac_root + "/pi_cam_location.sh";
+
+    GS_LOG_TRACE_MSG(trace, "DiscoverCameraLocation script string is:\n" + s);
+
+    // Write the script out to file to run.  
+    // Otherwise, system() would try to run the script as a sh script,
+    // not a bash script
+    std::ofstream script_file(script_name); // Open file for reading
+
+    if (!script_file.is_open()) {
+        GS_LOG_TRACE_MSG(error, "DiscoverCameraLocation - failed to open script file " + script_name);
+        return false;
+    }
+
+    // Write the script to the file
+    script_file << s << std::endl; 
+    script_file.close();
+
+    // At least currently, we need to make the script file executable before calling it
+    std::string script_command = "chmod 777 " + script_name;
+    system(script_command.c_str());
+
+    script_command = script_name;
+
+    GS_LOG_TRACE_MSG(trace, "Executing command: " + script_command);
+
+    int cmdResult = system(script_command.c_str());
+
+    if (cmdResult != 0) {
+        GS_LOG_TRACE_MSG(error, "system(DiscoverCameraLocation) failed.  Return value was: " + std::to_string(cmdResult));
+        return false;
+    }
+    
+    // Read and parse the output results
+    std::ifstream file(kOutputFileName); 
+
+    if (!file.is_open()) {
+        GS_LOG_TRACE_MSG(error, "DiscoverCameraLocation - failed to open output file " + kOutputFileName);
+        return false;
+    }
+
+    std::string line;
+
+    // Read only one line
+    if (!std::getline(file, line)) { 
+        GS_LOG_TRACE_MSG(error, "system(DiscoverCameraLocation) failed.");
+        return false;
+    }
+        
+    file.close();
+
+    GS_LOG_TRACE_MSG(trace, "DiscoverCameraLocation - result in output file was: " + line);
+
+    // The format of the output file should be
+    // <media number> <space> <device number>
+    try {
+        int lastSpacePos = line.rfind(' ');
+
+        std::string device_number_str;
+
+        if (lastSpacePos != (int)string::npos) {
+            device_number_str = line.substr(lastSpacePos + 1);
+        }
+        else {
+            GS_LOG_TRACE_MSG(error, "No space found");
+            return false;
+        }
+
+        int firstSpacePos = line.find(' ');
+
+        std::string media_number_str;
+
+        if (firstSpacePos != (int)string::npos) {
+            media_number_str = line.substr(0, firstSpacePos);
+        }
+        else {
+            GS_LOG_TRACE_MSG(error, "No space found");
+            return false;
+        }
+
+        if (media_number_str.empty() || device_number_str.empty()) {
+            GS_LOG_TRACE_MSG(error, "Failed to parse media and device number strings");
+            return false;
+        }
+
+        GS_LOG_TRACE_MSG(trace, "media_number_str = " + media_number_str + ", device_number_str = " + device_number_str);
+
+        media_number = std::stoi(media_number_str);
+        device_number = std::stoi(device_number_str);
+    }
+    catch (std::exception const& e)
+    {
+        GS_LOG_MSG(error, "ERROR: *** " + std::string(e.what()) + " ***");
+        return false;
+    }
+
+    // Signal that we won't need to do this again during this run.
+    camera_location_found_ = true;
+    previously_found_media_number_ = media_number;
+    previously_found_device_number_ = device_number;
+
+    return true;
+}
+
+
 bool SendCameraCroppingCommand(cv::Vec2i& cropping_window_size, cv::Vec2i& cropping_window_offset) {
 
     GS_LOG_TRACE_MSG(trace, "SendCameraCroppingCommand.");
@@ -385,7 +531,7 @@ bool SendCameraCroppingCommand(cv::Vec2i& cropping_window_size, cv::Vec2i& cropp
     int cmdResult = system(mediaCtlCmd.c_str());
 
     if (cmdResult != 0) {
-        GS_LOG_TRACE_MSG(trace, "system(mediaCtlCmd) failed.");
+        GS_LOG_TRACE_MSG(error, "system(mediaCtlCmd) failed.");
         return false;
     }
     return true;
@@ -526,12 +672,17 @@ std::string GetCmdLineForMediaCtlCropping(cv::Vec2i croppedHW, cv::Vec2i crop_of
 
     std::string s;
 
-    int device_number = (GolfSimConfiguration::GetPiModel() == GolfSimConfiguration::PiModel::kRPi5) ? 6 : 10;
+    int media_number = -1;
+    int device_number = -1;
+
+    if (!DiscoverCameraLocation(media_number, device_number)) {
+        GS_LOG_MSG(error, "Could not DiscoverCameraLocation");
+        return "";
+    }
 
     s += "#!/bin/sh\n";
-    for (int m = 0; m <= 5; m++) {
-        s += "if  media-ctl -d \"/dev/media" + std::to_string(m) + "\" --set-v4l2 \"'imx296 " + std::to_string(device_number) + "-001a':0 [fmt:SBGGR10_1X10/" + std::to_string(croppedHW[0]) + "x" + std::to_string(croppedHW[1]) + " crop:(" + std::to_string(crop_offset_xY[0]) + "," + std::to_string(crop_offset_xY[1]) + ")/" + std::to_string(croppedHW[0]) + "x" + std::to_string(croppedHW[1]) + "]\" > /dev/null;  then  echo -e \"/dev/media" + std::to_string(m) + "\" > /dev/null; break;  fi\n";
-    }
+    s += "if  media-ctl -d \"/dev/media" + std::to_string(media_number) + "\" --set-v4l2 \"'imx296 " + std::to_string(device_number) + "-001a':0 [fmt:SBGGR10_1X10/" + std::to_string(croppedHW[0]) + "x" + std::to_string(croppedHW[1]) + " crop:(" + std::to_string(crop_offset_xY[0]) + "," + std::to_string(crop_offset_xY[1]) + ")/" + 
+        std::to_string(croppedHW[0]) + "x" + std::to_string(croppedHW[1]) + "]\" > /dev/null;  then  echo -e \"/dev/media" + std::to_string(media_number) + "\" > /dev/null; break;  fi\n";
 
     return s;
 }

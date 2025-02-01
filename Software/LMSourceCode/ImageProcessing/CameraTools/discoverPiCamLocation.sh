@@ -6,7 +6,7 @@ do
     echo -n -e "Camera is at /dev/media$m on device number " > discover_result.txt
     cat discover_device.txt >> discover_result.txt
     
-    if  grep imx discover_media.txt > /dev/null ;  then  cat discover_result.txt ; break;  fi
+    if  grep imx discover_media.txt > /dev/null ;  then  cat discover_result.txt > $PITRAC_ROOT/test.txt ; break;  fi
 done
 
 rm discover_media.txt discover_device.txt discover_result.txt

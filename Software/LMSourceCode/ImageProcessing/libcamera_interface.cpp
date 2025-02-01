@@ -413,7 +413,7 @@ bool DiscoverCameraLocation(int& media_number, int& device_number) {
     s += "       if  grep imx discover_media.txt > /dev/null;  then  cat discover_result.txt > " + kOutputFileName + "; break;  fi\n";
     s += "            done\n";
 
-    s += "#            rm -f discover_media.txt discover_device.txt discover_result.txt\n";
+    s += "            rm -f discover_media.txt discover_device.txt discover_result.txt\n";
 
     const std::string script_name = pitrac_root + "/pi_cam_location.sh";
 

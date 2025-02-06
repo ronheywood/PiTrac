@@ -110,14 +110,16 @@ public:
     static double kPuttingHoughDpParam1;
 
     // TBD - Some of these are redundant - put 'em all in ball_image_proc or in gs_camera, but not both
-    static double kExternallyStrobedEnvBallCurrentParam1;
-    static double kExternallyStrobedEnvBallMinParam2;
-    static double kExternallyStrobedEnvBallMaxParam2;
-    static double kExternallyStrobedEnvBallStartingParam2;
-    static double kExternallyStrobedEnvBallNarrowingParam2;
-    static double kExternallyStrobedEnvBallNarrowingDpParam;
+    static double kExternallyStrobedEnvCannyLower;
+    static double kExternallyStrobedEnvCannyUpper;
+    static double kExternallyStrobedEnvCurrentParam1;
+    static double kExternallyStrobedEnvMinParam2;
+    static double kExternallyStrobedEnvMaxParam2;
+    static double kExternallyStrobedEnvStartingParam2;
+    static double kExternallyStrobedEnvNarrowingParam2;
+    static double kExternallyStrobedEnvNarrowingDpParam;
 
-    static double kExternallyStrobedEnvBallParam2Increment;
+    static double kExternallyStrobedEnvParam2Increment;
     static int kExternallyStrobedEnvMinHoughReturnCircles;
     static int kExternallyStrobedEnvMaxHoughReturnCircles;
     static int kExternallyStrobedEnvPreHoughBlurSize;
@@ -128,9 +130,12 @@ public:
     static int kExternallyStrobedEnvMaximumSearchRadius;
     static double kStrobedNarrowingRadiiDpParam;
     static double kStrobedNarrowingRadiiParam2;
-    static int kExternallyStrobedEnvBallNarrowingPreCannyBlurSize;
-    static int kExternallyStrobedEnvBallNarrowingPreHoughBlurSize;
+    static int kExternallyStrobedEnvNarrowingPreCannyBlurSize;
+    static int kExternallyStrobedEnvNarrowingPreHoughBlurSize;
 
+    static bool kExternallyStrobedUseCLAHEProcessing;
+    static int kExternallyStrobedCLAHEClipLimit;
+    static int kExternallyStrobedCLAHETilesGridSize;
 
     static bool kUseDynamicRadiiAdjustment;
     static int kNumberRadiiToAverageForDynamicAdjustment;
@@ -225,7 +230,7 @@ public:
         kUnknown = 0,
         kFindPlacedBall = 1,
         kStrobed = 2,
-        kExternalStrobe = 3,
+        kExternallyStrobed = 3,
         kPutting = 4
     };
 
@@ -299,6 +304,7 @@ public:
         const GsColorTriplet input_upperHsv,
         double wideningAmount = 0.0);
 
+    bool PreProcessStrobedImage(cv::Mat& search_image, BallSearchMode search_mode);
 
 private:
 

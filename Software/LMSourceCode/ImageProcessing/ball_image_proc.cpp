@@ -120,23 +120,26 @@ namespace golf_sim {
     int BallImageProc::kPuttingMinHoughReturnCircles = 1;
     double BallImageProc::kPuttingHoughDpParam1 = 1.5;
 
-    double BallImageProc::kExternallyStrobedEnvBallCurrentParam1 = 130.0;
-    double BallImageProc::kExternallyStrobedEnvBallMinParam2 = 28;
-    double BallImageProc::kExternallyStrobedEnvBallMaxParam2 = 100;
-    double BallImageProc::kExternallyStrobedEnvBallStartingParam2 = 65;
-    double BallImageProc::kExternallyStrobedEnvBallNarrowingParam2 = 0.6;
-    double BallImageProc::kExternallyStrobedEnvBallNarrowingDpParam = 1.1;
-    double BallImageProc::kExternallyStrobedEnvBallParam2Increment = 4;
+    double BallImageProc::kExternallyStrobedEnvCannyLower = 35;
+    double BallImageProc::kExternallyStrobedEnvCannyUpper = 80;
+
+    double BallImageProc::kExternallyStrobedEnvCurrentParam1 = 130.0;
+    double BallImageProc::kExternallyStrobedEnvMinParam2 = 28;
+    double BallImageProc::kExternallyStrobedEnvMaxParam2 = 100;
+    double BallImageProc::kExternallyStrobedEnvStartingParam2 = 65;
+    double BallImageProc::kExternallyStrobedEnvNarrowingParam2 = 0.6;
+    double BallImageProc::kExternallyStrobedEnvNarrowingDpParam = 1.1;
+    double BallImageProc::kExternallyStrobedEnvParam2Increment = 4;
     int BallImageProc::kExternallyStrobedEnvMinHoughReturnCircles = 3;
     int BallImageProc::kExternallyStrobedEnvMaxHoughReturnCircles = 20;
     int BallImageProc::kExternallyStrobedEnvPreHoughBlurSize = 11;
     int BallImageProc::kExternallyStrobedEnvPreCannyBlurSize = 3;
     double BallImageProc::kExternallyStrobedEnvHoughDpParam1 = 1.0;
-    int BallImageProc::kExternallyStrobedEnvBallNarrowingPreCannyBlurSize = 3;
-    int BallImageProc::kExternallyStrobedEnvBallNarrowingPreHoughBlurSize = 9;
+    int BallImageProc::kExternallyStrobedEnvNarrowingPreCannyBlurSize = 3;
+    int BallImageProc::kExternallyStrobedEnvNarrowingPreHoughBlurSize = 9;
     int BallImageProc::kExternallyStrobedEnvMinimumSearchRadius = 60;
     int BallImageProc::kExternallyStrobedEnvMaximumSearchRadius = 80;
-    
+
     bool BallImageProc::kUseDynamicRadiiAdjustment = true;
     int BallImageProc::kNumberRadiiToAverageForDynamicAdjustment = 3;
     double BallImageProc::kStrobedNarrowingRadiiMinRatio = 0.8;
@@ -161,7 +164,7 @@ namespace golf_sim {
 
     bool BallImageProc::kUseBestCircleRefinement = false;
     bool BallImageProc::kUseBestCircleLargestCircle = false;
-    
+
     double BallImageProc::kBestCircleCannyLower = 55;
     double BallImageProc::kBestCircleCannyUpper = 110;
     int BallImageProc::kBestCirclePreCannyBlurSize = 5;
@@ -177,6 +180,10 @@ namespace golf_sim {
     double BallImageProc::kExternallyStrobedBestCircleParam1 = 120.;
     double BallImageProc::kExternallyStrobedBestCircleParam2 = 35.;
     double BallImageProc::kExternallyStrobedBestCircleHoughDpParam1 = 1.5;
+
+    bool BallImageProc::kExternallyStrobedUseCLAHEProcessing = true;
+    int BallImageProc::kExternallyStrobedCLAHEClipLimit = 6;
+    int BallImageProc::kExternallyStrobedCLAHETilesGridSize = 6;
 
     double BallImageProc::kBestCircleIdentificationMinRadiusRatio = 0.85;
     double BallImageProc::kBestCircleIdentificationMaxRadiusRatio = 1.10;
@@ -211,12 +218,12 @@ namespace golf_sim {
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kPlacedBallParam2Increment", kPlacedBallParam2Increment);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kPlacedMinHoughReturnCircles", kPlacedMinHoughReturnCircles);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kPlacedMaxHoughReturnCircles", kPlacedMaxHoughReturnCircles);
-        
+
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kStrobedBallsCannyLower", kStrobedBallsCannyLower);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kStrobedBallsCannyUpper", kStrobedBallsCannyUpper);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kStrobedBallsPreCannyBlurSize", kStrobedBallsPreCannyBlurSize);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kStrobedBallsPreHoughBlurSize", kStrobedBallsPreHoughBlurSize);
-        
+
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kStrobedBallsStartingParam2", kStrobedBallsStartingParam2);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kStrobedBallsMinParam2", kStrobedBallsMinParam2);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kStrobedBallsMaxParam2", kStrobedBallsMaxParam2);
@@ -252,15 +259,15 @@ namespace golf_sim {
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kPuttingMaxHoughReturnCircles", kPuttingMaxHoughReturnCircles);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kPuttingHoughDpParam1", kPuttingHoughDpParam1);
 
-        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvBallCurrentParam1", kExternallyStrobedEnvBallCurrentParam1);
-        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvBallMaxParam2", kExternallyStrobedEnvBallMaxParam2);
-        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvBallStartingParam2", kExternallyStrobedEnvBallStartingParam2);
-        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvBallNarrowingParam2", kExternallyStrobedEnvBallNarrowingParam2);
-        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvBallNarrowingDpParam", kExternallyStrobedEnvBallNarrowingDpParam);
-        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvBallNarrowingPreCannyBlurSize", kExternallyStrobedEnvBallNarrowingPreCannyBlurSize);
-        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvBallNarrowingPreHoughBlurSize", kExternallyStrobedEnvBallNarrowingPreHoughBlurSize);
+        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvCurrentParam1", kExternallyStrobedEnvCurrentParam1);
+        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvMaxParam2", kExternallyStrobedEnvMaxParam2);
+        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvStartingParam2", kExternallyStrobedEnvStartingParam2);
+        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvNarrowingParam2", kExternallyStrobedEnvNarrowingParam2);
+        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvNarrowingDpParam", kExternallyStrobedEnvNarrowingDpParam);
+        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvNarrowingPreCannyBlurSize", kExternallyStrobedEnvNarrowingPreCannyBlurSize);
+        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvNarrowingPreHoughBlurSize", kExternallyStrobedEnvNarrowingPreHoughBlurSize);
 
-        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvBallParam2Increment", kExternallyStrobedEnvBallParam2Increment);
+        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvParam2Increment", kExternallyStrobedEnvParam2Increment);
         GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvMinHoughReturnCircles", kExternallyStrobedEnvMinHoughReturnCircles);
         GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvMaxHoughReturnCircles", kExternallyStrobedEnvMaxHoughReturnCircles);
         GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvPreHoughBlurSize", kExternallyStrobedEnvPreHoughBlurSize);
@@ -274,13 +281,17 @@ namespace golf_sim {
         GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedBestCircleParam2", kExternallyStrobedBestCircleParam2);
         GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedBestCircleHoughDpParam1", kExternallyStrobedBestCircleHoughDpParam1);
 
+        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedUseCLAHEProcessing", kExternallyStrobedUseCLAHEProcessing);
+        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedCLAHEClipLimit", kExternallyStrobedCLAHEClipLimit);
+        GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedCLAHETilesGridSize", kExternallyStrobedCLAHETilesGridSize);
+
         GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvHoughDpParam1", kExternallyStrobedEnvHoughDpParam1);
         GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvMaximumSearchRadius", kExternallyStrobedEnvMaximumSearchRadius);
         GolfSimConfiguration::SetConstant("gs_config.testing.kExternallyStrobedEnvMinimumSearchRadius", kExternallyStrobedEnvMinimumSearchRadius);
 
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kPlacedPreHoughBlurSize", kPlacedPreHoughBlurSize);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kPlacedPreCannyBlurSize", kPlacedPreCannyBlurSize);
-        
+
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kStrobedBallsPreHoughBlurSize", kStrobedBallsPreHoughBlurSize);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kPuttingPreHoughBlurSize", kPuttingPreHoughBlurSize);
 
@@ -313,13 +324,141 @@ namespace golf_sim {
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kPlacedNarrowingRadiiMaxRatio", kPlacedNarrowingRadiiMaxRatio);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kPlacedNarrowingStartingParam2", kPlacedNarrowingStartingParam2);
         GolfSimConfiguration::SetConstant("gs_config.ball_identification.kPlacedNarrowingRadiiDpParam", kPlacedNarrowingRadiiDpParam);
-        
+
 
         GolfSimConfiguration::SetConstant("gs_config.logging.kLogIntermediateSpinImagesToFile", kLogIntermediateSpinImagesToFile);
     }
 
     BallImageProc::~BallImageProc() {
 
+    }
+
+    bool BallImageProc::PreProcessStrobedImage( cv::Mat& search_image, 
+                                                BallSearchMode search_mode) {
+
+        GS_LOG_TRACE_MSG(trace, "PreProcessStrobedImage");
+
+        if (search_image.empty()) {
+            GS_LOG_MSG(error, "PreProcessStrobedImage called with no image to work with (search_image)");
+            return false;
+        }
+
+        // setup CLAHE processing dependent on PiTrac-only strobing or externally-strobed
+        
+        bool use_clahe_processing = true;
+        int clahe_tiles_grid_size = -1;
+        int clahe_clip_limit = -1;
+
+        if (search_mode == kStrobed) {
+            use_clahe_processing = kUseCLAHEProcessing;
+            clahe_tiles_grid_size = kCLAHETilesGridSize;
+            clahe_clip_limit = kCLAHEClipLimit;
+        }
+        else if (search_mode == kExternallyStrobed) {
+            use_clahe_processing = kExternallyStrobedUseCLAHEProcessing;
+            clahe_tiles_grid_size = kExternallyStrobedCLAHETilesGridSize;
+            clahe_clip_limit = kExternallyStrobedCLAHEClipLimit;
+        }
+        else {
+            GS_LOG_MSG(error, "PreProcessStrobedImage called with invalid search_mode)");
+            return false;
+        }
+
+        // Create a CLAHE object
+
+        if (use_clahe_processing) {
+            cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+
+            // Set CLAHE parameters
+
+            if (clahe_tiles_grid_size < 1) {
+                clahe_tiles_grid_size = 1;
+                GS_LOG_MSG(warning, "clahe_tiles_grid_size was < 1 - Resetting to 1.");
+            }
+            if (clahe_clip_limit < 1) {
+                clahe_clip_limit = 1;
+                GS_LOG_MSG(warning, "kCLAHEClipLimit was < 1 - Resetting to 1.");
+            }
+
+            GS_LOG_TRACE_MSG(trace, "Using CLAHE Pre-processing with GridSize = " + std::to_string(clahe_tiles_grid_size) +
+                ", ClipLimit = " + std::to_string(clahe_clip_limit));
+
+            clahe->setClipLimit(clahe_clip_limit);
+            clahe->setTilesGridSize(cv::Size(clahe_tiles_grid_size, clahe_tiles_grid_size));
+
+            // Apply CLAHE
+            cv::Mat equalizedImage;
+            clahe->apply(search_image, search_image);
+
+            LoggingTools::DebugShowImage(image_name_ + "  Strobed Ball Image - After CLAHE equalization", search_image);
+        }
+
+        double canny_lower = 0.0;
+        double canny_upper = 0.0;
+        int pre_canny_blur_size = 0;
+        int pre_hough_blur_size = 0;
+
+        if (search_mode == kStrobed) {
+            if (kStrobedBallsUseAltHoughAlgorithm) {
+                canny_lower = kStrobedBallsAltCannyLower;
+                canny_upper = kStrobedBallsAltCannyUpper;
+                pre_canny_blur_size = kStrobedBallsAltPreCannyBlurSize;
+                pre_hough_blur_size = kStrobedBallsAltPreHoughBlurSize;
+            }
+            else {
+                canny_lower = kStrobedBallsCannyLower;
+                canny_upper = kStrobedBallsCannyUpper;
+                pre_canny_blur_size = kStrobedBallsPreCannyBlurSize;
+                pre_hough_blur_size = kStrobedBallsPreHoughBlurSize;
+            }
+        }
+        else if (search_mode == kExternallyStrobed) {
+            canny_lower = kExternallyStrobedEnvCannyLower;
+            canny_upper = kExternallyStrobedEnvCannyUpper;
+            pre_canny_blur_size = kExternallyStrobedEnvPreCannyBlurSize;
+            pre_hough_blur_size = kExternallyStrobedEnvPreHoughBlurSize;
+        }
+
+        // The size for the blur must be odd - force it up in value by 1 if necessary
+        if (pre_canny_blur_size > 0) {
+            if (pre_canny_blur_size % 2 != 1) {
+                pre_canny_blur_size++;
+            }
+        }
+
+        if (pre_hough_blur_size > 0) {
+            if (pre_hough_blur_size % 2 != 1) {
+                pre_hough_blur_size++;
+            }
+        }
+
+
+        GS_LOG_MSG(info, "Main HoughCircle Image Prep - Performing Pre-Hough Blur and Canny for kStrobed mode.");
+        GS_LOG_MSG(info, "  Blur Parameters are: pre_canny_blur_size = " + std::to_string(pre_canny_blur_size) +
+            ", pre_hough_blur_size " + std::to_string(pre_hough_blur_size));
+        GS_LOG_MSG(info, "  Canny Parameters are: canny_lower = " + std::to_string(canny_lower) +
+            ", canny_upper " + std::to_string(canny_upper));
+
+
+        cv::GaussianBlur(search_image, search_image, cv::Size(pre_canny_blur_size, pre_canny_blur_size), 0);
+
+        // TBD - REMOVED THIS FOR NOW
+        for (int i = 0; i < 0; i++) {
+            cv::erode(search_image, search_image, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)), cv::Point(-1, -1), 3);
+            cv::dilate(search_image, search_image, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)), cv::Point(-1, -1), 3);
+        }
+
+        LoggingTools::DebugShowImage(image_name_ + "  Strobed Ball Image - Ready for Edge Detection", search_image);
+
+        cv::Mat cannyOutput_for_balls;
+        cv::Canny(search_image, cannyOutput_for_balls, canny_lower, canny_upper);
+
+        LoggingTools::DebugShowImage(image_name_ + "  cannyOutput_for_balls", cannyOutput_for_balls);
+
+        // Blur the lines-only image back to the search_image that the code below uses
+        cv::GaussianBlur(cannyOutput_for_balls, search_image, cv::Size(pre_hough_blur_size, pre_hough_blur_size), 0);   // Nominal is 7x7
+
+        return true;
     }
 
     // Given a picture, see if we can find the golf ball somewhere in that picture.
@@ -447,99 +586,19 @@ namespace golf_sim {
 
             case kStrobed: {
 
-                // Create a CLAHE object
-
-                if (kUseCLAHEProcessing) {
-                    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
-
-                    // Set CLAHE parameters
-
-                    if (kCLAHETilesGridSize < 1) {
-                        kCLAHETilesGridSize = 1;
-                        GS_LOG_MSG(warning, "kCLAHETilesGridSize was < 1 - Resetting to 1.");
-                    }
-                    if (kCLAHEClipLimit < 1) {
-                        kCLAHEClipLimit = 1;
-                        GS_LOG_MSG(warning, "kCLAHEClipLimit was < 1 - Resetting to 1.");
-                    }
-
-                    GS_LOG_TRACE_MSG(trace, "Using CLAHE Pre-processing with GridSize = " + std::to_string(kCLAHETilesGridSize) + 
-                                            ", ClipLimit = " + std::to_string(kCLAHEClipLimit));
-
-                    clahe->setClipLimit(kCLAHEClipLimit);
-                    clahe->setTilesGridSize(cv::Size(kCLAHETilesGridSize, kCLAHETilesGridSize));
-
-                    // Apply CLAHE
-                    cv::Mat equalizedImage;
-                    clahe->apply(search_image, search_image);
-
-                    LoggingTools::DebugShowImage(image_name_ + "  Strobed Ball Image - After CLAHE equalization", search_image);
+                if (!PreProcessStrobedImage(search_image, kStrobed)) {
+                    GS_LOG_MSG(error, "Failed to PreProcessStrobedImage");
+                    return false;
                 }
-
-                double canny_lower = 0.0;
-                double canny_upper = 0.0;
-                int pre_canny_blur_size = 0;
-                int pre_hough_blur_size = 0;
-
-                if (kStrobedBallsUseAltHoughAlgorithm) {
-                    canny_lower = kStrobedBallsAltCannyLower;
-                    canny_upper = kStrobedBallsAltCannyUpper;
-                    pre_canny_blur_size = kStrobedBallsAltPreCannyBlurSize;
-                    pre_hough_blur_size = kStrobedBallsAltPreHoughBlurSize;
-                }
-                else {
-                    canny_lower = kStrobedBallsCannyLower;
-                    canny_upper = kStrobedBallsCannyUpper;
-                    pre_canny_blur_size = kStrobedBallsPreCannyBlurSize;
-                    pre_hough_blur_size = kStrobedBallsPreHoughBlurSize;
-                }
-
-                // The size for the blur must be odd - force it up in value by 1 if necessary
-                if (pre_canny_blur_size > 0) {
-                    if (pre_canny_blur_size % 2 != 1) {
-                        pre_canny_blur_size++;
-                    }
-                }
-
-                if (pre_hough_blur_size > 0) {
-                    if (pre_hough_blur_size % 2 != 1) {
-                        pre_hough_blur_size++;
-                    }
-                }
-
-
-                GS_LOG_MSG(info, "Main HoughCircle Image Prep - Performing Pre-Hough Blur and Canny for kStrobed mode.");
-                GS_LOG_MSG(info, "  Blur Parameters are: pre_canny_blur_size = " + std::to_string(pre_canny_blur_size) +
-                        ", pre_hough_blur_size " + std::to_string(pre_hough_blur_size));
-                GS_LOG_MSG(info, "  Canny Parameters are: canny_lower = " + std::to_string(canny_lower) +
-                    ", canny_upper " + std::to_string(canny_upper));
-
-
-                cv::GaussianBlur(search_image, search_image, cv::Size(pre_canny_blur_size, pre_canny_blur_size), 0);
-
-                // TBD - REMOVED THIS FOR NOW
-                for (int i = 0; i < 0; i++) {
-                    cv::erode(search_image, search_image, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)), cv::Point(-1, -1), 3);
-                    cv::dilate(search_image, search_image, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)), cv::Point(-1, -1), 3);
-                }
-
-                LoggingTools::DebugShowImage(image_name_ + "  Strobed Ball Image - Ready for Edge Detection", search_image);
-
-                cv::Mat cannyOutput_for_balls;
-                cv::Canny(search_image, cannyOutput_for_balls, canny_lower, canny_upper);
-
-                LoggingTools::DebugShowImage(image_name_ + "  cannyOutput_for_balls", cannyOutput_for_balls);
-
-                // Blur the lines-only image back to the search_image that the code below uses
-                cv::GaussianBlur(cannyOutput_for_balls, search_image, cv::Size(pre_hough_blur_size, pre_hough_blur_size), 0);   // Nominal is 7x7
 
                 break;
             }
 
 
-            case kExternalStrobe: {
+            case kExternallyStrobed: {
 
-                // The lines of the golf-shaft in a strobed environment
+                // Attempt to remove the lines of the golf-shaft in an externally-strobed environment.  
+                // Sadly, this is better accomplished by simply putting IR-black felt over the shaft.
                 std::vector<cv::Vec4i> lines;
 
                 if (GolfSimCamera::kExternallyStrobedEnvFilterImage) {
@@ -548,6 +607,11 @@ namespace golf_sim {
                     }
 
                     LoggingTools::DebugShowImage(image_name_ + "After CleanExternalStrobeArtifacts", search_image);
+                }
+
+                if (!PreProcessStrobedImage(search_image, kExternallyStrobed)) {
+                    GS_LOG_MSG(error, "Failed to PreProcessStrobedImage");
+                    return false;
                 }
 
                 break;
@@ -687,18 +751,18 @@ namespace golf_sim {
                 currentDp = use_alt ? kStrobedBallsAltHoughDpParam1 : kStrobedBallsHoughDpParam1;         // Must be between 0 and 2 (double).Nominal is 2, CURRENT = 1.2
                 break;
             }
-            case kExternalStrobe:
+            case kExternallyStrobed:
             {
-                starting_param2 = kExternallyStrobedEnvBallStartingParam2;
-                min_param2 = kExternallyStrobedEnvBallMinParam2;
-                max_param2 = kExternallyStrobedEnvBallMaxParam2;
+                starting_param2 = kExternallyStrobedEnvStartingParam2;
+                min_param2 = kExternallyStrobedEnvMinParam2;
+                max_param2 = kExternallyStrobedEnvMaxParam2;
                 // In the strobed image, there may be overlapping balls. so the search distance should be small
 
                 // The lower the value, the sloppier the found circles can be.  But crank it up too far and 
                 // we don't pick up overlapped circles.
-                currentParam1 = kExternallyStrobedEnvBallCurrentParam1;
+                currentParam1 = kExternallyStrobedEnvCurrentParam1;
                 // Don't want to get too crazy loose too fast in order to find more balls
-                param2_increment = kExternallyStrobedEnvBallParam2Increment;
+                param2_increment = kExternallyStrobedEnvParam2Increment;
 
                 // We have to have at least two candidate balls to do spin analysis
                 // Try for more tp make sure we get all the overlapped balls.
@@ -785,7 +849,7 @@ namespace golf_sim {
             }
         }
 
-        if (search_mode == kStrobed || search_mode == kExternalStrobe || search_mode == kFindPlacedBall) {
+        if (search_mode == kStrobed || search_mode == kExternallyStrobed || search_mode == kFindPlacedBall) {
 
             if (kUseDynamicRadiiAdjustment) {
 
@@ -810,9 +874,9 @@ namespace golf_sim {
                 }
 
                 // Externally-strobed environments need a looser Param2
-                if (search_mode == kExternalStrobe) {
-                    narrowing_radii_param2 = kExternallyStrobedEnvBallNarrowingParam2;
-                    narrowing_dp_param = kExternallyStrobedEnvBallNarrowingDpParam;
+                if (search_mode == kExternallyStrobed) {
+                    narrowing_radii_param2 = kExternallyStrobedEnvNarrowingParam2;
+                    narrowing_dp_param = kExternallyStrobedEnvNarrowingDpParam;
                 }
                     
                 // For some reason, odd maximum_search_radius values were resulting in bad circle identification
@@ -1484,7 +1548,7 @@ namespace golf_sim {
             // Blur the lines-only image back to the search_image that the code below uses
             cv::GaussianBlur(cannyOutput_for_balls, finalChoiceSubImg, cv::Size(kExternallyStrobedBestCirclePreHoughBlurSize, kExternallyStrobedBestCirclePreHoughBlurSize), 0);   // Nominal is 7x7
         }
-        /*****
+        /***** THIS WAS PERFORMING POORLY - TBD - Probably remove
         cv::GaussianBlur(finalChoiceSubImg, finalChoiceSubImg, cv::Size(7, 7), 0);   // Nominal is 7x7
 
 
@@ -1498,6 +1562,7 @@ namespace golf_sim {
         double currentParam1 = is_externally_strobed ? kExternallyStrobedBestCircleParam1 : kBestCircleParam1;
         double currentParam2 = is_externally_strobed ? kExternallyStrobedBestCircleParam2 : kBestCircleParam2;  // TBD - was 25
         double currentDp = is_externally_strobed ? kExternallyStrobedBestCircleHoughDpParam1 : kBestCircleHoughDpParam1;  // TBD - was 1.3?
+
         // TBD - Increase?  We want to be able to find several circles really close to one another
         int minimum_inter_ball_distance = 20; // has to be at least 1  .  Larger than 1 effectively turns off multiple balls
 

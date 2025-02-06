@@ -2016,7 +2016,7 @@ namespace golf_sim {
             BallImageProc::BallSearchMode processing_mode = BallImageProc::BallSearchMode::kStrobed;
 
             if (GolfSimOptions::GetCommandLineOptions().lm_comparison_mode_) {
-                processing_mode = BallImageProc::BallSearchMode::kExternalStrobe;
+                processing_mode = BallImageProc::BallSearchMode::kExternallyStrobed;
             }
 
             // If we're putting, the ball should only be in the lower one-half to one-third of the image

@@ -109,7 +109,7 @@
 			"kMaxMovedBallRadiusRatio": 1.5,
 			"kMinRadiusRatio": 0.8,
 			"kMaxRadiusRatio": 1.7,
-			"kBallAreaMaskRadiusRatio": 7.0,
+			"kBallAreaMaskRadiusRatio": 9.0,
 			"kMinBallRadiusPixelsForProximityWarning": 160
 		},
 
@@ -301,13 +301,16 @@
 		},
 
 		"testing": {
-			"kBaseTestImageDir": "L:/SavedImages/",
-			"kTwoImageTestTeedBallImage": "Test_For_Histogram/gs_log_img__log_ball_final_found_ball_img_Shot_1_2025-Jan-20_15.44.18.png",
-			"kTwoImageTestStrobedImage": "Test_For_Histogram/gs_log_img__log_cam2_last_strobed_img_Shot_2_2025-Jan-20_15.44.24.png",
+			"kBaseTestImageDir": "M:/GolfSim/TestImages/BaseImages/",
+			"kTwoImageTestTeedBallImage": "gs_log_img__log_ball_final_found_ball_img_Shot_3_2025-Feb-04_09.59.41.png",
+			"kTwoImageTestStrobedImage": "gs_log_img__log_cam2_last_strobed_img_Shot_2_2025-Feb-04_09.54.25.png",
+
+			"Externally strobed means there is another strobing source (another LM) that is being used along with PiTrac": 1,
+
 
 			"kExternallyStrobedEnvNumber_bits_for_fast_on_pulse_": 5,
 
-			"kExternallyStrobedEnvFilterImage": 1,
+			"kExternallyStrobedEnvFilterImage": 0,
 			"kExternallyStrobedEnvBottomIgnoreHeight": 110,
 			"kExternallyStrobedEnvFilterHsvLowerH": 14,
 			"kExternallyStrobedEnvFilterHsvUpperH": 48,
@@ -320,6 +323,25 @@
 			"kExternallyStrobedEnvLinesAngleUpper": 290,
 			"kExternallyStrobedEnvMaximumHoughLineGap": 7,
 			"kExternallyStrobedEnvMinimumHoughLineLength": 23,
+
+			"kExternallyStrobedEnvCannyLower": 35,
+			"kExternallyStrobedEnvCannyUpper": 80,
+			"kExternallyStrobedEnvCurrentParam1": 130.0,
+			"kExternallyStrobedEnvMinParam2": 40,
+			"kExternallyStrobedEnvMaxParam2": 120,
+			"kExternallyStrobedEnvStartingParam2": 0.65,
+			"kExternallyStrobedEnvParam2Increment": 5,
+			"kExternallyStrobedEnvNarrowingParam2": 0.7,
+			"kExternallyStrobedEnvNarrowingDpParam": 0.9,
+			"kExternallyStrobedEnvNarrowingPreCannyBlurSize": 1,
+			"kExternallyStrobedEnvNarrowingPreHoughBlurSize": 9,
+			"kExternallyStrobedEnvMinHoughReturnCircles": 6,
+			"kExternallyStrobedEnvMaxHoughReturnCircles": 20,
+			"kExternallyStrobedEnvPreCannyBlurSize": 9,
+			"kExternallyStrobedEnvPreHoughBlurSize": 9,
+			"kExternallyStrobedEnvHoughDpParam1": 0.8,
+			"kExternallyStrobedEnvMinimumSearchRadius": 55,
+			"kExternallyStrobedEnvMaximumSearchRadius": 95,
 
 			"kExternallyStrobedBestCircleCannyLower": 35,
 			"kExternallyStrobedBestCircleCannyUpper": 70,
@@ -338,24 +360,10 @@
 			"kExternallyStrobedALTBestCircleParam2": 0.9,
 			"kExternallyStrobedALTBestCircleHoughDpParam1": 1.5,
 
-			"kExternallyStrobedEnvCannyLower": 33,
-			"kExternallyStrobedEnvCannyUpper": 66,
-			"kExternallyStrobedEnvBallCurrentParam1": 140.0,
-			"kExternallyStrobedEnvBallMinParam2": 40,
-			"kExternallyStrobedEnvBallMaxParam2": 120,
-			"kExternallyStrobedEnvBallStartingParam2": 83,
-			"kExternallyStrobedEnvBallParam2Increment": 5,
-			"kExternallyStrobedEnvBallNarrowingParam2": 0.7,
-			"kExternallyStrobedEnvBallNarrowingDpParam": 0.9,
-			"kExternallyStrobedEnvBallNarrowingPreCannyBlurSize": 1,
-			"kExternallyStrobedEnvBallNarrowingPreHoughBlurSize": 9,
-			"kExternallyStrobedEnvMinHoughReturnCircles": 6,
-			"kExternallyStrobedEnvMaxHoughReturnCircles": 20,
-			"kExternallyStrobedEnvPreCannyBlurSize": 1,
-			"kExternallyStrobedEnvPreHoughBlurSize": 11,
-			"kExternallyStrobedEnvHoughDpParam1": 1.3,
-			"kExternallyStrobedEnvMinimumSearchRadius": 55,
-			"kExternallyStrobedEnvMaximumSearchRadius": 95,
+			"kExternallyStrobedUseCLAHEProcessing": 1,
+			"kExternallyStrobedCLAHEClipLimit": 6,
+			"kExternallyStrobedCLAHETilesGridSize": 6,
+
 
 			"kInterShotInjectionPauseSeconds": 22,
 

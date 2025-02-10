@@ -1,7 +1,15 @@
+/*****************************************************************//**
+ * \file   ball_image_proc.cpp
+ * \brief  Handles most of the image processing related to ball-identification 
+ * 
+ * \author PiTrac
+ * \date   February 2025
+ *********************************************************************/
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (C) 2022-2025, Verdant Consultants, LLC.
  */
+
 
 #include <ranges>
 #include <algorithm>
@@ -333,6 +341,15 @@ namespace golf_sim {
 
     }
 
+    /**
+     * Given a gray-scale image and a ball search mode (e.g., kStrobed), this function applies
+     * CLAHE processing to improve the contrast and edge definition of the balls.  It then
+     * applies a Guassian blur and edge detection to the image.
+     * 
+     * \param search_image  The image to be processed.
+     * \param search_mode  Currently can be only kStrobed or kExternallyStrobed
+     * \return True on success.
+     */
     bool BallImageProc::PreProcessStrobedImage( cv::Mat& search_image, 
                                                 BallSearchMode search_mode) {
 
@@ -2796,16 +2813,16 @@ namespace golf_sim {
 
         // Compare the second (presumably rotated) ball image to different candidate rotations of the first ball image to determine the angular change
         std::vector<std::string> comparison_csv_data;
-        int maxIndex = CompareCandidateAngleImages(&ball_image2DimpleEdges, &outputCandidateElementsMat, &output_candidate_elements_mat_size, &candidates, comparison_csv_data);
+        int best_candidate_index = CompareCandidateAngleImages(&ball_image2DimpleEdges, &outputCandidateElementsMat, &output_candidate_elements_mat_size, &candidates, comparison_csv_data);
         
         cv::Vec3f rotationResult;
 
-        if (maxIndex < 0) {
+        if (best_candidate_index < 0) {
             LoggingTools::Warning("No best candidate found.");
             return rotationResult;
         }
 
-        bool write_spin_analysis_CSV_files = false;
+        bool write_spin_analysis_CSV_files = true;
 
         GolfSimConfiguration::SetConstant("gs_config.spin_analysis.kWriteSpinAnalysisCsvFiles", write_spin_analysis_CSV_files);
         
@@ -2823,12 +2840,12 @@ namespace golf_sim {
         }
 
         // See which angle looked best and then iterate more closely near those angles
-        RotationCandidate c = candidates[maxIndex];
+        RotationCandidate c = candidates[best_candidate_index];
 
-        std::string s = "Best Coarse Initial Rotation Candidate was #" + std::to_string(maxIndex) + " - Rot: (" + std::to_string(c.x_rotation_degrees) + ", " + std::to_string(c.y_rotation_degrees) + ", " + std::to_string(c.z_rotation_degrees) + ") ";
+        std::string s = "Best Coarse Initial Rotation Candidate was #" + std::to_string(best_candidate_index) + " - Rot: (" + std::to_string(c.x_rotation_degrees) + ", " + std::to_string(c.y_rotation_degrees) + ", " + std::to_string(c.z_rotation_degrees) + ") ";
         GS_LOG_MSG(debug, s);
 
-        // Now iterate more cloesely in the area that looks best
+        // Now iterate more closely in the area that looks best
         RotationSearchSpace finalSearchSpace;
 
         int anglex_window_width = (int)std::round(ceil(initialSearchSpace.anglex_rotation_degrees_increment / 2.));
@@ -2856,8 +2873,9 @@ namespace golf_sim {
         ComputeCandidateAngleImages(ball_image1DimpleEdges, finalSearchSpace, finalOutputCandidateElementsMat, finalOutputCandidateElementsMatSize, finalCandidates, local_ball1);
 
         // TBD - change CompareCandidateAngleImages to work directly with the "3D" images
-        maxIndex = CompareCandidateAngleImages(&ball_image2DimpleEdges, &finalOutputCandidateElementsMat, &finalOutputCandidateElementsMatSize, &finalCandidates, comparison_csv_data);
+        best_candidate_index = CompareCandidateAngleImages(&ball_image2DimpleEdges, &finalOutputCandidateElementsMat, &finalOutputCandidateElementsMatSize, &finalCandidates, comparison_csv_data);
 
+        // Save all the candidate scores to a CSV file if requested
         if (write_spin_analysis_CSV_files) {
 
             std::string csv_fname_fine = "spin_analysis_fine.csv";
@@ -2871,24 +2889,29 @@ namespace golf_sim {
             csv_file_fine.close();
         }
 
-        // Analyze the results
+        // Analyze the fine-grained results
         int bestRotX = 0;
         int bestRotY = 0;
         int bestRotZ = 0;
 
-        if (maxIndex >= 0) {
-            RotationCandidate finalC = finalCandidates[maxIndex];
+        if (best_candidate_index >= 0) {
+            RotationCandidate finalC = finalCandidates[best_candidate_index];
             bestRotX = finalC.x_rotation_degrees;
             bestRotY = finalC.y_rotation_degrees;
             bestRotZ = finalC.z_rotation_degrees;
-            std::string s = "Best Raw Fine (and final) Rotation Candidate was #" + std::to_string(maxIndex) + " - Rot: (" + std::to_string(bestRotX) + ", " + std::to_string(bestRotY) + ", " + std::to_string(bestRotZ) + ") ";
+
+            // TBD - Experiment - are Y and X reversed?  Try it here...
+            // bestRotX = finalC.y_rotation_degrees;
+            // bestRotY = finalC.x_rotation_degrees;
+
+            std::string s = "Best Raw Fine (and final) Rotation Candidate was #" + std::to_string(best_candidate_index) + " - Rot: (" + std::to_string(bestRotX) + ", " + std::to_string(bestRotY) + ", " + std::to_string(bestRotZ) + ") ";
             GS_LOG_MSG(debug, s);
 
-            /*** DEBUG ***/
-                cv::Mat bestImg3D = finalCandidates[maxIndex].img;
-                cv::Mat bestImg2D = cv::Mat::zeros(ball_image1DimpleEdges.rows, ball_image1DimpleEdges.cols, ball_image1DimpleEdges.type());
-                Unproject3dBallTo2dImage(bestImg3D, bestImg2D, ball2);
-                LoggingTools::DebugShowImage("Best Final Rotation Candidate Image", bestImg2D);
+            /*** FOR DEBUG ***/
+            cv::Mat bestImg3D = finalCandidates[best_candidate_index].img;
+            cv::Mat bestImg2D = cv::Mat::zeros(ball_image1DimpleEdges.rows, ball_image1DimpleEdges.cols, ball_image1DimpleEdges.type());
+            Unproject3dBallTo2dImage(bestImg3D, bestImg2D, ball2);
+            LoggingTools::DebugShowImage("Best Final Rotation Candidate Image", bestImg2D);
         } 
         else {
             LoggingTools::Warning("No best final candidate found.  Returning 0,0,0 spin results.");
@@ -2906,33 +2929,36 @@ namespace golf_sim {
         double spin_offset_angle_radians_Y = CvUtils::DegreesToRadians(spin_offset_angle[1]);
         double spin_offset_angle_radians_Z = CvUtils::DegreesToRadians(spin_offset_angle[2]);
 
-        int normalizedRotX = (int)round( (double)bestRotX * cos(spin_offset_angle_radians_Y) + (double)bestRotZ * sin(spin_offset_angle_radians_Y) );
-        int normalizedRotY = (int)round( (double)bestRotY * cos(spin_offset_angle_radians_X) - (double)bestRotZ * sin(spin_offset_angle_radians_Y) );
-        int normalizedRotZ = (int)round( (double)bestRotZ * cos(spin_offset_angle_radians_X) - (double)bestRotY * sin(spin_offset_angle_radians_X) );
-
-        GS_LOG_TRACE_MSG(trace, "Normalized spin angles (X,Y,Z) = (" + std::to_string(normalizedRotX) + ", " + std::to_string(normalizedRotY) + ", " + std::to_string(normalizedRotZ) + ").");
+        // The X rotation will be negated, so that's why there is a - sign here when normalizing the X component
+        int normalizedRotX = (int)round( (double)bestRotX * cos(spin_offset_angle_radians_Y) - (double)bestRotZ * sin(spin_offset_angle_radians_Y) );
+        int normalizedRotY = (int)round( (double)bestRotY * cos(spin_offset_angle_radians_X) - (double)bestRotZ * sin(spin_offset_angle_radians_X) );
+        int normalizedRotZ = (int)round( (double)bestRotZ * cos(spin_offset_angle_radians_X) * cos(spin_offset_angle_radians_Y) 
+                                - (double)bestRotY * sin(spin_offset_angle_radians_X) + (double)bestRotX * sin(spin_offset_angle_radians_Y));
 
         rotationResult = cv::Vec3d(normalizedRotX, normalizedRotY, normalizedRotZ);
 
+        GS_LOG_TRACE_MSG(trace, "Normalized spin angles (X,Y,Z) = (" + std::to_string(normalizedRotX) + ", " + std::to_string(normalizedRotY) + ", " + std::to_string(normalizedRotZ) + ").");
+        
+        
         // TBD _ DEBUG
         // See how the original image would look if rotated as the GetBallRotation function calculated
         // We will NOT use the normalized rotations, as the UN-normalized rotations will look most correct
         // in the context of the manner they are imaged by the camera.
 
         cv::Mat resultBball2DImage;
+
         GetRotatedImage(ball_image1DimpleEdges, local_ball1, cv::Vec3i(bestRotX, bestRotY, bestRotZ), resultBball2DImage);
 
 
-        // LoggingTools::DebugShowImage("Ball 1 rotated", resultBball2DImage);
         if (GolfSimOptions::GetCommandLineOptions().artifact_save_level_ != ArtifactSaveLevel::kNoArtifacts && kLogIntermediateSpinImagesToFile) {
             LoggingTools::LogImage("", resultBball2DImage, std::vector < cv::Point >{}, true, "Filtered Ball1_Rotated_By_Best_Angles.png");
         }
 
-        // We wnat to show apples to apples, so show the normalized images
+        // We want to show apples to apples, so show the normalized images
         cv::Mat test_ball1_image = normalizedOriginalBallImg1.clone();
         GetRotatedImage(normalizedOriginalBallImg1, local_ball1, cv::Vec3i(bestRotX, bestRotY, bestRotZ), test_ball1_image);
 
-        // We'll write a circle on the final image here, but we're not going to re-use that image, so it's ok
+        // We'll draw a center-dot on the final image here, but we're not going to re-use that image, so it's ok
         cv::Scalar color{ 0, 0, 0 };
         const GsCircle& circle = local_ball1.ball_circle_;
         cv::circle(test_ball1_image, cv::Point((int)local_ball1.x(), (int)local_ball1.y()), (int)circle[2], color, 2 /*thickness*/);

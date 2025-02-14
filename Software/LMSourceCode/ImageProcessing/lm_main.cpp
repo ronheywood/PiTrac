@@ -1348,7 +1348,7 @@ void run_main(int argc, char* argv[])
 
         int kInterShotInjectionPauseSeconds = 0;
         if (!GolfSimConfiguration::ReadShotInjectionData(shots, kInterShotInjectionPauseSeconds)) {
-            GS_LOG_MSG(error, "Failed to ReadShotInjectionData.");
+            GS_LOG_MSG(error, "Failed to kInterShotInjectionPauseSeconds.");
             return;
         }
         else {
@@ -1363,6 +1363,11 @@ void run_main(int argc, char* argv[])
             GS_LOG_MSG(info, "********   PLEASE RE-ARM THE SIMULATOR TO ACCEPT ANOTHER SHOT  ********");
 
             sleep(kInterShotInjectionPauseSeconds);
+
+            while(!GsSimInterface::GetAllSystemsArmed()) {
+                sleep(2);
+                GS_LOG_MSG(info, "            Waiting for Simulator to Arm.");
+            }
             // Get the result to the golf simulator ASAP
             if (!GsSimInterface::SendResultsToGolfSims(result)) {
                 GS_LOG_MSG(error, "Could not SendResultsToGolfSim. Continuing");

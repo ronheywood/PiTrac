@@ -457,7 +457,12 @@ namespace golf_sim {
             ", canny_upper " + std::to_string(canny_upper));
 
 
-        cv::GaussianBlur(search_image, search_image, cv::Size(pre_canny_blur_size, pre_canny_blur_size), 0);
+        if (pre_canny_blur_size > 0) {
+            cv::GaussianBlur(search_image, search_image, cv::Size(pre_canny_blur_size, pre_canny_blur_size), 0);
+        }
+        else {
+            GS_LOG_TRACE_MSG(trace, "Skipping pre-Canny Blur");
+        }
 
         // TBD - REMOVED THIS FOR NOW
         for (int i = 0; i < 0; i++) {
@@ -468,7 +473,13 @@ namespace golf_sim {
         LoggingTools::DebugShowImage(image_name_ + "  Strobed Ball Image - Ready for Edge Detection", search_image);
 
         cv::Mat cannyOutput_for_balls;
-        cv::Canny(search_image, cannyOutput_for_balls, canny_lower, canny_upper);
+        if (search_mode == kExternallyStrobed && pre_canny_blur_size == 0) {
+            // Don't do the Canny at all if the blur size is zero and we're in comparison mode
+            cannyOutput_for_balls = search_image.clone();
+        }
+        else {
+            cv::Canny(search_image, cannyOutput_for_balls, canny_lower, canny_upper);
+        }
 
         LoggingTools::DebugShowImage(image_name_ + "  cannyOutput_for_balls", cannyOutput_for_balls);
 
@@ -1556,9 +1567,10 @@ namespace golf_sim {
             cv::GaussianBlur(cannyOutput_for_balls, finalChoiceSubImg, cv::Size(kBestCirclePreHoughBlurSize, kBestCirclePreHoughBlurSize), 0);   // Nominal is 7x7
         }
         else {
-            cv::GaussianBlur(finalChoiceSubImg, finalChoiceSubImg, cv::Size(kExternallyStrobedBestCirclePreCannyBlurSize, kExternallyStrobedBestCirclePreCannyBlurSize), 0);
+            // cv::GaussianBlur(finalChoiceSubImg, finalChoiceSubImg, cv::Size(kExternallyStrobedBestCirclePreCannyBlurSize, kExternallyStrobedBestCirclePreCannyBlurSize), 0);
 
-            cv::Canny(finalChoiceSubImg, cannyOutput_for_balls, kExternallyStrobedBestCircleCannyLower, kExternallyStrobedBestCircleCannyUpper);
+            // cv::Canny(finalChoiceSubImg, cannyOutput_for_balls, kExternallyStrobedBestCircleCannyLower, kExternallyStrobedBestCircleCannyUpper);
+            cannyOutput_for_balls = finalChoiceSubImg.clone();
 
             LoggingTools::DebugShowImage("Best Circle (externally-strobed)" + std::to_string(expandedRadiusForHough) + "  cannyOutput for best ball", cannyOutput_for_balls);
 
@@ -1596,7 +1608,7 @@ namespace golf_sim {
         cv::HoughCircles(
             finalChoiceSubImg,
             finalTargetedCircles,
-            cv::HOUGH_GRADIENT,  // cv::HOUGH_GRADIENT_ALT,
+            cv::HOUGH_GRADIENT_ALT,  // cv::HOUGH_GRADIENT,
             currentDp,
             /*minDist = */ minimum_inter_ball_distance, 
             /*param1 = */ currentParam1,
@@ -2756,7 +2768,11 @@ namespace golf_sim {
 
         // We will split the difference in the angles so that the amount of de-rotation we need to do is spread evenly
         // across the two images
+
+        // angleOffsetDeltas1 (and the floating-point version) are the angles that ball 1 must be rotated in
+        // order to take it halfway to where ball 2 is
         cv::Vec3f angleOffsetDeltas1Float = (angleOffset2 - angleOffset1) / 2.0;
+        angleOffsetDeltas1Float[1] *= -1.0;  // Account for how our rotations are signed
         cv::Vec3i angleOffsetDeltas1 = CvUtils::Round(angleOffsetDeltas1Float);
 
 
@@ -2764,18 +2780,19 @@ namespace golf_sim {
         GetRotatedImage(unrotatedBallImg1DimpleEdges, local_ball1, angleOffsetDeltas1, ball_image1DimpleEdges);
 
         GS_LOG_TRACE_MSG(trace, "Adjusting rotation for camera view of ball 1 to offset (x,y,z)=" + std::to_string(angleOffsetDeltas1[0]) + "," + std::to_string(angleOffsetDeltas1[1]) + "," + std::to_string(angleOffsetDeltas1[2]));
-        LoggingTools::DebugShowImage("Final perspective-de-rotated filtered ball_image1DimpleEdges: ", ball_image1DimpleEdges);
+        LoggingTools::DebugShowImage("Final perspective-de-rotated filtered ball_image1DimpleEdges: ", ball_image1DimpleEdges, center1);
         
-        // The second rotation deltas will be the remainder of (approximately) the other half of the necessary degrees to get everyting to be the same perspective
+        // The second rotation deltas will be the remainder of (approximately) the other half of the necessary degrees to get everything to be the same perspective
         cv::Vec3i angleOffsetDeltas2 = CvUtils::Round(  -(( angleOffset2 - angleOffset1) - angleOffsetDeltas1Float) );
+        angleOffsetDeltas2[1] *= -1.0;
 
 
         cv::Mat unrotatedBallImg2DimpleEdges = ball_image2DimpleEdges.clone();
         GetRotatedImage(unrotatedBallImg2DimpleEdges, local_ball2, angleOffsetDeltas2, ball_image2DimpleEdges);
         GS_LOG_TRACE_MSG(trace, "Adjusting rotation for camera view of ball 2 to offset (x,y,z)=" + std::to_string(angleOffsetDeltas2[0]) + "," + std::to_string(angleOffsetDeltas2[1]) + "," + std::to_string(angleOffsetDeltas2[2]));
-        LoggingTools::DebugShowImage("Final perspective-de-rotated filtered ball_image2DimpleEdges: ", ball_image2DimpleEdges);
+        LoggingTools::DebugShowImage("Final perspective-de-rotated filtered ball_image2DimpleEdges: ", ball_image2DimpleEdges, center1);
 
-        // Although unnecessary for the algorithm, the following DEBUG code shows the original image as it would appear rotated in the same way as the gabor-filtered balls
+        // Although unnecessary for the algorithm, the following DEBUG code shows the original image as it would appear rotated in the same way as the Gabor-filtered balls
         
         cv::Mat normalizedOriginalBallImg1 = originalBallImg1.clone();
         GetRotatedImage(originalBallImg1, local_ball1, angleOffsetDeltas1, normalizedOriginalBallImg1);
@@ -2785,6 +2802,8 @@ namespace golf_sim {
         LoggingTools::DebugShowImage("Final rotated originalBall2: ", normalizedOriginalBallImg2, center2);
         
 #ifdef __unix__ 
+        // Save the normalized ball images to the webserver shared directory so that the user
+        // can compare them to the final rotated image.
         GsUISystem::SaveWebserverImage(GsUISystem::kWebServerResultSpinBall1Image, normalizedOriginalBallImg1);
         GsUISystem::SaveWebserverImage(GsUISystem::kWebServerResultSpinBall2Image, normalizedOriginalBallImg2);
 #endif
@@ -2890,21 +2909,21 @@ namespace golf_sim {
         }
 
         // Analyze the fine-grained results
-        int bestRotX = 0;
-        int bestRotY = 0;
-        int bestRotZ = 0;
+        int best_rot_x = 0;
+        int best_rot_y = 0;
+        int best_rot_z = 0;
 
         if (best_candidate_index >= 0) {
             RotationCandidate finalC = finalCandidates[best_candidate_index];
-            bestRotX = finalC.x_rotation_degrees;
-            bestRotY = finalC.y_rotation_degrees;
-            bestRotZ = finalC.z_rotation_degrees;
+            best_rot_x = finalC.x_rotation_degrees;
+            best_rot_y = finalC.y_rotation_degrees;
+            best_rot_z = finalC.z_rotation_degrees;
 
             // TBD - Experiment - are Y and X reversed?  Try it here...
-            // bestRotX = finalC.y_rotation_degrees;
-            // bestRotY = finalC.x_rotation_degrees;
+            // best_rot_x = finalC.y_rotation_degrees;
+            // best_rot_y = finalC.x_rotation_degrees;
 
-            std::string s = "Best Raw Fine (and final) Rotation Candidate was #" + std::to_string(best_candidate_index) + " - Rot: (" + std::to_string(bestRotX) + ", " + std::to_string(bestRotY) + ", " + std::to_string(bestRotZ) + ") ";
+            std::string s = "Best Raw Fine (and final) Rotation Candidate was #" + std::to_string(best_candidate_index) + " - Rot: (" + std::to_string(best_rot_x) + ", " + std::to_string(best_rot_y) + ", " + std::to_string(best_rot_z) + ") ";
             GS_LOG_MSG(debug, s);
 
             /*** FOR DEBUG ***/
@@ -2918,9 +2937,17 @@ namespace golf_sim {
             rotationResult = cv::Vec3d(0, 0, 0);
         }
 
-        // Now translate the spin angles so that the axes are the same as the ball plane.  
+        // The above angular deltas were calculated relative to a coordinate system that is at an angle
+        // from the camera to the balls. So...
+        // Now translate the spin angles so that the axes are the same as the PiTrac's and Sim's axes, where, 
+        // for example, the Z and Y axes are parallel to the ground plane on which PiTrac sits, and the X axis
+        // is orthogonal to that plane
 
-        cv::Vec3f spin_offset_angle = ( angleOffset1 + angleOffsetDeltas1Float );
+        // We negated the Y offset delta before to account for the Sim's rotational scheme, so will undo here.
+        // The idea is to determine the angle to the point in space that was between the two balls.
+        cv::Vec3f spin_offset_angle;
+        spin_offset_angle[0] = angleOffset1[0] + angleOffsetDeltas1Float[0];
+        spin_offset_angle[1] = angleOffset1[1] - angleOffsetDeltas1Float[1];
 
         GS_LOG_TRACE_MSG(trace, "Now normalizing for spin_offset_angle = (" + std::to_string(spin_offset_angle[0]) + ", " + 
                                     std::to_string(spin_offset_angle[1]) + ", " + std::to_string(spin_offset_angle[2]) + ").");
@@ -2929,15 +2956,17 @@ namespace golf_sim {
         double spin_offset_angle_radians_Y = CvUtils::DegreesToRadians(spin_offset_angle[1]);
         double spin_offset_angle_radians_Z = CvUtils::DegreesToRadians(spin_offset_angle[2]);
 
-        // The X rotation will be negated, so that's why there is a - sign here when normalizing the X component
-        int normalizedRotX = (int)round( (double)bestRotX * cos(spin_offset_angle_radians_Y) - (double)bestRotZ * sin(spin_offset_angle_radians_Y) );
-        int normalizedRotY = (int)round( (double)bestRotY * cos(spin_offset_angle_radians_X) - (double)bestRotZ * sin(spin_offset_angle_radians_X) );
-        int normalizedRotZ = (int)round( (double)bestRotZ * cos(spin_offset_angle_radians_X) * cos(spin_offset_angle_radians_Y) 
-                                - (double)bestRotY * sin(spin_offset_angle_radians_X) + (double)bestRotX * sin(spin_offset_angle_radians_Y));
+        // Peform the normalization to the real-world axes
+        int normalized_rot_x = (int)round( (double)best_rot_x * cos(spin_offset_angle_radians_Y) + (double)best_rot_z * sin(spin_offset_angle_radians_Y) );
+        int normalized_rot_y = (int)round( (double)best_rot_y * cos(spin_offset_angle_radians_X) - (double)best_rot_z * sin(spin_offset_angle_radians_X) );
 
-        rotationResult = cv::Vec3d(normalizedRotX, normalizedRotY, normalizedRotZ);
+        int normalized_rot_z = (int)round((double)best_rot_z * cos(spin_offset_angle_radians_X) * cos(spin_offset_angle_radians_Y));
+        normalized_rot_z -= (int)round((double)best_rot_y * sin(spin_offset_angle_radians_X));
+        normalized_rot_z -= (int)round((double)best_rot_x * sin(spin_offset_angle_radians_Y));
 
-        GS_LOG_TRACE_MSG(trace, "Normalized spin angles (X,Y,Z) = (" + std::to_string(normalizedRotX) + ", " + std::to_string(normalizedRotY) + ", " + std::to_string(normalizedRotZ) + ").");
+        rotationResult = cv::Vec3d(normalized_rot_x, normalized_rot_y, normalized_rot_z);
+
+        GS_LOG_TRACE_MSG(trace, "Normalized spin angles (X,Y,Z) = (" + std::to_string(normalized_rot_x) + ", " + std::to_string(normalized_rot_y) + ", " + std::to_string(normalized_rot_z) + ").");
         
         
         // TBD _ DEBUG
@@ -2947,7 +2976,7 @@ namespace golf_sim {
 
         cv::Mat resultBball2DImage;
 
-        GetRotatedImage(ball_image1DimpleEdges, local_ball1, cv::Vec3i(bestRotX, bestRotY, bestRotZ), resultBball2DImage);
+        GetRotatedImage(ball_image1DimpleEdges, local_ball1, cv::Vec3i(best_rot_x, best_rot_y, best_rot_z), resultBball2DImage);
 
 
         if (GolfSimOptions::GetCommandLineOptions().artifact_save_level_ != ArtifactSaveLevel::kNoArtifacts && kLogIntermediateSpinImagesToFile) {
@@ -2956,7 +2985,7 @@ namespace golf_sim {
 
         // We want to show apples to apples, so show the normalized images
         cv::Mat test_ball1_image = normalizedOriginalBallImg1.clone();
-        GetRotatedImage(normalizedOriginalBallImg1, local_ball1, cv::Vec3i(bestRotX, bestRotY, bestRotZ), test_ball1_image);
+        GetRotatedImage(normalizedOriginalBallImg1, local_ball1, cv::Vec3i(best_rot_x, best_rot_y, best_rot_z), test_ball1_image);
 
         // We'll draw a center-dot on the final image here, but we're not going to re-use that image, so it's ok
         cv::Scalar color{ 0, 0, 0 };
@@ -2966,10 +2995,12 @@ namespace golf_sim {
 
 
 #ifdef __unix__ 
+        // Save the final, rotated, normalized ball result image to the webserver shared directory so that the user
+        // can compare them to the original normalized images.
         GsUISystem::SaveWebserverImage(GsUISystem::kWebServerResultBallRotatedByBestAngles, test_ball1_image);
 #endif
 
-        // TBD - Looks like golf folks consider the X (side) spin to be positive if the surface is
+        // Looks like golf folks consider the X (side) spin to be positive if the surface is
         // going from right to left.  So we negate it here.
         rotationResult[0] *= -1;
 

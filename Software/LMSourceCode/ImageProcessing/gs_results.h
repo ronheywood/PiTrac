@@ -37,7 +37,7 @@ namespace golf_sim {
         static std::string FormatDoubleAsString(const double value);
         
         // Helper that converts a boost JSON tree into a string.  Includes processing that
-        // will remove extraneouis quotes.
+        // will remove extraneous quotes.
         static std::string GenerateStringFromJsonTree(const boost::property_tree::ptree& root);
 
 

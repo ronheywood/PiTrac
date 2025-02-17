@@ -450,10 +450,10 @@ namespace golf_sim {
         }
 
 
-        GS_LOG_MSG(info, "Main HoughCircle Image Prep - Performing Pre-Hough Blur and Canny for kStrobed mode.");
-        GS_LOG_MSG(info, "  Blur Parameters are: pre_canny_blur_size = " + std::to_string(pre_canny_blur_size) +
+        GS_LOG_MSG(trace, "Main HoughCircle Image Prep - Performing Pre-Hough Blur and Canny for kStrobed mode.");
+        GS_LOG_MSG(trace, "  Blur Parameters are: pre_canny_blur_size = " + std::to_string(pre_canny_blur_size) +
             ", pre_hough_blur_size " + std::to_string(pre_hough_blur_size));
-        GS_LOG_MSG(info, "  Canny Parameters are: canny_lower = " + std::to_string(canny_lower) +
+        GS_LOG_MSG(trace, "  Canny Parameters are: canny_lower = " + std::to_string(canny_lower) +
             ", canny_upper " + std::to_string(canny_upper));
 
 
@@ -1009,7 +1009,7 @@ namespace golf_sim {
 
                 minimum_distance = minimum_search_radius * 0.5;
 
-                /** TBD - REMOVE - Not necessary for GRADIENT_ALT now
+                /* TBD - REMOVE - Not necessary for GRADIENT_ALT now
                 if (kUseDynamicRadiiAdjustment && (search_mode == kFindPlacedBall)) {
                     // If we're using dynamic radii adjustment, we'd like to look at potentially several circles in a tight area
                     minimum_distance = 1;
@@ -2784,7 +2784,7 @@ namespace golf_sim {
         
         // The second rotation deltas will be the remainder of (approximately) the other half of the necessary degrees to get everything to be the same perspective
         cv::Vec3i angleOffsetDeltas2 = CvUtils::Round(  -(( angleOffset2 - angleOffset1) - angleOffsetDeltas1Float) );
-        angleOffsetDeltas2[1] *= -1.0;
+        angleOffsetDeltas2[1] = -angleOffsetDeltas2[1];
 
 
         cv::Mat unrotatedBallImg2DimpleEdges = ball_image2DimpleEdges.clone();
@@ -3002,7 +3002,7 @@ namespace golf_sim {
 
         // Looks like golf folks consider the X (side) spin to be positive if the surface is
         // going from right to left.  So we negate it here.
-        rotationResult[0] *= -1;
+        rotationResult[0] = -rotationResult[0];
 
         // Note that we return angles, not angular velocities.  The velocities will
         // be determined later based on the derived ball speed.

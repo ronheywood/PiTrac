@@ -65,6 +65,7 @@ bool GolfSimOptions::Parse(int argc, char *argv[])
 		{ "camera2_ball_location", SystemMode::kCamera2BallLocation },
 		{ "test_sim_message", SystemMode::kTestExternalSimMessage },
 		{ "test_gspro_server", SystemMode::kTestGSProServer },
+		{ "automated_testing", SystemMode::kAutomatedTesting },
 	};
 	if (mode_table.count(system_mode_string_) == 0)
 		throw std::runtime_error("Invalid system_mode: " + system_mode_string_);

@@ -27,7 +27,8 @@ namespace golf_sim {
 		kCamera1BallLocation = 8,
 		kCamera2BallLocation = 9,
 		kTestExternalSimMessage = 10,
-		kTestGSProServer = 11
+		kTestGSProServer = 11,
+		kAutomatedTesting = 12
 	};
 
 	enum LoggingLevel {
@@ -72,7 +73,7 @@ namespace golf_sim {
 				("golfer_orientation", value<std::string>(&golfer_orientation_string_)->default_value("right_handed"),
 					"Set the golfer's handed-ness (right_handed, left_handed)")
 				("system_mode", value<std::string>(&system_mode_string_)->default_value("test"),
-					"Set the system's operating mode (test, camera1, camera2, camera1Calibrate, camera2Calibrate, camera1_test_standalone, camera2_test_standalone, test_spin, camera1_ball_location, camera2_ball_location, test_gspro_message, test_gspro_server)")
+					"Set the system's operating mode (test, camera1, camera2, camera1Calibrate, camera2Calibrate, camera1_test_standalone, camera2_test_standalone, test_spin, camera1_ball_location, camera2_ball_location, test_gspro_message, test_gspro_server, automated_testing)")
 				("logging_level", value<std::string>(&logging_level_string_)->default_value("warn"),
 					"Set the system's logging level (trace, debug, info, warn, error, none)")
 				("artifact_save_level", value<std::string>(&artifact_save_level_string_)->default_value("final_results_only"),

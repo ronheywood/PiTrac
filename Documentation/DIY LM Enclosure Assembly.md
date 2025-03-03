@@ -162,7 +162,7 @@ Assembly Instructions:
       1. After confirming that both wiring harnesses are connected to the Connector Board, guide the 4-wire harness and the second network cable  to the right of the upper floor as you place the upper floor on the four mounting pads of the Pi-Side Middle Wall.  This will enable those wire wires to be connected to the Pi 1 on the Middle Layer upper floor.  
       2. Mount the upper floor to the side pads using four M3x10mm self-tapping screws.  
       3. Connect the 4-wire ribbon cable from the left side of the Connector Board in the lower floor to the GPIO pins of the Pi 1 computer on the upper floor.  See the upper part of the wiring diagram here:  
-         1. ![](images/enclosure_assembly/pcb_wiring_diagram_2.png) 
+         1. ![](images/enclosure_assembly/pcb_wiring_diagram.png) 
       4. Connect the second network cable to the Pi from the switch in the base layer  
       5. Connect a Pi-5 compatible power supply (we used [this one](https://www.amazon.com/CanaKit-PiSwitch-Raspberry-Power-Switch/dp/B07H125ZRL/ref=sr_1_4?crid=VQOV0R8XMNA0&dib=eyJ2IjoiMSJ9.AIdxZFc5tMLjKfCV9BEe403XELKsVK5ndYzxw68q3PbGDjPo9KQm1JsQqA1h6nNjDr0lR4B1gYTxx-xvP7ZNO3E-kw8olMpPmL3hOKJjZhHnerTOlTQBX3TPetkPZKHA4ANA88ZTNG_YMrLZKe9axLtBJSPC7yRtBsvcTH4q1eVb0Z5MGtRBbrFwjlwdPpKkCfFPXzmvqDFG4EceescwS9N5JDTKTBLBxfHe16GA5Kw.Z_0SKpqLaqnW-tz8_Xk9G0eAQ5kLujm9s-PL9_7gYvg&dib_tag=se&keywords=pi+5+power+supply&qid=1733787377&sprefix=pi+5+power+supply%2Caps%2C138&sr=8-4)) from the Power-Side to the Pi 5\.  Try to keep the cable out of the way of the strobe and other hardware on the lower layer beneath.  
       6. The Pi 5 should be operational at this point and the camera ready to be calibrated.  

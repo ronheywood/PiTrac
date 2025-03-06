@@ -296,7 +296,7 @@
 			"kDifferenceC": 13.0,
 			"kRegionThreshold": 0.2,
 			"kMaxRegionThreshold": 0.2,
-			"kFramePeriod": 5,
+			"kFramePeriod": 0,
 			"kHSkip": 5,
 			"kVSkip": 5
 		},

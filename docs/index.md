@@ -1,7 +1,13 @@
 ---
 title: Home
 layout: home
+nav_order: 1
 ---
+
+### PiTrac - The DIY Golf Launch Monitor
+
+- As seen on [Hackaday](https://hackaday.io/project/195042-pitrac-the-diy-golf-launch-monitor)
+- Also on [Reddit](https://www.reddit.com/r/Golfsimulator/comments/1hnwhx0/introducing_pitrac_the_open_source_launch_monitor/)
 
 The PiTrac project is a fully-functional golf launch monitor that avoids the need for expensive high shutter-speed and high frame-rate cameras. We've developed techniques for high-speed, infrared, strobe-based image capture and processing using cameras such as the Pi Global Shutter camera (~US$50 retail) and Raspberry Pi single board computers.
 

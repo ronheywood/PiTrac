@@ -5,7 +5,7 @@ theme: just-the-docs
 url: https://just-the-docs.github.io
 
 aux_links:
-  Doc Contribute: https://github.com/jamespilgrim/PiTrac/tree/main/docs
+  Edit Me: https://github.com/jamespilgrim/PiTrac/tree/main/docs
 
 search_enabled: true
 

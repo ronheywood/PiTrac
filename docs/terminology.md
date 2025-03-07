@@ -7,21 +7,43 @@ nav_order: 1.2
 
 ### Terminology 
 
-- Top Camera (Position Camera)
-Bottom Camera (Flight Camera)
-
-- Core Pi (aka Raspberry Pi 1, Top Pi) // Desc: Where pitrac_lm, Samba would run?
-Messaging Pi (aka Raspberry Pi 2, Bottom Pi) // Desc: Where ActiveMQ and Tomee would run?
-
-- Flight Camera - This is the modified camera that will be installed on the first floor of the enclosure.
-    - This camera is attached to Core Pi.
-- Tee Camera - This is an unmodified camera that will be installed on the top floor of the enclosure.
-    - This camera is installed
-
-- Tee Pi - This Raspberry Pi that is used for the shared directory--Samba Server. It is recommended that you use a faster Pi (e.g. Pi5) for this Pi. Installed on the top floor of the enclosure.
-    - Connected to the Tee off Camera (The top floor Camera)
-- Flight Pi - used for messaging running ActiveMQ and Apache Tomee. Installed on the bottom floor of the enclosure.
-    - Connected to the Flight camera (the modified camera).
+<table>
+  <tr>
+    <th>Device</th>
+    <th>Description</th>
+    <th>Notes</th>
+  </tr>
+  <tr>
+    <td>Flight Camera</td>
+    <td>This is the modified camera that will be installed on the first floor of the enclosure. Bottom camera.</td>
+    <td> 
+    - This camera is attached to Core Pi.<br>
+    - Previously known as camera 2. In scripts, may be referred as such.
+    </td>
+  </tr>
+   <tr>
+    <td>Tee Camera (As in, Tee off)</td>
+    <td>This is an unmodified camera that will be installed on the top floor of the enclosure. Top camera</td>
+    <td> 
+    - This camera is attached to Tee Pi.<br>
+    - Previously known as camera 1. In scripts, may be referred as such.
+    </td>
+  </tr>
+     <tr>
+    <td>Tee Pi </td>
+    <td>This Raspberry Pi that is used for the shared directory--Samba Server. It is recommended that you use a faster Pi (e.g. Pi5) for this Pi. Installed on the top floor of the enclosure.</td>
+    <td> 
+    - Connected to the Tee Camera (The top floor Camera).<br>
+    </td>
+  </tr>
+       <tr>
+    <td>Flight Pi </td>
+    <td>Flight Pi - used for messaging running ActiveMQ and Apache Tomee. Installed on the bottom floor of the enclosure.</td>
+    <td> 
+    - Connected to the Flight camera (the modified camera).<br>
+    </td>
+  </tr>
+</table>
 
 ### PiTrac 
 <a href="https://1drv.ms/i/c/35c1f51c7fbc7aba/IQSr4Eu550wjRoRfLHclEgkAARA1St3Qvlx-dvPuE9Aupqc?width=1024">

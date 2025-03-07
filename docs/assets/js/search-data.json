@@ -5,5 +5,13 @@
     "url": "/",
     
     "relUrl": "/"
+  },
+  "1": {
+    "doc": "Camera",
+    "title": "Home",
+    "content": "Tee camera distances and angles (also referenced by and relevant for Flight camera process)   ",
+    "url": "/camera",
+    
+    "relUrl": "/"
   }
 }

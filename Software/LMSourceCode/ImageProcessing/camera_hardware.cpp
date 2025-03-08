@@ -181,6 +181,15 @@ namespace golf_sim {
                 resolution_y_ = 1088;
             }
 
+            std::string ball_radius_pixels_at_40cm_name = "kExpectedBallRadiusPixelsAt40cmCamera" + std::string(camera_number == GsCameraNumber::kGsCamera1 ? "1" : "2");
+
+            GolfSimConfiguration::SetConstant("gs_config.cameras." + ball_radius_pixels_at_40cm_name, expected_ball_radius_pixels_at_40cm_);
+
+            if (expected_ball_radius_pixels_at_40cm_ < 1) {
+                GS_LOG_TRACE_MSG(warning, ball_radius_pixels_at_40cm_name + " not set in .json config file.  Setting to default instead.");
+                GolfSimConfiguration::SetConstant("gs_config.ball_position.kExpectedBallRadiusPixelsAt40cm", expected_ball_radius_pixels_at_40cm_);                
+            }
+
             cv::Mat camera_calibration_matrix_values = cv::Mat(3, 3, CV_64F);
             camera_calibration_matrix_values = cv::Mat::zeros(camera_calibration_matrix_values.rows, 
                                                                camera_calibration_matrix_values.cols, 

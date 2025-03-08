@@ -210,7 +210,23 @@ namespace golf_sim {
 
     int GolfSimCamera::getExpectedBallRadiusPixels(const int resolution_x_, const double distance) {
 
+        if (!camera_.cameraInitialized) {
+            GS_LOG_MSG(warning, "Camera hardware not initialized in GetCalibratedBall!");
+            // TBD - For now, just ignore.    return false;
+        }
+
+        // Get a reasonable default in case (for some reason), the camera's radius has not been set;
         double radius = kExpectedBallRadiusPixelsAt40cm;
+
+        // Get the cameraa's expected ball radius.  There might be two different cameras, or two different
+        // lenses (e.g., one wide, one telephoto), with different respective radii.
+        if (camera_.expected_ball_radius_pixels_at_40cm_ > 0) {
+            kExpectedBallRadiusPixelsAt40cm = camera_.expected_ball_radius_pixels_at_40cm_;
+        }
+        else
+        {
+            GS_LOG_TRACE_MSG(warning, "expected_ball_radius_pixels_at_40cm_ not set in camera in GolfSimCamera::getExpectedBallRadiusPixels().  Setting to default instead.");
+        }
 
         GS_LOG_TRACE_MSG(trace, "getExpectedBallRadiusPixels called with resolution: " + std::to_string(resolution_x_) + 
                         ", distance: " + std::to_string(distance) + ", and with expected radius at 40cm of: " + std::to_string(radius));

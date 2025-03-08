@@ -254,8 +254,9 @@
 			"kPauseAfterSendingPreImageTriggerMs": 2000,
 			"kPauseBeforeSendingImageFlushMs": 300,
 			"kPauseBeforeSendingFinalImageTriggerMs": 2000,
-			"kPauseBeforeSendingLastPrimingPulse": 1500
-
+			"kPauseBeforeSendingLastPrimingPulse": 1500,
+			"kExpectedBallRadiusPixelsAt40cmCamera1": 87,
+			"kExpectedBallRadiusPixelsAt40cmCamera2": 87
 		},
 
 		"calibration": {

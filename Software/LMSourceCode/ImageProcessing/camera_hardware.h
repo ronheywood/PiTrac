@@ -66,6 +66,8 @@ namespace golf_sim {
 
         cv::Vec2d camera_angles_;
 
+        int expected_ball_radius_pixels_at_40cm_ = 0;
+
         // if set, the camera will use this image (file) as if (it were the image that the
         // camera took on the Pi, regardless of operating system.  First will be used first, then
         // if another picture is needed, the second will be used.

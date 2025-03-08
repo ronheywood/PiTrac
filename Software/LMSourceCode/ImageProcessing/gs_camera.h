@@ -488,7 +488,7 @@ namespace golf_sim {
         // Distance is meters that the ball is from the lens.
         // The size of the ball is assumed to be a standard constant
         // NOTE - getCameraParameters must already have been called before this function is called
-        static int getExpectedBallRadiusPixels(const int resolution_x_, const double distance);
+        int getExpectedBallRadiusPixels(const int resolution_x_, const double distance);
 
         // Return the distance of the ball in meters
         double getBallDistance(const GolfBall& calibrated_ball);

@@ -309,7 +309,8 @@
 			"kTwoImageTestTeedBallImage": "gs_log_img__log_ball_final_found_ball_img_Shot_6_2025-Feb-07_11.05.32.png",
 			"kTwoImageTestStrobedImage": "gs_log_img__log_cam2_last_strobed_img_Shot_14_2025-Feb-07_11.05.09.png",
 
-			"kAutomatedTestSuiteDirectory": "M:/Dev/PiTrac/Software/LMSourceCode/Testing/TestSuite_2025_02_07/",
+			"kAutomatedTestSuiteDirectory": "/home/mleary/Dev/PiTrac/Software/LMSourceCode/Testing/TestSuite_2025_02_07/",
+			"OLDkAutomatedTestSuiteDirectory": "M:/Dev/PiTrac/Software/LMSourceCode/Testing/TestSuite_2025_02_07/",
 			"kAutomatedTestExpectedResultsCSV": "Uneekor Comparison 2025-02-07_Small_Test.csv",
 			"kAutomatedTestResultsCSV": "PiTrac_Test_Results.csv",
 			"kAutomatedTestToleranceBallSpeedMPH": 4,

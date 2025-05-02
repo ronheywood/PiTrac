@@ -932,7 +932,9 @@ namespace golf_sim {
         // the GPIO system
         if (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1 ||
             GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1TestStandalone ||
-            GolfSimOptions::GetCommandLineOptions().camera_still_mode_ ) {
+            GolfSimOptions::GetCommandLineOptions().camera_still_mode_ ||
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1AutoCalibrate ||
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate) {
 
             if (!PulseStrobe::InitGPIOSystem(default_signal_handler)) {
                 GS_LOG_MSG(error, "Failed to InitGPIOSystem.");

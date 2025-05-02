@@ -55,6 +55,16 @@ namespace golf_sim {
 		static bool ReadShotInjectionData(std::vector<GsResults>& shots,
 								   int& kInterShotInjectionPauseSeconds);
 
+		// Set the specified value to the value.  The node will be created if necessary
+		static bool SetTreeValue(const std::string& tag_name, const cv::Vec2d& vec);
+		static bool SetTreeValue(const std::string& tag_name, const double value);
+
+		// Write the current json tree to the specified file
+		static bool WriteTreeToFile(const std::string& file_name);
+
+		// Remove the named node in the json tree if it exists.  
+		// Returns true if the node had previously existed, false if not
+		static bool RemoveTreeNode(const std::string& tag_name);
 	protected:
 
 		static boost::property_tree::ptree configuration_root_;

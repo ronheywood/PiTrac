@@ -6,6 +6,8 @@
 #ifdef __unix__  // Ignore in Windows environment
 #include <bcm_host.h>
 #endif
+#include <boost/foreach.hpp>
+
 #include "logging_tools.h"
 #include "gs_camera.h"
 #include "gs_ui_system.h"
@@ -44,7 +46,7 @@ namespace golf_sim {
 		try {
 			SetConstant("gs_config.testing.kInterShotInjectionPauseSeconds", kInterShotInjectionPauseSeconds);
 
-			// Retreive as many shots as are defined in the json file
+			// Retrirve as many shots as are defined in the json file
 			boost::property_tree::ptree shots_json = configuration_root_.get_child("gs_config.testing.test_shots_to_inject");
 
 			int shot_number = 1;
@@ -133,6 +135,15 @@ bool GolfSimConfiguration::ReadValues() {
 	SetConstant("gs_config.cameras.kCamera1HighFPSGain", LibCameraInterface::kCamera1HighFPSGain);
 	SetConstant("gs_config.cameras.kCamera1Contrast", LibCameraInterface::kCamera1Contrast);
 	SetConstant("gs_config.cameras.kCamera2Gain", LibCameraInterface::kCamera2Gain);
+
+	// Let the command-line gain parameter override the .json config file parameter 
+	// TBD - May want to have separate gain options?
+	if (GolfSimOptions::GetCommandLineOptions().camera_gain_ > 0.0) {
+		GS_LOG_MSG(info, "Overriding camera gains with value: " + std::to_string(GolfSimOptions::GetCommandLineOptions().camera_gain_) + ".");
+		LibCameraInterface::kCamera1Gain = GolfSimOptions::GetCommandLineOptions().camera_gain_;
+		LibCameraInterface::kCamera2Gain = GolfSimOptions::GetCommandLineOptions().camera_gain_;
+	}
+
 	SetConstant("gs_config.cameras.kCamera2CalibrateOrLocationGain", LibCameraInterface::kCamera2CalibrateOrLocationGain);	
 	SetConstant("gs_config.cameras.kCamera2ComparisonGain", LibCameraInterface::kCamera2ComparisonGain);
 	SetConstant("gs_config.testing.kCamera2StrobedEnvironmentGain", LibCameraInterface::kCamera2StrobedEnvironmentGain);
@@ -341,6 +352,100 @@ bool GolfSimConfiguration::ReadValues() {
 		 {
 			 GS_LOG_MSG(error, "GolfSimConfiguration::SetConstant failed. ERROR: *** " + std::string(e.what()) + " ***");
 		 }
+	 }
+
+	 bool GolfSimConfiguration::RemoveTreeNode(const std::string& tag_name) {
+
+		 try {
+			 std::string end_node_name = "kCamera1FocalLength";
+
+			 if (PropertyExists(tag_name)) {
+				 configuration_root_.erase(tag_name);
+				 return true;
+			 }
+		 }
+		 catch (std::exception const& e)
+		 {
+			 GS_LOG_MSG(error, "GolfSimConfiguration::RemoveTreeNode failed. ERROR: *** " + std::string(e.what()) + " ***");
+			 return false;
+		 }
+
+		 return false;
+	 }
+
+	 bool GolfSimConfiguration::SetTreeValue(const std::string& tag_name, const cv::Vec2d& vec) {
+
+		 boost::property_tree::ptree values_node;
+
+		 try {
+			 // RemoveTreeNode(tag_name);
+
+			 bool node_exists = PropertyExists(tag_name);
+
+			 if (node_exists) {
+				 int i = 0;
+				 for (boost::property_tree::ptree::value_type& element : configuration_root_.get_child(tag_name)) {
+					 element.second.put("", vec[i++]);
+				 }
+			 }
+			 else {
+				 boost::property_tree::ptree new_node;
+				 boost::property_tree::ptree element;
+
+				 element.put("", vec[0]);
+				 new_node.push_back(std::make_pair("", element));
+
+				 element.clear();
+				 element.put("", vec[1]);
+				 new_node.push_back(std::make_pair("", element));
+
+				 configuration_root_.add_child(tag_name, new_node);
+			 }
+		 }
+		 catch (std::exception const& e)
+		 {
+			 GS_LOG_MSG(error, "GolfSimConfiguration::SetTreeValue failed. ERROR: *** " + std::string(e.what()) + " ***");
+			 return false;
+		 }
+
+		 // TBD - Set the values
+
+		 return true;
+	 }
+
+	 bool GolfSimConfiguration::SetTreeValue(const std::string& tag_name, const double value) {
+
+		 // RemoveTreeNode(tag_name);
+
+		 try {
+			 configuration_root_.put(tag_name, value);
+		 }
+		 catch (std::exception const& e)
+		 {
+			 GS_LOG_MSG(error, "GolfSimConfiguration::SetTreeValue failed. ERROR: *** " + std::string(e.what()) + " ***");
+			 return false;
+		 }
+
+		 // TBD - Set the values
+
+		 return true;
+	 }
+
+	 bool GolfSimConfiguration::WriteTreeToFile(const std::string& file_name) {
+
+		 GS_LOG_MSG(trace, "GolfSimConfiguration::WriteTreeToFile called for file_name = " + file_name);
+			 
+		 std::ofstream file(file_name);
+		 if (file.is_open()) {
+			 boost::property_tree::write_json(file, configuration_root_);
+			 file.close();
+		 }
+		 else {
+			 GS_LOG_MSG(error, "GolfSimConfiguration::WriteTreeToFile failed. Could not open file for writing.");
+			 return false;
+		 }
+
+		 return true;
 	 }
 
 } // namespace golf_sim

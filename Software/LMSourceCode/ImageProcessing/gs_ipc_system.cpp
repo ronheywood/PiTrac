@@ -330,6 +330,11 @@ namespace golf_sim {
 
                 break;
             }
+            case SystemMode::kCamera1AutoCalibrate:
+            case SystemMode::kCamera2AutoCalibrate:
+            {
+                // Do nothing.  Not relevant for these modes
+            }
             default:
             {
                 LoggingTools::Warning("GolfSimIpcSystem::DispatchRequestForCamera2ImageMessage found unknown command_line_options_.system_mode_ .");
@@ -349,8 +354,10 @@ namespace golf_sim {
 
         // If in still-image mode, we won't inform the state machine about the message.
         // Instead just save the image so that someone can get to it.
-        if (GolfSimOptions::GetCommandLineOptions().camera_still_mode_) {
-            GS_LOG_TRACE_MSG(trace, "In still-picture camera mode.  Will save received image.");
+        if (GolfSimOptions::GetCommandLineOptions().camera_still_mode_ ||
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1AutoCalibrate ||
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate) {
+            GS_LOG_TRACE_MSG(trace, "In still-picture or AutoCalibrate camera mode.  Will save received image.");
 
             last_received_image_ = message.GetImageMat().clone();
 

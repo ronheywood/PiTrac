@@ -214,20 +214,20 @@ namespace golf_sim {
     GolfSimCamera::~GolfSimCamera() {
     }
 
-    int GolfSimCamera::getExpectedBallRadiusPixels(const int resolution_x_, const double distance) {
+    int GolfSimCamera::getExpectedBallRadiusPixels(const CameraHardware& camera_hardware, const int resolution_x_, const double distance) {
 
-        if (!camera_hardware_.cameraInitialized) {
-            GS_LOG_MSG(warning, "Camera hardware not initialized in getExpectedBallRadiusPixels!");
+        if (!camera_hardware.cameraInitialized || resolution_x_ <= 0) {
+            GS_LOG_MSG(warning, "Camera hardware (or resolution x value) not initialized in getExpectedBallRadiusPixels!");
             // TBD - For now, just ignore.    return false;
         }
 
         // Get a reasonable default in case (for some reason), the camera's radius has not been set;
         double radius = kExpectedBallRadiusPixelsAt40cm;
 
-        // Get the cameraa's expected ball radius.  There might be two different cameras, or two different
+        // Get the camera's expected ball radius.  There might be two different cameras, or two different
         // lenses (e.g., one wide, one telephoto), with different respective radii.
-        if (camera_hardware_.expected_ball_radius_pixels_at_40cm_ > 0) {
-            kExpectedBallRadiusPixelsAt40cm = camera_hardware_.expected_ball_radius_pixels_at_40cm_;
+        if (camera_hardware.expected_ball_radius_pixels_at_40cm_ > 0) {
+            kExpectedBallRadiusPixelsAt40cm = camera_hardware.expected_ball_radius_pixels_at_40cm_;
         }
         else
         {
@@ -339,19 +339,21 @@ namespace golf_sim {
             GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1TestStandalone ||
             GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2TestStandalone ) {
 
-            if (GolfSimOptions::GetCommandLineOptions().GetCameraNumber() == GsCameraNumber::kGsCamera1) {
-                expected_distance = kCamera1CalibrationDistanceToBall;
+            if (kCamera1CalibrationDistanceToBall > 0.01) {
+                if (GolfSimOptions::GetCommandLineOptions().GetCameraNumber() == GsCameraNumber::kGsCamera1) {
+                    expected_distance = kCamera1CalibrationDistanceToBall;
+                }
+                else {
+                    expected_distance = kCamera2CalibrationDistanceToBall;
+                }
+                GS_LOG_TRACE_MSG(trace, "GetCalibratedBall overriding expected_distance.  Setting to: " + std::to_string(expected_distance));
             }
-            else {
-                expected_distance = kCamera2CalibrationDistanceToBall;
-            }
-            GS_LOG_TRACE_MSG(trace, "GetCalibratedBall overriding expected_distance.  Setting to: " + std::to_string(expected_distance));
         }
         
         GS_LOG_TRACE_MSG(trace, "GetCalibratedBall using expected ball distance of: " + std::to_string(expected_distance));
 
         // TBD - Will want to be able to vary the calibration distance later
-        double expectedRadius = getExpectedBallRadiusPixels(rgbImg.cols, expected_distance);
+        double expectedRadius = getExpectedBallRadiusPixels(camera.camera_hardware_, rgbImg.cols, expected_distance);
         int min = int(expectedRadius * kMinRadiusRatio);
         int max = int(expectedRadius * kMaxRadiusRatio);
 
@@ -454,7 +456,7 @@ namespace golf_sim {
         b.measured_radius_pixels_ = b.ball_circle_[2];
 
         // We might also try to force the user to put the ball at a specific distance from the camera and calibrate from that
-        // Note that the distance being calculated here is not the Z-axus only distance, but instead it is the distance
+        // Note that the distance being calculated here is not the Z-axis only distance, but instead it is the distance
         // directly to the ball, as the crow flies.
 
         double distance_direct_to_ball = -1.0;
@@ -1024,41 +1026,26 @@ namespace golf_sim {
                 std::to_string(camera_perspective_distances[0]) + ", " +
                 std::to_string(camera_perspective_distances[1]));
 
-            // Convert the distances from the camera into a set of angles from the camera's perspective
-
-
-            // Need to first determine the new Z-axis (down the barrel of the camera) twist angle 
-            // that occurs because as a result of the tilt and spin of that camera.
-            // That twist needs to be applied to the X and Y distances from the center of the image that
-            // the camera_perspective_distances represent.
-            double adjusted_camera_angle_y = camera.camera_hardware_.camera_angles_[1];
-            if (std::abs(camera.camera_hardware_.camera_angles_[1]) < 0.0001) {
-                // Make sure we don't divide by 0
-                adjusted_camera_angle_y = 0.0001;
-            }
-
-            // The spin axis is negative as the camera spins clockwise looking out the lens from the back
-            double spin_axis_radians = CvUtils::DegreesToRadians( sin(CvUtils::DegreesToRadians(camera.camera_hardware_.camera_angles_[0])) * adjusted_camera_angle_y );
-            GS_LOG_TRACE_MSG(trace, "GolfSimCamera::ComputeXyzDistanceFromOrthoCamPerspective accounting for a camera twist angle of: " +
-                std::to_string(CvUtils::RadiansToDegrees(spin_axis_radians)) + " degrees.");
-
-            // Rotate the x,y point 
-            double rotated_x = camera_perspective_distances[0] * cos(spin_axis_radians) - camera_perspective_distances[1] * sin(spin_axis_radians);
-            double rotated_y = camera_perspective_distances[0] * sin(spin_axis_radians) + camera_perspective_distances[1] * cos(spin_axis_radians);
-
-            GS_LOG_TRACE_MSG(trace, "GolfSimCamera::ComputeXyzDistanceFromOrthoCamPerspective un-rotated X,Y distances of: " +
-                std::to_string(rotated_x) + ", " + std::to_string(rotated_y));
+            // If the camera were pointed straight out, the above is all we would need to have in 
+            // order to compute the x,y,z position of the ball.  The ball would be at the same z-distance,
+            // and the x and y distances would just have to be added/subtracted to the point in space
+            // directly out from the camera.
+            // 
+            // However, because the camera is at an angle, we need to convert the x,y,z distances from the
+            // camera's perspective into x,y,z from a perspective that is orthogonal to the launch monitor.
+            // This will entail a polar (or spherical) coordinate system to a cartesian (x,y,z) conversion
+            // So, Convert the distances from the camera into a set of angles from the camera's perspective
 
             // Using the adjusted X and Y distances (lined up with the real world up/down and left/right),
             // determine the angles of the ball from the camera perspective
             // Positive X degrees is to the left looking out the camera
             // Negative Y degrees is tilting down looking out the camera
             cv::Vec2d deltaAnglesCameraPerspective;
-            deltaAnglesCameraPerspective[0] = -CvUtils::RadiansToDegrees(atan(rotated_x / camera_perspective_distances[2]));
-            deltaAnglesCameraPerspective[1] = CvUtils::RadiansToDegrees(atan(rotated_y / camera_perspective_distances[2]));
+            deltaAnglesCameraPerspective[0] = -CvUtils::RadiansToDegrees(atan(camera_perspective_distances[0] / b1.distance_to_z_plane_from_lens_));
+            deltaAnglesCameraPerspective[1] = CvUtils::RadiansToDegrees(atan(camera_perspective_distances[1] / b1.distance_to_z_plane_from_lens_));
 
             // Account for the angle of the camera, which will adjust the camera perspective angles
-            // to the real-world LM-perspective polar coordinates.
+            // to the real-world orthogonal-to-the-LM-perspective polar coordinates.
             // X angle here is positive in a counter-clockwise movement looking down at the LM from above
             // Y angle is negative as the azimuth angle goes down from horizontal
             cv::Vec2d deltaAnglesLMPerspective;
@@ -1070,12 +1057,19 @@ namespace golf_sim {
                                         std::to_string(deltaAnglesLMPerspective[1]));
 
             // Second, figure out the X, Y, and Z distances from the LM's perspective
-            // This is essentially a polor-coordinate system to cartesian system conversion
+            // Theta is the rotation in the floor plane
+            // Phi is the rotation down/away from the vertical
+            // This is essentially a polar-coordinate system to cartesian system conversion
             // See https://math.libretexts.org/Courses/Mount_Royal_University/MATH_2200%3A_Calculus_for_Scientists_II/7%3A_Vector_Spaces/5.7%3A_Cylindrical_and_Spherical_Coordinates#:~:text=To%20convert%20a%20point%20from,y2%2Bz2).
 
             double phi_radians = CvUtils::DegreesToRadians( 90. + deltaAnglesLMPerspective[1] );
             double p_rho = camera_perspective_distances[2];
             double theta_radians = CvUtils::DegreesToRadians(deltaAnglesLMPerspective[0]);
+            // Intermediate results for precision testing - ignore
+            double sin_phi = sin(phi_radians);
+            double cos_theta = cos(theta_radians);
+            double sin_theta = sin(theta_radians);
+
             double cartesian_x = p_rho * sin(phi_radians) * cos(theta_radians);
             double cartesian_y = p_rho * sin(phi_radians) * sin(theta_radians);
             double cartesian_z = p_rho * cos(phi_radians);
@@ -2015,7 +2009,6 @@ namespace golf_sim {
             double expected_strobed_ball_radius = calibrated_ball.radius_at_calibration_pixels_ * (distance_at_calibration_ / expected_camera2_distance);
 
             // Setup to search for a ball that has a reasonable size relationship to the calibrated ball
-// TBD - REMOVE            double radius_at_calibration_pixels_ = getExpectedBallRadiusPixels(strobed_balls_color_image.cols, expected_camera2_distance);
             ip->min_ball_radius_ = int(expected_strobed_ball_radius * kMinMovedBallRadiusRatio);
             ip->max_ball_radius_ = int(expected_strobed_ball_radius * kMaxMovedBallRadiusRatio);
 
@@ -3758,11 +3751,11 @@ namespace golf_sim {
 
             PulseStrobe::SendExternalTrigger();
 
-            // At this point, the camera2 sytem should take a image and return it via IPC
-            // We will give the IPC system to receive and process this imcage
+            // At this point, the camera2 system should take a image and return it via IPC
+            // We will give the IPC system to receive and process this image
             // TBD - Figure a better way than just waiting for a long time.
             GS_LOG_TRACE_MSG(trace, "Waiting to receive one strobed picture from camera2 system.");
-            sleep(7);
+            sleep(6);
 
             // Get the image that the IPC system should have saved
             color_image = GolfSimIpcSystem::last_received_image_;
@@ -3794,6 +3787,7 @@ namespace golf_sim {
         // This parameter will be set from the config .json file based on the known coordinates of where
         // the calibration rig puts the ball in space.
         cv::Vec3d GolfSimCamera::kAutoCalibrationBallPositionFromCameraMeters;
+        int GolfSimCamera::kNumberPicturesForFocalLengthAverage = 1;
 
 
         bool GolfSimCamera::RetrieveAutoCalibrationConstants(const GsCameraNumber camera_number) {
@@ -3803,6 +3797,9 @@ namespace golf_sim {
             std::string camera_number_string = std::to_string(camera_number);
 
             GolfSimConfiguration::SetConstant("gs_config.calibration.kAutoCalibrationBallPositionFromCamera" + camera_number_string + "Meters", kAutoCalibrationBallPositionFromCameraMeters);
+
+            
+            GolfSimConfiguration::SetConstant("gs_config.calibration.kNumberPicturesForFocalLengthAverage", kNumberPicturesForFocalLengthAverage);
 
             return true;
         }
@@ -3816,7 +3813,14 @@ namespace golf_sim {
             cv::Rect nullROI;
             std::vector<GolfBall> return_balls;
             BallImageProc* ip = get_image_processor();
-            bool result = ip->GetBall(color_image, ball, return_balls, nullROI, BallImageProc::BallSearchMode::kFindPlacedBall);
+
+            // The search mode depends on the camera we are calibrating.  The camera2 pictures will be more like that
+            // of typical strobed (ball in flight) pictures.  
+            // TBD - Still not sure this is the best mode?
+            BallImageProc::BallSearchMode search_mode = (camera.camera_hardware_.camera_number_ == 1) ? BallImageProc::BallSearchMode::kFindPlacedBall : BallImageProc::BallSearchMode::kStrobed;
+            search_mode = BallImageProc::BallSearchMode::kFindPlacedBall;  // TBD - This seems to be working better than the Strobed version for now?
+
+            bool result = ip->GetBall(color_image, ball, return_balls, nullROI, search_mode);
 
             if (!result || return_balls.empty()) {
                 GS_LOG_MSG(error, "GetBall() failed to get a ball.");
@@ -3840,9 +3844,6 @@ namespace golf_sim {
                 return -1.0;
             }
 
-            // Note - since we are measuring the ball using the standard focal length of the camera hardware,
-            // when we compute the length again here, it should be the same.  We'd use this if we have the ball 
-            // at a known, precise distance and then get the focal length that makes the system find that distance.
             double calibrated_focal_length = computeFocalDistanceFromBallData(camera, measured_radius_pixels, distance_direct_to_ball);
             GS_LOG_MSG(info, "Calibrated focal length for distance " + std::to_string(distance_direct_to_ball) + " and Radius: " + std::to_string(measured_radius_pixels) +
                 " mm is " + std::to_string(calibrated_focal_length) + ".");
@@ -3850,7 +3851,7 @@ namespace golf_sim {
             return calibrated_focal_length;
         }
 
-        bool GolfSimCamera::DetermineCameraAngles(const cv::Mat& color_image, const GolfSimCamera& camera) {
+        bool GolfSimCamera::DetermineCameraAngles(const cv::Mat& color_image, const GolfSimCamera& camera, cv::Vec2d& camera_angles) {
 
             GS_LOG_TRACE_MSG(trace, "DetermineCameraAngles called");
 
@@ -3865,7 +3866,14 @@ namespace golf_sim {
             cv::Rect nullROI;
             std::vector<GolfBall> return_balls;
             BallImageProc* ip = get_image_processor();
-            bool result = ip->GetBall(color_image, ball, return_balls, nullROI, BallImageProc::BallSearchMode::kFindPlacedBall);
+
+            // The search mode depends on the camera we are calibrating.  The camera2 pictures will be more like that
+            // of typical strobed (ball in flight) pictures.  
+            // TBD - Still not sure this is the best mode?
+            BallImageProc::BallSearchMode search_mode = (camera.camera_hardware_.camera_number_ == 1) ? BallImageProc::BallSearchMode::kFindPlacedBall : BallImageProc::BallSearchMode::kStrobed;
+            search_mode = BallImageProc::BallSearchMode::kFindPlacedBall;  // TBD - This seems to be working better than the Strobed version for now?
+
+            bool result = ip->GetBall(color_image, ball, return_balls, nullROI, search_mode);
 
             if (!result || return_balls.empty()) {
                 GS_LOG_MSG(error, "GetBall() failed to get a ball.");
@@ -3875,28 +3883,79 @@ namespace golf_sim {
             ball = return_balls[0];
 
             // First calculate the distances as if the camera was facing straight ahead toward 
-            // the ball flight plane
+            // the ball flight plane.  
+            // The Z-distance in this scenario would measure as if the image plane is orthogonal to the camera's
+            // bore.  The image plane would only actually go through the ball's center if the
+            // ball was in the exact center of the image.
 
             double xFromCameraCenter = ball.x() - std::round(camera.camera_hardware_.resolution_x_ / 2.0);
             double yFromCameraCenter = ball.y() - std::round(camera.camera_hardware_.resolution_y_ / 2.0);
 
             cv::Vec3d camera_perspective_distances;
 
-            // Direct-to-ball-PLANE distance is already in real-world meters.   
-            // However, we do not have the exact direct-to-ball distance due to the lens.
-            // We will figure out the Z axis distance (which will generally be a little shorter) first.
-            double xDistanceFromCamCenter = convertXDistanceToMeters(camera, ball.distance_to_z_plane_from_lens_, xFromCameraCenter);
+            double distance_direct_to_ball = CvUtils::GetDistance(kAutoCalibrationBallPositionFromCameraMeters);
+
+            if (distance_direct_to_ball <= 0.0001) {
+                LoggingTools::Warning("DetermineFocalLengthForAutoCalibration called without setting the kAutoCalibrationBallPositionFromCameraMeters values.");
+                return -1.0;
+            }
+
+            if (kAutoCalibrationBallPositionFromCameraMeters[2] < 0.0) {
+                GS_LOG_MSG(error, "DetermineCameraAngles called without kAutoCalibrationBallPositionFromCameraMeters constants being set.");
+                return false;
+            }
+
+            // We have the direct-to-ball-PLANE distance - it is already in real-world meters.   
+            // However, we do not have the exact direct-to-ball distance due to the fact the lens will slightly
+            // enlarge objects that are actually further away the camera.
+
+            // Use the direct-to-ball-plane distance as the direct-to-ball distance to calculate the offset of the ball from center.
+            double xDistanceFromCamCenter = convertXDistanceToMeters(camera, distance_direct_to_ball, xFromCameraCenter);
             camera_perspective_distances[0] = xDistanceFromCamCenter;  // X distance, negative means to the left of the camera
 
-            double yDistanceFromCamCenter = convertYDistanceToMeters(camera, ball.distance_to_z_plane_from_lens_, yFromCameraCenter);
+            double yDistanceFromCamCenter = convertYDistanceToMeters(camera, distance_direct_to_ball, yFromCameraCenter);
 
-            camera_perspective_distances[1] = -yDistanceFromCamCenter;  // Y distance, positive is upward (smaller Y values)  // TBD - sqrt(pow(b1.distance_to_z_plane_from_lens_, 2) - pow(yDistanceFromCamCenter, 2));  // Y distance.  Positive values are above the camera center
+            camera_perspective_distances[1] = -yDistanceFromCamCenter;  // Y distance, positive is upward (smaller Y values)
 
-            camera_perspective_distances[2] = ball.distance_to_z_plane_from_lens_;// FOR NON_DIRECT sqrt(pow(b1.distance_to_z_plane_from_lens_, 2) - pow(xDistanceFromCamCenter, 2));  // Z distance.  Only positive values in front of camera
+            camera_perspective_distances[2] = kAutoCalibrationBallPositionFromCameraMeters[2];
 
-            GS_LOG_TRACE_MSG(trace, "GolfSimCamera::ComputeXyzDistanceFromOrthoCamPerspective computed camera_perspective_distances of: " +
+            GS_LOG_TRACE_MSG(trace, "GolfSimCamera::DetermineCameraAngles computed camera_perspective_distances of: " +
                 std::to_string(camera_perspective_distances[0]) + ", " +
                 std::to_string(camera_perspective_distances[1]));
+
+            // Determine the angles from the center-bore of the camera at which the ball exists to the ball
+
+            // Angles in this section are taken using a ray that extends out from the camera
+            // Positive X angle is counter-clockwise looking down on the camera/ball from above
+            // Positive Y angle is looking up from level to the ball
+            double x_angle_degrees_of_ball_camera_perspective = -CvUtils::RadiansToDegrees(atan(camera_perspective_distances[0] / distance_direct_to_ball));
+            double y_angle_degrees_of_ball_camera_perspective = CvUtils::RadiansToDegrees(atan(camera_perspective_distances[1] / distance_direct_to_ball));
+
+            GS_LOG_TRACE_MSG(trace, "GolfSimCamera::DetermineCameraAngles computed angles to ball from center-bore of camera of: " +
+                std::to_string(x_angle_degrees_of_ball_camera_perspective) + ", " +
+                std::to_string(y_angle_degrees_of_ball_camera_perspective));
+
+            // Determine the angles at which the camera would be if the ball were centered (in other
+            // words, the angle of the ball from the center of the lens if the camera was
+            // pointing straight out).
+
+            double x_angle_degrees_of_ball_lm_perspective = -CvUtils::RadiansToDegrees(atan(kAutoCalibrationBallPositionFromCameraMeters[0] / kAutoCalibrationBallPositionFromCameraMeters[2]));
+            
+            // Need to calculate the adjacent (tan x = opposite/adjacent) distance by using the known x and z distances) to determine the y angle
+            double horizontal_distance_to_ball_vertical_axis = sqrt(pow(kAutoCalibrationBallPositionFromCameraMeters[0], 2) + pow(kAutoCalibrationBallPositionFromCameraMeters[2], 2) );
+            double y_angle_degrees_of_ball_lm_perspective = CvUtils::RadiansToDegrees(atan(kAutoCalibrationBallPositionFromCameraMeters[1] / horizontal_distance_to_ball_vertical_axis));
+
+            GS_LOG_TRACE_MSG(trace, "GolfSimCamera::DetermineCameraAngles computed angles to ball from the perspective of the LM (from the center of the camera lens if the camera was pointing straight out): " +
+                std::to_string(x_angle_degrees_of_ball_lm_perspective) + ", " +
+                std::to_string(y_angle_degrees_of_ball_lm_perspective));
+
+            // The difference (if any) will be the angle of the ball from the camera
+            camera_angles[0] = x_angle_degrees_of_ball_lm_perspective - x_angle_degrees_of_ball_camera_perspective;
+            camera_angles[1] = y_angle_degrees_of_ball_lm_perspective - y_angle_degrees_of_ball_camera_perspective;
+
+            GS_LOG_TRACE_MSG(trace, "GolfSimCamera::DetermineCameraAngles computed angles to the camera of: " +
+                std::to_string(camera_angles[0]) + ", " +
+                std::to_string(camera_angles[1]));
 
             return true;
         }
@@ -3924,21 +3983,41 @@ namespace golf_sim {
 #ifdef __unix__  
             // In the "real" Pi environment, the focal length computation can vary from image to image,
             // so we will try multiple times and average the results
-            const int number_attempts = 10;
+            int number_attempts = 10;
+
+	    if (kNumberPicturesForFocalLengthAverage > 0) {
+            number_attempts = kNumberPicturesForFocalLengthAverage;
+	    }
 #else
             // It's the same canned picture in the non-Pi environment, so no need to do averaging
             const int number_attempts = 1;
 #endif
             int number_samples = 0;
 
-            /**** REMOVE
-            // Reset the processing mode so that the CheckForBall function will work to calculate the focal length
-            GolfSimOptions::GetCommandLineOptions().system_mode_ = (camera_number == GsCameraNumber::kGsCamera1) ? SystemMode::kCamera1Calibrate : SystemMode::kCamera1Calibrate;
-            ****/
-
             GolfBall ball;
 
-            GS_LOG_TRACE_MSG(trace, "Determining focal length for auto-calibration ");
+
+            BallImageProc* ip = get_image_processor();
+
+            if (ip == nullptr) {
+                GS_LOG_MSG(error, "Could not get_image_processor().");
+                return false;
+            }
+
+            double distance_direct_to_ball = CvUtils::GetDistance(kAutoCalibrationBallPositionFromCameraMeters);
+            
+            if (distance_direct_to_ball <= 0.0) {
+                GS_LOG_MSG(error, "Could not calculate a valid distance_direct_to_ball.");
+                return false;
+            }
+
+            // TBD - would a smaller radius range help with more accurately ID'ing the balls and 
+            // determining the focal length?
+            double expectedRadius = getExpectedBallRadiusPixels(camera.camera_hardware_, camera.camera_hardware_.resolution_x_, distance_direct_to_ball);
+            ip->min_ball_radius_ = int(1.2 * expectedRadius * kMinRadiusRatio);
+            ip->max_ball_radius_ = int(0.8 * expectedRadius * kMaxRadiusRatio);
+
+            GS_LOG_TRACE_MSG(trace, "Determining focal length for auto-calibration. Will average " + std::to_string(number_attempts) + " samples.");
 
             // Focal length can be touchy because of small changes in the perceived radius of the ball due to small changes in, for example, lighting
             // Find an average focal length
@@ -3961,6 +4040,9 @@ namespace golf_sim {
                     return false;
                 }
 
+                // The intermediate image is useful to see if the circles are being identified accurately
+                LoggingTools::LogImage("", ip->final_result_image_, std::vector < cv::Point >{}, true, "Focal_Length_Autocalibration_Image_" + std::to_string(i) + ".png");
+
                 number_samples++;
 
                 average_focal_length += focal_length;
@@ -3969,11 +4051,65 @@ namespace golf_sim {
             }
 
             average_focal_length /= number_samples;
-            GS_LOG_MSG(info, "====>  Average Focal Length = " + std::to_string(average_focal_length) + ".Set this value into the gs_config.json file.");
+            GS_LOG_MSG(info, "====>  Average Focal Length = " + std::to_string(average_focal_length) + ". Will set this value into the gs_config.json file.");
 
+            // Re-set the camera_hardware object's focal length to reflect the real-world focal length we just determined.
+            camera.camera_hardware_.focal_length_ = (float)average_focal_length;
+            
+            // Save the last image we captured to allow for review/QC.
+            LoggingTools::LogImage("", color_image, std::vector < cv::Point >{}, true, "Base Autocalibration Image.png");
+
+            // Also reset the expected radius numbers based on the (hopefully improved) focal length
+            expectedRadius = getExpectedBallRadiusPixels(camera.camera_hardware_, color_image.cols, distance_direct_to_ball);
+            ip->min_ball_radius_ = int(expectedRadius * kMinRadiusRatio);
+            ip->max_ball_radius_ = int(expectedRadius * kMaxRadiusRatio);
+
+            cv::Vec2d camera_angles;
+            
             // Use the last-taken image to determine at what angle the ball is to the bore-line of the camera's center
-            if (!DetermineCameraAngles(color_image, camera)) {
+            if (!DetermineCameraAngles(color_image, camera, camera_angles)) {
                 GS_LOG_MSG(error, "Could not DetermineCameraAngles.");
+                return false;
+            }
+
+            // Now save the values out to a .json file
+
+            std::string camera_number_string = std::to_string(camera_number);
+            
+            std::string focal_length_tag_name = "gs_config.cameras.kCamera" + camera_number_string + "FocalLength";
+            std::string camera_angles_tag_name = "gs_config.cameras.kCamera" + camera_number_string + "Angles";
+
+            GolfSimConfiguration::SetTreeValue(focal_length_tag_name, average_focal_length);
+            GolfSimConfiguration::SetTreeValue(camera_angles_tag_name, camera_angles);
+
+            std::string config_file_name = "golf_sim_config.json";
+
+            if (!GolfSimOptions::GetCommandLineOptions().config_file_.empty()) {
+                config_file_name = GolfSimOptions::GetCommandLineOptions().config_file_;
+            }
+
+            // Add only to the tail of the file name to ensure that any prefixed path will remain valid
+            std::string backup_json_file_name = config_file_name + "_BACKUP_" + LoggingTools::GetUniqueLogName() + ".json";
+
+            GS_LOG_TRACE_MSG(info, "Saving current golf_sim_config.json file to filename = " + backup_json_file_name);
+
+#ifdef __unix__  
+            std::string cp_command = "cp " + config_file_name + " " + backup_json_file_name;
+#else
+            std::string cp_command = "copy " + config_file_name + " " + backup_json_file_name;
+#endif
+            int command_result = system(cp_command.c_str());
+
+            if (command_result != 0) {
+                GS_LOG_TRACE_MSG(trace, "system(cp_command) failed. Could not backup existing golf_sim_config.json file.  Exiting");
+                return false;
+            }
+
+            // NOTE - we will overwrite the original config file
+            std::string results_tree_file_name = config_file_name;
+
+            if (!GolfSimConfiguration::WriteTreeToFile(results_tree_file_name)) {
+                GS_LOG_MSG(error, "Could not WriteTreeToFile(" + results_tree_file_name + ").");
                 return false;
             }
 

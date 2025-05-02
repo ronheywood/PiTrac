@@ -907,7 +907,7 @@ void run_main(int argc, char* argv[])
 
 
 #ifdef __unix__   
-    // What the program will do dpends on its mode
+    // What the program will do depends on its mode
 
     if (GolfSimOptions::GetCommandLineOptions().shutdown_) {
 
@@ -1127,7 +1127,13 @@ void run_main(int argc, char* argv[])
         {
             GS_LOG_MSG(info, "Running in kCamera1AutoCalibrate or kCamera2AutoCalibrate mode.");
 
-            GsCameraNumber camera_number = (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1AutoCalibrate ? 
+            // We will still need IPC and cameras and such to communicate in and between the systems as usual
+            if (!PerformSystemStartupTasks()) {
+                GS_LOG_MSG(error, "Failed to PerformSystemStartupTasks.");
+                return;
+            }
+
+            GsCameraNumber camera_number = (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1AutoCalibrate ?
                                         GsCameraNumber::kGsCamera1 : GsCameraNumber::kGsCamera2);
 
             // We will want to send a calibration message to any monitor UIs
@@ -1136,6 +1142,15 @@ void run_main(int argc, char* argv[])
                 return;
             }
             break;
+
+            // Shutdown the camera2 system (if running) so the user doesn't have to do it
+            GolfSimIPCMessage ipc_message(GolfSimIPCMessage::IPCMessageType::kShutdown);
+            GolfSimIpcSystem::SendIpcMessage(ipc_message);
+
+            // Give the IPC thread time to send the message
+            sleep(2);
+
+            return;
         }
 
         case SystemMode::kCamera1Calibrate:
@@ -1325,6 +1340,48 @@ void run_main(int argc, char* argv[])
                 GS_LOG_MSG(info, "Failed to AutoCalibrateCamera.");
                 return;
             }
+
+            break;
+        }
+
+        case SystemMode::kCamera1BallLocation:
+        case SystemMode::kCamera2BallLocation:
+        {
+            GS_LOG_MSG(info, "Running in kCamera1BallLocation or kCamera2BallLocation mode.");
+
+            // TBD - In Windows, this function is mostly just for debugging purposes
+            // Now see if the ball location math will come up with a ball in the same place as the
+            // calibration rig should have held that ball.
+            GsCameraNumber camera_number = (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1BallLocation ?
+                GsCameraNumber::kGsCamera1 : GsCameraNumber::kGsCamera2);
+
+            cv::Mat color_image;
+
+            if (!GolfSimCamera::TakeStillPicture(camera_number, color_image)) {
+                GS_LOG_MSG(error, "FAILED to TakeStillPicture");
+                return;
+            }
+
+            GolfBall ball;
+
+            CameraHardware::CameraModel  cameraModel = CameraHardware::PiGSCam6mmWideLens;
+            GolfSimCamera camera;
+            camera.camera_hardware_.init_camera_parameters(GolfSimOptions::GetCommandLineOptions().GetCameraNumber(), cameraModel);
+            camera.camera_hardware_.firstCannedImageFileName = std::string("/mnt/VerdantShare/dev/GolfSim/LM/Images/") + "FirstWaitingImage";
+            camera.camera_hardware_.firstCannedImage = color_image;
+
+            cv::Vec2i search_area_center = camera.GetExpectedBallCenter();
+
+            bool expectBall = false;
+            bool success = camera.GetCalibratedBall(camera, color_image, ball, search_area_center, expectBall);
+
+            if (!success) {
+                GS_LOG_TRACE_MSG(trace, "Failed to GetCalibratedBall.");
+                return;
+            }
+
+            GS_LOG_TRACE_MSG(info, "(Simulated) kCamera1BallLocation Sanity Check Returned a ball = " + ball.Format());
+
             break;
         }
 

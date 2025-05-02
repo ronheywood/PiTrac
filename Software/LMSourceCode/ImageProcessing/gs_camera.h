@@ -182,6 +182,7 @@ namespace golf_sim {
         static bool kPlacedBallUseLargestBall;
 
         static cv::Vec3d kAutoCalibrationBallPositionFromCameraMeters;
+        static int kNumberPicturesForFocalLengthAverage;
 
         // Refers to the camera_hardware device object associated with this higher-level camera object
         CameraHardware camera_hardware_;
@@ -309,7 +310,7 @@ namespace golf_sim {
         static bool getXYDeltaAnglesBallPerspective(const cv::Vec3d& position_deltas_ball_perspective,
                                                   cv::Vec2d&       deltaAnglesBallPerspective);
 
-        // Given the current focal length and sensed ball radius, determine what a distance in pixels in the 
+        // Given the current focal length, direct-to-ball distance, and sensed ball radius, determine what a distance in pixels in the 
         // X or Y direction is in real-life distance in meters.
         static double convertXDistanceToMeters(const GolfSimCamera& camera, double zDistanceMeters, double xDistancePixels);
         static double convertYDistanceToMeters(const GolfSimCamera& camera, double zDistanceMeters, double yDistancePixels);
@@ -470,7 +471,7 @@ namespace golf_sim {
 
         static bool RetrieveAutoCalibrationConstants(GsCameraNumber camera_number);
 
-        static bool DetermineCameraAngles(const cv::Mat& color_image, const GolfSimCamera& camera);
+        static bool DetermineCameraAngles(const cv::Mat& color_image, const GolfSimCamera& camera, cv::Vec2d& camera_angles);
 
         // Take a single still picture with the specified camera.  May require the Pi 2 (Camera 2) 
         // process to be running if that is the specified camera.
@@ -500,7 +501,7 @@ namespace golf_sim {
         // Distance is meters that the ball is from the lens.
         // The size of the ball is assumed to be a standard constant
         // NOTE - getCameraParameters must already have been called before this function is called
-        int getExpectedBallRadiusPixels(const int resolution_x_, const double distance);
+        static int getExpectedBallRadiusPixels(const CameraHardware& camera_hardware, const int resolution_x_, const double distance);
 
         // Return the distance of the ball in meters
         double getBallDistance(const GolfBall& calibrated_ball);

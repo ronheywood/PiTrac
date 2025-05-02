@@ -246,10 +246,12 @@ namespace golf_sim {
 
         // Ensure we identify who we are so that we can avoid getting our own
         // messages reflected back to su (and chewing up time + bandwidth)
-        // Note that if the system is in still mode, this is system 1, regardless of which
+        // Note that if the system is in still or auto-calibrate modes, this is system 1, regardless of which
         // camera is going to take the picture.
         if (GolfSimOptions::GetCommandLineOptions().GetCameraNumber() == GsCameraNumber::kGsCamera1 ||
-            GolfSimOptions::GetCommandLineOptions().camera_still_mode_) {
+            GolfSimOptions::GetCommandLineOptions().camera_still_mode_ ||
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1AutoCalibrate ||
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate ) {
             system_id = "LM_1";
         }
         else {

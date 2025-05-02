@@ -259,13 +259,21 @@
 			"kExpectedBallRadiusPixelsAt40cmCamera2": 87
 		},
 
-		"calibration": {
-			"kCamera1CalibrationDistanceToBall": 0.87,
-			"kCamera2CalibrationDistanceToBall": 0.55,
-			"kTestAutoCalibrationFileName": "M:\\Dev\\PiTrac\\Software\\LMSourceCode\\Images\\autocalibrate_cam2_still_picture.png"
-
-		},
-
+        "calibration": {
+            "Looking out from cameras, positive X distance is to the right, positive y is up, and positive Z is outward": "0",
+            "kAutoCalibrationBallPositionFromCamera1Meters": [
+                "-0.525",
+                "-0.275",
+                "0.45"
+            ],
+            "kAutoCalibrationBallPositionFromCamera2Meters": [
+                "0.0",
+                "0.095",
+                "0.435"
+            ],
+            "kNumberPicturesForFocalLengthAverage": "6",
+            "kTestAutoCalibrationFileName": "M:\\Dev\\PiTrac\\Software\\LMSourceCode\\Images\\autocalibrate_cam1_still_picture_1.png"
+        },
 		"golf_simulator_interfaces": {
 			"kLaunchMonitorIdString": "PiTrac LM 0.1",
 			"kSkipSpinCalculation": 0,

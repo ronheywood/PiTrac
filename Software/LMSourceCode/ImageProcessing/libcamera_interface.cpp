@@ -912,14 +912,15 @@ LibcameraJpegApp* ConfigureForLibcameraStill(GsCameraNumber camera_number) {
 
             camera_contrast = LibCameraInterface::kCamera2Contrast;
 
-            if (GolfSimOptions::GetCommandLineOptions().system_mode_ != SystemMode::kCamera2Calibrate &&
-                GolfSimOptions::GetCommandLineOptions().system_mode_ != SystemMode::kCamera2BallLocation) {
+            if (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2Calibrate ||
+                GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2BallLocation ||
+                GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate) {
 
                 camera_gain = LibCameraInterface::kCamera2CalibrateOrLocationGain;
                 still_shutter_time_uS = LibCameraInterface::kCamera2StillShutterTimeuS;
             }
             else {
-                GS_LOG_TRACE_MSG(trace, "In SystemMode::kCamera2Calibrate.  Using DEFAULT gain/contrast for Camera2.");
+                GS_LOG_TRACE_MSG(trace, "In SystemMode::kCamera2Calibrate (or similar).  Using DEFAULT gain/contrast for Camera2.");
                 GS_LOG_TRACE_MSG(trace, "Setting longer still_shutter_time_uS for Camera2.");
                 still_shutter_time_uS = 6 * LibCameraInterface::kCamera2StillShutterTimeuS;
             }
@@ -1140,7 +1141,13 @@ bool WaitForCam2Trigger(cv::Mat& return_image) {
 
         SetLibCameraLoggingOff();
 
-        if (GolfSimClubs::GetCurrentClubType() == GolfSimClubs::kPutter) {
+        if (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2Calibrate ||
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2BallLocation ||
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate) {
+
+            options->gain = LibCameraInterface::kCamera2CalibrateOrLocationGain;
+        }
+        else if (GolfSimClubs::GetCurrentClubType() == GolfSimClubs::kPutter) {
             options->gain = LibCameraInterface::kCamera2PuttingGain;
             options->contrast = LibCameraInterface::kCamera2PuttingContrast;
         }

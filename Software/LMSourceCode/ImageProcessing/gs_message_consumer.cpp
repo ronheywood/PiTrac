@@ -115,8 +115,14 @@ namespace golf_sim {
             // We don't want our own messages fed back to us, so exclude them
             std::string system_id_to_exclude;
 
+            // Ensure we identify who we are so that we can avoid getting our own
+            // messages reflected back to su (and chewing up time + bandwidth)
+            // Note that if the system is in still or auto-calibrate modes, this is system 1, regardless of which
+            // camera is going to take the picture.
             if (GolfSimOptions::GetCommandLineOptions().GetCameraNumber() == GsCameraNumber::kGsCamera1 ||
-                GolfSimOptions::GetCommandLineOptions().camera_still_mode_) {
+                GolfSimOptions::GetCommandLineOptions().camera_still_mode_ ||
+                GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1AutoCalibrate ||
+                GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate ) {
                 system_id_to_exclude = "LM_1";
             }
             else {

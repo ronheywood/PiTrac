@@ -30,7 +30,8 @@ First thing to do is to get your calibration rig printed.  The rig provides an e
 
 1. Print the rig using the [files here](https://github.com/jamespilgrim/PiTrac/tree/main/3D%20Printed%20Parts/Enclosure%20Version%202/Calibration%20Rig) in the github repo.  The rig is in the version 2 enclosure file area, but can be used with either version of the enclosure.  The main difference in using the rig for the Version 1 and 2 enclosures is just the measurement values that describe the distances from where the cameras are to the golf balls positioned on the rig.  The rig looks like the following on the print bed:
 
-   ![][image1](Picture 1\_0)
+   ![Picture 1_0 - AutoCalibration Instuctions](https://github.com/user-attachments/assets/5d97b701-f18b-42c8-89fc-3654e0de1781)
+(Picture 1\_0)
 
    1. Printing Notes:    
       1. The rig only needs support structure in the green area shown below on the part that positions Ball 1 on the floor.  Otherwise, whatever standard print settings your system uses (e.g., 15% infill) should be fine.  We did not need any print plate glue.  

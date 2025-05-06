@@ -267,6 +267,9 @@
     <ClCompile Include="gs_e6_response.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gs_automated_testing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="golf_ball.h">

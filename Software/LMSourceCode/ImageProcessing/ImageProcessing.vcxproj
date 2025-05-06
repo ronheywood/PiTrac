@@ -246,6 +246,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="golf_ball.cpp" />
+    <ClCompile Include="gs_automated_testing.cpp" />
     <ClCompile Include="gs_camera.cpp" />
     <ClCompile Include="gs_clubs.cpp" />
     <ClCompile Include="gs_config.cpp" />

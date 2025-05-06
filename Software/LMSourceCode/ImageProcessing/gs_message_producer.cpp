@@ -251,7 +251,9 @@ namespace golf_sim {
         if (GolfSimOptions::GetCommandLineOptions().GetCameraNumber() == GsCameraNumber::kGsCamera1 ||
             GolfSimOptions::GetCommandLineOptions().camera_still_mode_ ||
             GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1AutoCalibrate ||
-            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate ) {
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate ||
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1BallLocation ||
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2BallLocation) {
             system_id = "LM_1";
         }
         else {

@@ -356,8 +356,10 @@ namespace golf_sim {
         // Instead just save the image so that someone can get to it.
         if (GolfSimOptions::GetCommandLineOptions().camera_still_mode_ ||
             GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1AutoCalibrate ||
-            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate) {
-            GS_LOG_TRACE_MSG(trace, "In still-picture or AutoCalibrate camera mode.  Will save received image.");
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate ||
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1BallLocation ||
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2BallLocation) {
+            GS_LOG_TRACE_MSG(trace, "In still-picture, locate or AutoCalibrate camera mode.  Will save received image.");
 
             last_received_image_ = message.GetImageMat().clone();
 

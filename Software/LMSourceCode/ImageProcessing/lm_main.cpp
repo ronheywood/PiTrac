@@ -1016,6 +1016,8 @@ void run_main(int argc, char* argv[])
     // to this process.
     if (GolfSimOptions::GetCommandLineOptions().camera_still_mode_) {
 
+        GS_LOG_TRACE_MSG(trace, "Running in camera_still_mode.");
+
         // We will still need IPC and cameras and such to communicate in and between the systems as usual
         if (!PerformSystemStartupTasks()) {
             GS_LOG_MSG(error, "Failed to PerformSystemStartupTasks.");
@@ -1230,34 +1232,51 @@ void run_main(int argc, char* argv[])
         {
             GS_LOG_MSG(info, "Running in kCamera1BallLocation or kCamera2BallLocation mode.");
 
-            // We will want to send a test rest results message to any monitor UIs
-            if (!GolfSimIpcSystem::InitializeIPCSystem()) {
-                GS_LOG_MSG(info, "Failed to InitializeIPCSystem.");
+
+            // We will still need IPC and cameras and such to communicate in and between the systems as usual
+            if (!PerformSystemStartupTasks()) {
+                GS_LOG_MSG(error, "Failed to PerformSystemStartupTasks.");
                 return;
             }
 
-            PerformCameraSystemStartup();
+            GsCameraNumber camera_number = (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1) ? GsCameraNumber::kGsCamera1 : GsCameraNumber::kGsCamera2;
+
+            if (camera_number == GsCameraNumber::kGsCamera1) {
+                GS_LOG_TRACE_MSG(trace, "Running in cam_still_mode on camera1 system.  Will take one picture.");
+            }
+            else {
+                GS_LOG_TRACE_MSG(trace, "Running in  cam2 still mode on camera1 system.  Will take one strobed picture in camera2 system.");
+            }
+
 
             GolfBall ball;
             cv::Mat img;
             std::vector<cv::Vec3d> camera_positions_from_origin = std::vector<cv::Vec3d>({ GolfSimCamera::kCamera1PositionsFromExpectedBallMeters, GolfSimCamera::kCamera2PositionsFromExpectedBallMeters });
 
             CameraHardware::CameraModel  cameraModel = CameraHardware::PiGSCam6mmWideLens;
-            GolfSimCamera c;
-            c.camera_hardware_.init_camera_parameters(GolfSimOptions::GetCommandLineOptions().GetCameraNumber(), cameraModel);
+            GolfSimCamera camera;
+            camera.camera_hardware_.init_camera_parameters(GolfSimOptions::GetCommandLineOptions().GetCameraNumber(), cameraModel);
 
 
             int i = 0;
 
             while (GolfSimGlobals::golf_sim_running_) {
-                // In addition to checking for the ball, this method will send an IPC results
-                // message if we are in calibration mode.
-                bool status = CheckForBall(ball, img);
+
+
+                if (!GolfSimCamera::TakeStillPicture(camera_number, img)) {
+                    GS_LOG_MSG(error, "FAILED to PulseStrobe::SendCameraPrimingPulses");
+                }
+
+
+                cv::Vec2i search_area_center = camera.GetExpectedBallCenter();
+
+                bool expectBall = false;
+                bool success = camera.GetCalibratedBall(camera, img, ball, search_area_center, expectBall);
 
                 std::vector<GolfBall> balls({ ball });
                 std::vector<GolfBall> empty_balls;
 
-                if (status) {
+                if (success) {
 
                     GS_LOG_MSG(info, "Found Ball - (X, Y, Z) (in cm): " + std::to_string(ball.distances_ortho_camera_perspective_[0]) + ", " +
                         std::to_string(ball.distances_ortho_camera_perspective_[1]) + ", " +
@@ -1270,21 +1289,6 @@ void run_main(int argc, char* argv[])
                     cv::Mat gray_image;
                     cv::cvtColor(img, gray_image, cv::COLOR_BGR2GRAY);
 
-                    bool choose_largest_final_ball = false;
-                    
-                    /***  NOT USING THIS NOW
-                    if (!BallImageProc::DetermineBestCircle(gray_image, ball, choose_largest_final_ball, final_circle)) {
-                        GS_LOG_MSG(error, "Failed to DetermineBestCircle.");
-                    }
-                    else
-                    {
-                        // A ball was found - show it to the user
-
-                        GS_LOG_TRACE_MSG(trace, "Best Circle xiRadius was: " + std::to_string(final_circle[2]) + " pixels.\n\n");
-                    }
-                    */
-
-                    // TBD - Send Test results IPC message
                     i++;
                 }
 
@@ -1292,7 +1296,7 @@ void run_main(int argc, char* argv[])
 
             }
 
-            GolfSimIpcSystem::ShutdownIPCSystem();
+            PerformSystemShutdownTasks();
         }
         break;
 

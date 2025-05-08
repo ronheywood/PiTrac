@@ -87,3 +87,33 @@ NOTE - The Strip should produce NO infrared light, or else it will interfere wit
 | 1 | Power Strip | A relatively short power strip that is compact enough to fit into the enclosure. 10” or less, and with some type of power filtering to protect the rest of the components |
 
 [^1]:  Stainless Steel seems to be stronger than black carbon steel, though both can work.  Especially in the stiffer PLA material, stainless is preferable because black carbon can break if torqued too much..  For parts supply example see [HanTof 525 Pcs 304 Stainless Steel M2 M3 M4 Phillips Pan Head Self Tapping Wood screws Assortment Kit](https://www.googleadservices.com/pagead/aclk?sa=L&ai=DChcSEwiLuLi4w9eJAxW8Ka0GHe7XF-QYABALGgJwdg&co=1&ase=2&gclid=Cj0KCQiAlsy5BhDeARIsABRc6ZvLmaSF7SMXMVEWsWj3rp8S5qOvISkRMdr9czJDXK6-_GcV_X18lyoaApxdEALw_wcB&ohost=www.google.com&cid=CAESVeD2Qt_A3T4eLbWpcXoKb1T4jyPt8OTe6U2I9Uze-kjy3MAArJhoS9pYvi39aDroogjezyRvCcOJ56x4hYKkL8BaTouv69VFkW3lUm7VcRcYOp8m49s&sig=AOD64_3FizAX65usODanOujaKxqh5_gQbg&ctype=5&q=&nis=4&ved=2ahUKEwj92Kq4w9eJAxU1JzQIHakTKO8Q9aACKAB6BAgEEAw&adurl=)., 
+
+
+**NOTE \-The following is a work in progress \- Version 2 of the Enclosure is not complete**
+
+**Enclosure Ver. 2 \- Hardware \- Bolts and Nuts:[^2]**
+
+| Quantity | Hardware | Purpose |
+| :---- | :---- | :---- |
+| 2 | M3 x 8 self-tapping screws | AC Power inlet plug (side of base box) (if using a PSU, or potentially putting a LED driver inside the basebox. |
+| 2 | M3 x 8 self-tapping screws | Secures the end-cap of the base box into the rest of the box |
+| 2 | M3 x 8 machine screws | Secures PSU to bottom of base box.  No PSU will generally be used if using the original Connector Board variant of the Version 2 enclosure. |
+| 3 | M3 x 10 machine screws (or x 8\) | Secures PSU to the side of the base box.   NOTE \- in order to efficiently use screw assortment sets, either x8 or x10 screws can be used.  There is space in the PSU for either, so just use what you have more of. |
+| 12 | M2 x 6 self-tapping screws | Secures and aligns the tower back and front plate parts |
+| 4 | M4 x 12  self-tapping screws | Secures tower (feet) to top of base box.  Could use longer screws if they don’t interfere with the power supply. |
+| 2 | Pan head M4\*12 or \*16 self-tapping screws  | For the top of the Shank Shield.  Pan-head is preferred in order to avoid countersinking, but could also use flat-head. |
+| 2 | Flat head self-tapping M4\*12 or \*14 screws | For the bottom of the Shank Shield \- screws go through the front of the basebox and the shield. |
+| 4 | M4 x 12 | Secures Case Cover to the top of the Basebox |
+| 6 12 (variant) | Self-tapping M2.5 x 8 screws | Secure Compute Board to the Backplane of the Tower.  If using the original Connector Board and two Raspberry Pi’s, will need 12, not 6 screws. |
+| 5 | Heat Shrink Ring-type Wire Connectors | [Ring connectors](https://www.amazon.com/dp/B0CYM3J44Q?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1) to connect the various power supply wires to the screw terminals of the PSU. |
+
+**Enclosure Ver. 2 \- Components (WORK IN PROGRESS)**
+
+| 1 | AC 250V 15A IEC320 C14 Male Power Cord Inlet Socket with Fuse Holder,3Pin Inlet Module Power Connector Socket with 3pcs Wires | [AC Power inlet plug](https://www.amazon.com/IEC320-Socket-Holder-Module-Connector/dp/B081ZFHRGW/ref=sr_1_6?crid=2DKBAQMH44GRG&dib=eyJ2IjoiMSJ9.dVV6QBUldjPNvkPlVHiLfdJ7bh1G4vsgRURNHlImOsleAhVwWEofnFBs0m5Lk6ogy7vOgGHoAFFR_oLS-pEd3-yleomym5goucq5RbCF11b30qvN1eTzFk4gn1GctrCMLNubL2pRlvl83XN1o9heIluAKTbpAj2r3uixQZV2RouUYEV_Yq6w90AKK-5ooXiIXEASn65fOQqx8Xz_x2V5A1LaAUTsmcEIpKq1L1Aohp7K9hwGkhZQenB-uTFkBZapM1ve16_AImKE4T0C-G9usz1IYndjYKeKAWrRWddZb2U.B9djjQkUKJMXT4UfZy4FXMS6fc36kzNO3TUmFgmhFkU&dib_tag=se&keywords=filshu+ac+inlet+plug+c14&qid=1744312070&sprefix=filshu+ac+inlet+plug+c14%2Caps%2C122&sr=8-6) (for the side of base box)  (when using a PSU, or potentially putting a LED driver inside the basebox. |
+| :---- | :---- | :---- |
+| 1 | Mean Well LRS-150-24 150W Single Output Switching Power Supply(24V 6.5A) | [150 W Power supply unit.](https://www.amazon.com/dp/B07GTY6R4H?ref=ppx_yo2ov_dt_b_fed_asin_title) |
+| TBD | TBD | TBD |
+
+[^1]:  Stainless Steel seems to be stronger than black carbon steel, though both can work.  Especially in the stiffer PLA material, stainless is preferable because black carbon can break if torqued too much..  For parts supply example see [HanTof 525 Pcs 304 Stainless Steel M2 M3 M4 Phillips Pan Head Self Tapping Wood screws Assortment Kit](https://www.googleadservices.com/pagead/aclk?sa=L&ai=DChcSEwiLuLi4w9eJAxW8Ka0GHe7XF-QYABALGgJwdg&co=1&ase=2&gclid=Cj0KCQiAlsy5BhDeARIsABRc6ZvLmaSF7SMXMVEWsWj3rp8S5qOvISkRMdr9czJDXK6-_GcV_X18lyoaApxdEALw_wcB&ohost=www.google.com&cid=CAESVeD2Qt_A3T4eLbWpcXoKb1T4jyPt8OTe6U2I9Uze-kjy3MAArJhoS9pYvi39aDroogjezyRvCcOJ56x4hYKkL8BaTouv69VFkW3lUm7VcRcYOp8m49s&sig=AOD64_3FizAX65usODanOujaKxqh5_gQbg&ctype=5&q=&nis=4&ved=2ahUKEwj92Kq4w9eJAxU1JzQIHakTKO8Q9aACKAB6BAgEEAw&adurl=)., 
+
+[^2]:  You may choose to buy some assortment sets of screws and bolts.  That hardware on this list can be satisfied by a combination of:  

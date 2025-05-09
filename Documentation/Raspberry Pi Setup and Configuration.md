@@ -292,7 +292,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        Libs: -L${libdir} -lboost_filesystem -lboost_system -lboost_timer -lboost_log -lboost_chrono -lboost_regex -lboost_thread -lboost_program_options  
        Cflags: -isystem ${includedir}
        ```
-    2. Finally, because of a problem when compiling boost under C++20 (which PiTrac uses), add `#include <utility>` as the last include before the line that says “name space boost” in the awaitable.hpp file at /usr/include/boost/asio/awaitable.hpp”  
+    2. Finally, because of a problem when compiling boost under C++20 (which PiTrac uses), add `#include <utility>` as the last include before the line that says “namespace boost” in the awaitable.hpp file at /usr/include/boost/asio/awaitable.hpp”  
        1. `sudo vi /usr/include/boost/asio/awaitable.hpp`  
        2. This is a hack, but works for now.
 

@@ -417,7 +417,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
        5. `sudo apt -y install maven`  
     3. [https://activemq.apache.org/components/classic/download/](https://activemq.apache.org/components/classic/download/) has the source code zip file that you will want to download with the ActiveMQ Broker  
        1. E.g., [apache-activemq-6.1.4-bin.tar.gz](https://www.apache.org/dyn/closer.cgi?filename=/activemq/6.1.4/apache-activemq-6.1.4-bin.tar.gz&action=download)  
-    2. Follow these instructions to install:  
+    2. Follow these instructions to install (but NOT the source-install option - we're just installing the executables, not building them):  
        1. [https://activemq.apache.org/version-5-getting-started.html\#installation-procedure-for-unix](https://activemq.apache.org/version-5-getting-started.html#installation-procedure-for-unix)  
        2. Set the following environment variable to ensure you don’t run out of memory:  
           1. `export MAVEN_OPTS=-Xmx1024M` (ignore for RaspberryPi 5 8GB)

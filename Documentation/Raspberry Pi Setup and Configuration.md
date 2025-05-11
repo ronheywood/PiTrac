@@ -343,7 +343,40 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
           2. Do not install boost dev as a prerequisite- we built it already above  
           3. When done (after the install step), do sudo ldconfig to refresh the shared libraries  
           4. On the Pi 4 (if it has less than 6GB memory), add “-j 2” at the end of the ninja \-C build command to limit the amount of memory used during the build.  E.g., ninja \-C build \-j 2  
-             - On low-memory Pi’s, if you run out of memory, the computer will often just freeze and hang, requiring a hard-reboot  
+             - On low-memory Pi’s, if you run out of memory, the computer will often just freeze and hang, requiring a hard-reboot
+          5. libcamnera can be very verbose for higher logging levels.  We suggest you effectively disable some of the logging by editing the file `libcamera/subprojects/libpisp/src/libpisp/common/logging.hpp` and replacing the contents with the following in order to help minimize the trace-log junk:
+             `#pragma once
+
+#include <cassert>
+
+#ifndef PISP_LOGGING_ENABLE
+#define PISP_LOGGING_ENABLE 0
+#endif
+
+#if PISP_LOGGING_ENABLE
+
+#define PISP_LOG(sev, stuff) do { } while(0)
+
+#else
+
+#define PISP_LOG(sev, stuff) do { } while(0)
+
+#endif
+
+#define PISP_ASSERT(x) assert(x)
+
+namespace libpisp
+{
+        // Call this before you try and use any logging.
+        void logging_init();
+} // namespace libpisp
+
+// Ensure NO logging occurs.  It's usually too verbose
+#ifdef PISP_LOG
+#undef PISP_LOG
+#endif
+
+#define PISP_LOG(sev, stuff) do { } while(0)`
        2. If the build fails at the last install step, see: [https://github.com/mesonbuild/meson/issues/7345](https://github.com/mesonbuild/meson/issues/7345) for a possible solution.  Specifically, exporting the following environment variable and re-building.  
           1. `export PKEXEC\_UID=99999`  
           2. `cd build && sudo ninja install`

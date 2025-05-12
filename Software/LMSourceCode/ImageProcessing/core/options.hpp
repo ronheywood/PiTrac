@@ -114,6 +114,7 @@ struct Options
 	std::string config_file;
 	std::string output;
 	std::string post_process_file;
+	std::string post_process_libs;
 	unsigned int width;
 	unsigned int height;
 	bool nopreview;
@@ -150,6 +151,7 @@ struct Options
 	bool qt_preview;
 	unsigned int lores_width;
 	unsigned int lores_height;
+	bool lores_par;
 	unsigned int camera;
 	std::string mode_string;
 	Mode mode;

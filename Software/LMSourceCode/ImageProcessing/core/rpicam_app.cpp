@@ -335,6 +335,7 @@ void RPiCamApp::ConfigureViewfinder(unsigned int flags)
 		configuration_->at(lores_stream_num).pixelFormat = libcamera::formats::YUV420;
 		configuration_->at(lores_stream_num).size = lores_size;
 		configuration_->at(lores_stream_num).bufferCount = configuration_->at(0).bufferCount;		
+		configuration_->at(lores_stream_num).colorSpace = configuration_->at(0).colorSpace;
 	}
 
 	// MJLMOD
@@ -600,6 +601,7 @@ void RPiCamApp::ConfigureVideo(unsigned int flags)
 		configuration_->at(lores_index).pixelFormat = libcamera::formats::YUV420;
 		configuration_->at(lores_index).size = lores_size;
 		configuration_->at(lores_index).bufferCount = configuration_->at(0).bufferCount;
+		configuration_->at(lores_index).colorSpace = configuration_->at(0).colorSpace;
 	}
 	configuration_->orientation = libcamera::Orientation::Rotate0 * options_->transform;
 
@@ -695,19 +697,23 @@ void RPiCamApp::StartCamera()
 						  libcamera::Span<const int64_t, 2>({ frame_time, frame_time }));
 		}
 	}
-
 	if (!controls_.get(controls::ExposureTime) && options_->shutter)
+	{
 		controls_.set(controls::ExposureTime, options_->shutter.get<std::chrono::microseconds>());
-	if (!controls_.get(controls::AnalogueGain) && options_->gain)
+		controls_.set(controls::ExposureTime, options_->shutter.get<std::chrono::microseconds>());
+	}
+	if (!controls_.get(controls::AnalogueGain) && options_->gain) 
+	{
+		controls_.set(controls::AnalogueGainMode, controls::AnalogueGainModeManual);
 		controls_.set(controls::AnalogueGain, options_->gain);
+	}
 	if (!controls_.get(controls::AeMeteringMode))
 		controls_.set(controls::AeMeteringMode, options_->metering_index);
 	if (!controls_.get(controls::AeExposureMode))
 		controls_.set(controls::AeExposureMode, options_->exposure_index);
 	if (!controls_.get(controls::ExposureValue))
 		controls_.set(controls::ExposureValue, options_->ev);
-	if (!controls_.get(controls::AwbMode))
-		controls_.set(controls::AwbMode, options_->awb_index);
+	if (!controls_.get(controls::AwbMode)) controls_.set(controls::AwbMode, options_->awb_index);
 	if (!controls_.get(controls::ColourGains) && options_->awb_gain_r && options_->awb_gain_b)
 		controls_.set(controls::ColourGains,
 					  libcamera::Span<const float, 2>({ options_->awb_gain_r, options_->awb_gain_b }));
@@ -935,8 +941,13 @@ libcamera::Stream *RPiCamApp::GetMainStream() const
 	return nullptr;
 }
 
-const libcamera::CameraManager *RPiCamApp::GetCameraManager() const
+const libcamera::CameraManager *RPiCamApp::GetCameraManager()
 {
+	// MJL MOD - Make sure we have an initialized camera manager by now.
+	// Can't always assume that in PiTrac
+        if (!camera_manager_)
+                initCameraManager();
+
 	return camera_manager_.get();
 }
 

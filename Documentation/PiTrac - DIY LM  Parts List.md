@@ -69,7 +69,7 @@ NOTE - The Strip should produce NO infrared light, or else it will interfere wit
 | 3 | 2 | R2, R3 | 270 ohm R | Resistor | Resistor\_THT:R\_Axial\_DIN0207\_L6.3mm\_D2.5mm\_P10.16mm\_Horizontal |  |
 | 5 | 1 | Sys1\_Conn1 | \~ | 4 Pin Header | Connector\_PinHeader\_2.54mm:PinHeader\_1x04\_P2.54mm\_Vertical |  |
 | 6 | 1 | Sys2\_Conn1 | \~ | 3 Pin Header | Connector\_PinHeader\_2.54mm:PinHeader\_1x03\_P2.54mm\_Vertical |  |
-| 7 | 2 | U2, U3 | H11L1 | [Isolator:H11L1](https://www.amazon.com/dp/B09KM2BJCF?ref_=pe_386300_442618370_TE_sc_as_ri_0) | Package\_DIP:DIP-6\_W7.62mm |  |
+| 7 | 2 | U2, U3 | H11L1 | [Isolator:H11L1]([https://www.amazon.com/dp/B09KM2BJCF?ref_=pe_386300_442618370_TE_sc_as_ri_0](https://www.amazon.com/10PCS-H11L1M-Photoelectric-Coupler-Optocoupler/dp/B09PK3V339)) | Package\_DIP:DIP-6\_W7.62mm. NOTE: Make sure you get the DIP pin style, NOT the shorter surface-mount style.  The Connector Board is setup for through-hole pins, not surface mounting. |  |
 | 8 | 1 | U4 | 74HC04 | 74xx:74HC04 | Package\_DIP:DIP-14\_W7.62mm\_Socket |  |
 | 9 | 1 | U5 | \~ | [Dual\_Mos\_Driver\_Module](https://www.amazon.com/Anmbest-High-Power-Adjustment-Electronic-Brightness/dp/B07NWD8W26/ref=sims_dp_d_dex_ai_speed_loc_mtl_v5_t1_d_sccl_2_1/132-9837543-1351009?pd_rd_w=xeol9&content-id=amzn1.sym.281550a9-05fa-4fa0-a033-b1923adca8ef&pf_rd_p=281550a9-05fa-4fa0-a033-b1923adca8ef&pf_rd_r=WXGFBGSTH336WSAYW2XQ&pd_rd_wg=SokZb&pd_rd_r=2d219084-db5a-41cc-b5d7-b01ed55844ec&pd_rd_i=B07NWD8W26&th=1) | Verdant\_Custom\_Footprint\_Library:PCB Dual MOS Driver Module |  |
 |  | 1 | 2.5M Bolt 2.5M Nut |  |  | These help mechanically tie down the USB-B power connector to the board |  |

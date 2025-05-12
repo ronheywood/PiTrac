@@ -107,7 +107,14 @@ bool ball_watcher_event_loop(RPiCamEncoder &app, bool & motion_detected)
 		*/
 
 		CompletedRequestPtr &completed_request = std::get<CompletedRequestPtr>(msg.payload);
-		app.EncodeBuffer(completed_request, app.VideoStream());
+                if (!app.EncodeBuffer(completed_request, app.VideoStream()))
+                {
+                        // Keep advancing our "start time" if we're still waiting to start recording (e.g.
+                        // waiting for synchronisation with another camera).
+                        start_time = std::chrono::high_resolution_clock::now();
+                        count = 0; // reset the "frames encoded" counter too
+                }
+ 
 
 		bool mdResult = false;
 		int getStatus = completed_request->post_process_metadata.Get("motion_detect.result", mdResult);

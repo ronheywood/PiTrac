@@ -80,16 +80,28 @@ void encoderOptionsH264M2M(VideoOptions const *options, AVCodecContext *codec)
 
 void encoderOptionsLibx264(VideoOptions const *options, AVCodecContext *codec)
 {
-	codec->max_b_frames = 1;
 	codec->me_range = 16;
 	codec->me_cmp = 1; // No chroma ME
 	codec->me_subpel_quality = 0;
 	codec->thread_count = 0;
-	codec->thread_type = FF_THREAD_FRAME;
-	codec->slices = 1;
 
-	av_opt_set(codec->priv_data, "preset", "superfast", 0);
-	av_opt_set(codec->priv_data, "partitions", "i8x8,i4x4", 0);
+	if (options->low_latency)
+	{
+		codec->thread_type = FF_THREAD_SLICE;
+		codec->slices = 4;
+		codec->refs = 1;
+		av_opt_set(codec->priv_data, "preset", "ultrafast", 0);
+		av_opt_set(codec->priv_data, "tune", "zerolatency", 0);
+	}
+	else
+	{
+		codec->thread_type = FF_THREAD_FRAME;
+		codec->slices = 1;
+		codec->max_b_frames = 1;
+		av_opt_set(codec->priv_data, "preset", "superfast", 0);
+		av_opt_set(codec->priv_data, "partitions", "i8x8,i4x4", 0);
+	}
+
 	av_opt_set(codec->priv_data, "weightp", "none", 0);
 	av_opt_set(codec->priv_data, "weightb", "0", 0);
 	av_opt_set(codec->priv_data, "motion-est", "dia", 0);
@@ -307,7 +319,18 @@ void LibAvEncoder::initAudioOutCodec(VideoOptions const *options, StreamInfo con
 
 	codec_ctx_[AudioOut]->sample_rate = options->audio_samplerate ? options->audio_samplerate
 																  : stream_[AudioIn]->codecpar->sample_rate;
+#if LIBAVCODEC_VERSION_MAJOR < 61
 	codec_ctx_[AudioOut]->sample_fmt = codec->sample_fmts[0];
+#else
+	enum AVSampleFormat **sample_fmts = nullptr;
+	avcodec_get_supported_config(codec_ctx_[AudioOut], codec, AV_CODEC_CONFIG_SAMPLE_FORMAT, 0,
+								 (const void **)&sample_fmts, nullptr);
+	if (!sample_fmts)
+		throw std::runtime_error("libav: no supported sample formats for audio codec");
+	else
+		codec_ctx_[AudioOut]->sample_fmt = (*sample_fmts)[0];
+#endif
+
 	codec_ctx_[AudioOut]->bit_rate = options->audio_bitrate.bps();
 	// usec timebase
 	codec_ctx_[AudioOut]->time_base = { 1, 1000 * 1000 };
@@ -330,11 +353,16 @@ void LibAvEncoder::initAudioOutCodec(VideoOptions const *options, StreamInfo con
 
 LibAvEncoder::LibAvEncoder(VideoOptions const *options, StreamInfo const &info)
 	: Encoder(options), output_ready_(false), abort_video_(false), abort_audio_(false), video_start_ts_(0),
-	  audio_samples_(0), in_fmt_ctx_(nullptr), out_fmt_ctx_(nullptr), output_file_(options->output)
+	  audio_samples_(0), in_fmt_ctx_(nullptr), out_fmt_ctx_(nullptr), output_file_(options->output),
+	  output_initialised_(false)
 {
-	if (options->circular || options->segment || !options->save_pts.empty() || options->split)
-		LOG_ERROR("\nERROR: Pi 5 and libav encoder does not currently support the circular, segment, save_pts or "
-				  "split command line options, they will be ignored!\n");
+	if (options->circular || options->segment || !options->save_pts.empty() || options->split ||
+		options->initial == "pause")
+	{
+		LOG_ERROR("\nERROR: The libav encoder does not currently support the circular, segment, save_pts, "
+				  "split, or pause command line options!\n");
+		throw std::runtime_error("libav: Incompatible options selected.");
+	}
 
 	avdevice_register_all();
 
@@ -470,11 +498,16 @@ void LibAvEncoder::initOutput()
 		av_strerror(ret, err, sizeof(err));
 		throw std::runtime_error("libav: unable write output mux header for " + output_file_ + ": " + err);
 	}
+
+	output_initialised_ = true;
 }
 
 void LibAvEncoder::deinitOutput()
 {
 	if (!out_fmt_ctx_)
+		return;
+
+	if (!output_initialised_)
 		return;
 
 	av_write_trailer(out_fmt_ctx_);

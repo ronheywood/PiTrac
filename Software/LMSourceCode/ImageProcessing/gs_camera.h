@@ -184,6 +184,13 @@ namespace golf_sim {
         static cv::Vec3d kAutoCalibrationBallPositionFromCameraMeters;
         static int kNumberPicturesForFocalLengthAverage;
 
+        // Here, the "1" refers not necessarily to the camera that is named camera 1 functionally 
+        // (the camera that watches the teed-up ball).
+        static CameraHardware::CameraModel kSystemSlot1CameraType;
+        // If this instance of the system only has a single camera, there may be no type set for Camera 2.  
+        // Instead, another instance, presumably on another Pi, will have the other camera
+        static CameraHardware::CameraModel kSystemSlot2CameraType;
+
         // Refers to the camera_hardware device object associated with this higher-level camera object
         CameraHardware camera_hardware_;
         

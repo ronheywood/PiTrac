@@ -42,6 +42,8 @@ static libcamera::PixelFormat mode_to_pixel_format(Mode const &mode)
 		{ Mode(0, 0, 10, true), libcamera::formats::SBGGR10_CSI2P },
 		{ Mode(0, 0, 12, false), libcamera::formats::SBGGR12 },
 		{ Mode(0, 0, 12, true), libcamera::formats::SBGGR12_CSI2P },
+		{ Mode(0, 0, 14, false), libcamera::formats::SBGGR14 },
+		{ Mode(0, 0, 14, true), libcamera::formats::SBGGR14_CSI2P },
 	};
 
 	auto it = std::find_if(table.begin(), table.end(), [&mode] (auto &m) { return mode.bit_depth == m.first.bit_depth && mode.packed == m.first.packed; });
@@ -53,6 +55,8 @@ static libcamera::PixelFormat mode_to_pixel_format(Mode const &mode)
 
 static void set_pipeline_configuration(Platform platform)
 {
+	GS_LOG_TRACE_MSG(trace, "set_pipeline_configuration called for platform: " + std::to_string((int)platform));
+
 	// Respect any pre-existing value in the environment variable.
 	char const *existing_config = getenv("LIBCAMERA_RPI_CONFIG_FILE");
 	if (existing_config && existing_config[0])
@@ -62,6 +66,8 @@ static void set_pipeline_configuration(Platform platform)
 	static const std::vector<std::pair<Platform, std::string>> config_files = {
 		{ Platform::VC4, "/usr/local/share/libcamera/pipeline/rpi/vc4/rpi_apps.yaml" },
 		{ Platform::VC4, "/usr/share/libcamera/pipeline/rpi/vc4/rpi_apps.yaml" },
+		{ Platform::PISP, "/usr/local/share/libcamera/pipeline/rpi/pisp/rpi_apps.yaml" },
+		{ Platform::PISP, "/usr/share/libcamera/pipeline/rpi/pisp/rpi_apps.yaml" },
 	};
 
 	for (auto &config_file : config_files)
@@ -69,6 +75,8 @@ static void set_pipeline_configuration(Platform platform)
 		struct stat info;
 		if (config_file.first == platform && stat(config_file.second.c_str(), &info) == 0)
 		{
+			GS_LOG_TRACE_MSG(trace, "set_pipeline_configuration setting yaml pipeline file to : " + config_file.second);
+
 			setenv("LIBCAMERA_RPI_CONFIG_FILE", config_file.second.c_str(), 1);
 			break;
 		}
@@ -161,7 +169,10 @@ void RPiCamApp::OpenCamera()
 	LOG(2, "Acquired camera " << cam_id);
 
 	if (!options_->post_process_file.empty())
+	{
+		post_processor_.LoadModules(options_->post_process_libs);
 		post_processor_.Read(options_->post_process_file);
+	}
 	// The queue takes over ownership from the post-processor.
 	post_processor_.SetCallback(
 		[this](CompletedRequestPtr &r) { this->msg_queue_.Post(Msg(MsgType::RequestComplete, std::move(r))); });
@@ -275,6 +286,7 @@ Mode RPiCamApp::selectMode(const Mode &mode) const
 	return { best_mode.size.width, best_mode.size.height, best_mode.depth(), mode.packed };
 }
 
+// MJLMOD - Added flags
 void RPiCamApp::ConfigureViewfinder(unsigned int flags)
 {
 	LOG(2, "Configuring viewfinder...");
@@ -332,22 +344,24 @@ void RPiCamApp::ConfigureViewfinder(unsigned int flags)
 		lores_size.alignDownTo(2, 2);
 		if (lores_size.width > size.width || lores_size.height > size.height)
 			throw std::runtime_error("Low res image larger than viewfinder");
-		configuration_->at(lores_stream_num).pixelFormat = libcamera::formats::YUV420;
+		configuration_->at(lores_stream_num).pixelFormat = lores_format_;
 		configuration_->at(lores_stream_num).size = lores_size;
-		configuration_->at(lores_stream_num).bufferCount = configuration_->at(0).bufferCount;		
+		configuration_->at(lores_stream_num).bufferCount = configuration_->at(0).bufferCount;
 		configuration_->at(lores_stream_num).colorSpace = configuration_->at(0).colorSpace;
 	}
 
-	// MJLMOD
-	// Now we get to override any of the default settings from the options_->
-	if (flags & FLAG_STILL_BGR) {
-		GS_LOG_TRACE_MSG(trace, "FLAG_STILL_BGR recieved - setting pixelFormat = BGR888");
-		configuration_->at(lores_stream_num).pixelFormat = libcamera::formats::BGR888;
-	}
-	else if (flags & FLAG_STILL_RGB) {
-		GS_LOG_TRACE_MSG(trace, "FLAG_STILL_RGB recieved - setting pixelFormat = RGB888");
-		configuration_->at(lores_stream_num).pixelFormat = libcamera::formats::RGB888;
-	}
+
+        // MJLMOD
+        // Now we get to override any of the default settings from the options_->
+        if (flags & FLAG_STILL_BGR) {
+                GS_LOG_TRACE_MSG(trace, "FLAG_STILL_BGR recieved - setting pixelFormat = BGR888");
+                configuration_->at(lores_stream_num).pixelFormat = libcamera::formats::BGR888;
+        }
+        else if (flags & FLAG_STILL_RGB) {
+                GS_LOG_TRACE_MSG(trace, "FLAG_STILL_RGB recieved - setting pixelFormat = RGB888");
+                configuration_->at(lores_stream_num).pixelFormat = libcamera::formats::RGB888;
+        }
+
 
 	if (!options_->no_raw)
 	{
@@ -355,10 +369,7 @@ void RPiCamApp::ConfigureViewfinder(unsigned int flags)
 		options_->viewfinder_mode = selectMode(options_->viewfinder_mode);
 
 		configuration_->at(raw_stream_num).size = options_->viewfinder_mode.Size();
-		if (!(flags & FLAG_STILL_BGR) && !(flags & FLAG_STILL_RGB)) {
-			GS_LOG_TRACE_MSG(trace, "FLAG_STILL_RGB recived - resetting pixelFormat = viewfinder_mode");
-			configuration_->at(raw_stream_num).pixelFormat = mode_to_pixel_format(options_->viewfinder_mode);
-		}
+		configuration_->at(raw_stream_num).pixelFormat = mode_to_pixel_format(options_->viewfinder_mode);
 		configuration_->at(raw_stream_num).bufferCount = configuration_->at(0).bufferCount;
 		configuration_->sensorConfig = libcamera::SensorConfiguration();
 		configuration_->sensorConfig->outputSize = options_->viewfinder_mode.Size();
@@ -598,7 +609,7 @@ void RPiCamApp::ConfigureVideo(unsigned int flags)
 		if (lores_size.width > configuration_->at(0).size.width ||
 			lores_size.height > configuration_->at(0).size.height)
 			throw std::runtime_error("Low res image larger than video");
-		configuration_->at(lores_index).pixelFormat = libcamera::formats::YUV420;
+		configuration_->at(lores_index).pixelFormat = lores_format_;
 		configuration_->at(lores_index).size = lores_size;
 		configuration_->at(lores_index).bufferCount = configuration_->at(0).bufferCount;
 		configuration_->at(lores_index).colorSpace = configuration_->at(0).colorSpace;
@@ -651,17 +662,38 @@ void RPiCamApp::StartCamera()
 
 	// Build a list of initial controls that we must set in the camera before starting it.
 	// We don't overwrite anything the application may have set before calling us.
-	if (!controls_.get(controls::ScalerCrop) && options_->roi_width != 0 && options_->roi_height != 0)
+	if (!controls_.get(controls::ScalerCrop) && !controls_.get(controls::rpi::ScalerCrops))
 	{
-		Rectangle sensor_area = camera_->controls().at(&controls::ScalerCrop).max().get<Rectangle>();
-		int x = options_->roi_x * sensor_area.width;
-		int y = options_->roi_y * sensor_area.height;
-		int w = options_->roi_width * sensor_area.width;
-		int h = options_->roi_height * sensor_area.height;
-		Rectangle crop(x, y, w, h);
-		crop.translateBy(sensor_area.topLeft());
-		LOG(2, "Using crop " << crop.toString());
-		controls_.set(controls::ScalerCrop, crop);
+		const Rectangle sensor_area = camera_->controls().at(&controls::ScalerCrop).max().get<Rectangle>();
+		const Rectangle default_crop = camera_->controls().at(&controls::ScalerCrop).def().get<Rectangle>();
+		std::vector<Rectangle> crops;
+
+		if (options_->roi_width != 0 && options_->roi_height != 0)
+		{
+			int x = options_->roi_x * sensor_area.width;
+			int y = options_->roi_y * sensor_area.height;
+			unsigned int w = options_->roi_width * sensor_area.width;
+			unsigned int h = options_->roi_height * sensor_area.height;
+			crops.push_back({ x, y, w, h });
+			crops.back().translateBy(sensor_area.topLeft());
+		}
+		else
+		{
+			crops.push_back(default_crop);
+		}
+
+		LOG(2, "Using crop (main) " << crops.back().toString());
+
+		if (options_->lores_width != 0 && options_->lores_height != 0 && !options_->lores_par)
+		{
+			crops.push_back(crops.back());
+			LOG(2, "Using crop (lores) " << crops.back().toString());
+		}
+
+		if (options_->GetPlatform() == Platform::VC4)
+			controls_.set(controls::ScalerCrop, crops[0]);
+		else
+			controls_.set(controls::rpi::ScalerCrops, libcamera::Span<const Rectangle>(crops.data(), crops.size()));
 	}
 
 	if (!controls_.get(controls::AfWindows) && !controls_.get(controls::AfMetering) && options_->afWindow_width != 0 &&
@@ -697,12 +729,13 @@ void RPiCamApp::StartCamera()
 						  libcamera::Span<const int64_t, 2>({ frame_time, frame_time }));
 		}
 	}
+
 	if (!controls_.get(controls::ExposureTime) && options_->shutter)
 	{
-		controls_.set(controls::ExposureTime, options_->shutter.get<std::chrono::microseconds>());
+		controls_.set(controls::ExposureTimeMode, controls::ExposureTimeModeManual);
 		controls_.set(controls::ExposureTime, options_->shutter.get<std::chrono::microseconds>());
 	}
-	if (!controls_.get(controls::AnalogueGain) && options_->gain) 
+	if (!controls_.get(controls::AnalogueGain) && options_->gain)
 	{
 		controls_.set(controls::AnalogueGainMode, controls::AnalogueGainModeManual);
 		controls_.set(controls::AnalogueGain, options_->gain);
@@ -713,7 +746,8 @@ void RPiCamApp::StartCamera()
 		controls_.set(controls::AeExposureMode, options_->exposure_index);
 	if (!controls_.get(controls::ExposureValue))
 		controls_.set(controls::ExposureValue, options_->ev);
-	if (!controls_.get(controls::AwbMode)) controls_.set(controls::AwbMode, options_->awb_index);
+	if (!controls_.get(controls::AwbMode))
+		controls_.set(controls::AwbMode, options_->awb_index);
 	if (!controls_.get(controls::ColourGains) && options_->awb_gain_r && options_->awb_gain_b)
 		controls_.set(controls::ColourGains,
 					  libcamera::Span<const float, 2>({ options_->awb_gain_r, options_->awb_gain_b }));
@@ -943,10 +977,8 @@ libcamera::Stream *RPiCamApp::GetMainStream() const
 
 const libcamera::CameraManager *RPiCamApp::GetCameraManager()
 {
-	// MJL MOD - Make sure we have an initialized camera manager by now.
-	// Can't always assume that in PiTrac
-        if (!camera_manager_)
-                initCameraManager();
+	if (!camera_manager_)
+		initCameraManager();
 
 	return camera_manager_.get();
 }

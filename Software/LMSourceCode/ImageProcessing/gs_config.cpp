@@ -171,6 +171,36 @@ bool GolfSimConfiguration::ReadValues() {
 
 
 #endif
+
+	// Read any environment variables that we may need
+
+
+	if (std::getenv("PITRAC_SLOT1_CAMERA_TYPE") == nullptr) {
+		GS_LOG_TRACE_MSG(info, "GolfSimConfiguration - PITRAC_SLOT1_CAMERA_TYPE environment variable was not set.  Assuming default of: " + std::to_string(GolfSimCamera::kSystemSlot1CameraType));
+	}
+	else {
+		const std::string pitrac_slot1_camera_type = std::getenv("PITRAC_SLOT1_CAMERA_TYPE");
+		GolfSimCamera::kSystemSlot1CameraType = CameraHardware::string_to_camera_model(pitrac_slot1_camera_type);
+	}
+
+
+	if (std::getenv("PITRAC_SLOT2_CAMERA_TYPE") == nullptr) {
+		if (GolfSimOptions::GetCommandLineOptions().run_single_pi_)	{
+			// We somewhat arbitrarily require the slot2 camera type to be set if we're running in single-pi mode.
+			GS_LOG_TRACE_MSG(error, "GolfSimConfiguration - PITRAC_SLOT2_CAMERA_TYPE environment variable must be set when running in single-pi mode, but was not.  Exiting.");
+			return false;
+		}
+		else {
+			GS_LOG_TRACE_MSG(info, "GolfSimConfiguration - PITRAC_SLOT2_CAMERA_TYPE environment variable was not set.  Assuming default of: " + std::to_string(GolfSimCamera::kSystemSlot2CameraType));
+		}
+	}
+	else {
+		const std::string pitrac_slot2_camera_type = std::getenv("PITRAC_SLOT2_CAMERA_TYPE");
+		GolfSimCamera::kSystemSlot2CameraType = CameraHardware::string_to_camera_model(pitrac_slot2_camera_type);
+	}
+
+
+
 	return true;
 }
 

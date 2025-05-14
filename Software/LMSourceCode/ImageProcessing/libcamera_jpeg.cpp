@@ -66,7 +66,15 @@ bool ball_flight_camera_event_loop(LibcameraJpegApp& app, cv::Mat& returnImg)
 
 	// MJLMODs BELOW
 
-	StillOptions const* options = app.GetOptions();
+	StillOptions const * options = app.GetOptions();
+
+	if (options == nullptr) {
+		GS_LOG_TRACE_MSG(trace, "ball_flight_camera_event_loop could not get app.GetOptions()");
+		return false;
+	}
+
+	GS_LOG_TRACE_MSG(trace, "ball_flight_camera_event_loop started.  Opening Camera at slot: " + std::to_string(options->camera));
+
 
 	app.OpenCamera();
 

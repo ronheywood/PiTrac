@@ -79,6 +79,25 @@ namespace golf_sim {
     CameraHardware::~CameraHardware() {
     }
 
+    CameraHardware::CameraModel CameraHardware::string_to_camera_model(const std::string& model_enum_value_string) {
+
+        std::map<std::string, int> camera_table =
+        { { "1", CameraModel::PiCam13 },
+            { "2", CameraModel::PiCam2 },
+            { "3", CameraModel::PiHQCam6mmWideLens },
+            { "4", CameraModel::PiGSCam6mmWideLens },
+            { "5", CameraModel::PiGSCam3_6mmLens },
+            { "100", CameraModel::kUnknown },
+        };
+        if (camera_table.count(model_enum_value_string) == 0)
+            throw std::runtime_error("Invalid camera model_enum_value_string: " + model_enum_value_string + ".  Expected an integer. Check environment varaibles.");
+        
+        CameraHardware::CameraModel camera_model = (CameraHardware::CameraModel)camera_table[model_enum_value_string];
+
+        return camera_model;
+    }
+
+
     void CameraHardware::load_test_images() {
 
         // There are a couple of stationary pictures to simulate slight vibrations

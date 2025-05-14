@@ -3,7 +3,7 @@
  * Copyright (C) 2020, Raspberry Pi (Trading) Ltd.
  *
  * dng.cpp - Save raw image as DNG file.
- */ 
+ */
 
 #include <limits>
 #include <map>

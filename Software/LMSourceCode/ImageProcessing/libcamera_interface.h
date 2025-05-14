@@ -98,7 +98,7 @@ namespace golf_sim {
 	bool ConfigCameraForCropping(GolfBall ball, GolfSimCamera& camera, RPiCamEncoder& app);
 
 	// Uses media-ctl to setup a cropping mode to allow for high FPS.  Requires GS camera.
-	bool SendCameraCroppingCommand(cv::Vec2i& cropping_window_size, cv::Vec2i& cropping_window_offset);
+	bool SendCameraCroppingCommand(const GsCameraNumber camera_number, cv::Vec2i& cropping_window_size, cv::Vec2i& cropping_window_offset);
 
 	// Sets up the rpicam-app-based post-processing pipeline so that the motion-detection stage knows 
 	// how to analyze the cropped image
@@ -108,15 +108,15 @@ namespace golf_sim {
 	// the camera sensor.
 	bool ConfigureLibCameraOptions(RPiCamEncoder& app, const cv::Vec2i& cropping_window_size, uint cropped_frame_rate_fps_fps);
 
-	std::string GetCmdLineForMediaCtlCropping(cv::Vec2i croppedHW, cv::Vec2i cropOffsetXY);
+	std::string GetCmdLineForMediaCtlCropping(const GsCameraNumber camera_number, cv::Vec2i croppedHW, cv::Vec2i cropOffsetXY);
 
 	// Determine where the camera is, such as /dev/media2 at device 6
-	bool DiscoverCameraLocation(int& media_number, int& device_number);
+	bool DiscoverCameraLocation(const GsCameraNumber camera_number, int& media_number, int& device_number);
 
-	bool RetrieveCameraInfo(cv::Vec2i& resolution, uint& frameRate, bool restartCamera = false);
+	bool RetrieveCameraInfo(const GsCameraNumber camera_number, cv::Vec2i& resolution, uint& frameRate, bool restartCamera = false);
 
-	LibcameraJpegApp* ConfigureForLibcameraStill(GsCameraNumber camera_number);
-	bool DeConfigureForLibcameraStill(GsCameraNumber camera_number);
+	LibcameraJpegApp* ConfigureForLibcameraStill(const GsCameraNumber camera_number);
+	bool DeConfigureForLibcameraStill(const GsCameraNumber camera_number);
 
 	bool TakeLibcameraStill(cv::Mat& return_image);
 

@@ -81,6 +81,10 @@ namespace golf_sim {
     int previously_found_device_number_ = -1;
 
     void SetLibCameraLoggingOff() {
+
+        // TBD - JUST FOR TESTING
+        return;
+
         GS_LOG_TRACE_MSG(trace, "SetLibCameraLoggingOff");
         libcamera::logSetTarget(libcamera::LoggingTargetNone);
 	/* TBD - Not working, so avoid the extra log message for now
@@ -331,7 +335,7 @@ namespace golf_sim {
 
         GS_LOG_TRACE_MSG(trace, "Final (adjusted) crop offset x/y is: " + std::to_string(crop_offset_x) + "/" + std::to_string(crop_offset_y) + ".");
 
-        if (!SendCameraCroppingCommand(watching_crop_size, watching_crop_offset)) {
+        if (!SendCameraCroppingCommand(camera.camera_hardware_.camera_number_, watching_crop_size, watching_crop_offset)) {
             GS_LOG_TRACE_MSG(error, "Failed to SendCameraCroppingCommand.");
             return false;
         }
@@ -341,7 +345,7 @@ namespace golf_sim {
         // The camera would have been stopped after we took the first picture, so need re-start for this call
         cv::Vec2i cropped_resolution;
         uint cropped_frame_rate_fps;
-        if (!RetrieveCameraInfo(cropped_resolution, cropped_frame_rate_fps, true)) {
+        if (!RetrieveCameraInfo(camera.camera_hardware_.camera_number_, cropped_resolution, cropped_frame_rate_fps, true)) {
             GS_LOG_TRACE_MSG(trace, "Failed to RetrieveCameraInfo.");
             return false;
         }
@@ -397,9 +401,9 @@ namespace golf_sim {
     }
 
 
-bool DiscoverCameraLocation(int& media_number, int& device_number) {
+bool DiscoverCameraLocation(const GsCameraNumber camera_number, int& media_number, int& device_number) {
 
-    GS_LOG_TRACE_MSG(trace, "DiscoverCameraLocation");
+    GS_LOG_TRACE_MSG(trace, "DiscoverCameraLocation called for camera_number: " + to_string((int)camera_number));
 
     // The camera location won't change during the course of a single exceution, so 
     // no need to figure this out more than once - re-use the earlier values if we can
@@ -423,14 +427,16 @@ bool DiscoverCameraLocation(int& media_number, int& device_number) {
     std::string s;
 
     s += "#!/bin/bash\n";
+    s += "rm -f discover_media.txt discover_device.txt discover_result.txt " + kOutputFileName + "\n";
     s += "for ((m = 0; m <= 5; ++m))\n";
     s += "    do\n";
+    s += "        rm -f discover_result.txt\n";
     s += "        media-ctl -d \"/dev/media$m\" --print-dot | grep imx > discover_media.txt\n";
     s += "        awk -F\"imx296 \" '{print $2}' < discover_media.txt | cut -d- -f1 > discover_device.txt\n";
     s += "        echo -n -e \"$m \" > discover_result.txt\n";
     s += "        cat discover_device.txt >> discover_result.txt\n";
 
-    s += "       if  grep imx discover_media.txt > /dev/null;  then  cat discover_result.txt > " + kOutputFileName + "; break;  fi\n";
+    s += "       if  grep imx discover_media.txt > /dev/null;  then  cat discover_result.txt >> " + kOutputFileName + ";  fi\n";
     s += "            done\n";
 
     s += "            rm -f discover_media.txt discover_device.txt discover_result.txt\n";
@@ -478,37 +484,85 @@ bool DiscoverCameraLocation(int& media_number, int& device_number) {
 
     std::string line;
 
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+
+    line = buffer.str();
+
     // Read only one line
-    if (!std::getline(file, line)) { 
+    if (line.empty()) {
         GS_LOG_TRACE_MSG(error, "system(DiscoverCameraLocation) failed.");
         return false;
     }
         
     file.close();
 
-    GS_LOG_TRACE_MSG(trace, "DiscoverCameraLocation - result in output file was: " + line);
+    GS_LOG_TRACE_MSG(trace, "DiscoverCameraLocation - result in output file was:\n" + line);
 
     // The format of the output file should be
     // <media number> <space> <device number>
     try {
-        int lastSpacePos = line.rfind(' ');
+
+        // Using a single pi requires both cameras to be connected to that Pi.
+        // If we are not receiving two sets of camera data, then something is wrong.
+        int new_line_position = line.find('\n');
+
+        if (new_line_position == (int)string::npos) {
+
+            GS_LOG_TRACE_MSG(trace, "Detected only one camera connected to the Pi.");
+
+            // There is only one line of discovered information
+
+            if (GolfSimOptions::GetCommandLineOptions().run_single_pi_) {
+                GS_LOG_TRACE_MSG(error, "No expected new line found in camera location output.  Missing camera when running in single-pi mode.");
+                return false;
+            }
+            else {
+                // We have only a single line of information.  Do not need to do anything else
+            }
+        }
+        else {
+            GS_LOG_TRACE_MSG(trace, "Detected two cameras connected to the Pi.");
+
+
+            // Assume (TBD - Confirm with Pi people) that the camera on camera unit 0
+            // (the port nearest the LAN port) will correspond to the first line of the
+            // returned media-ctl output
+
+            if (camera_number == GsCameraNumber::kGsCamera1) {
+                // Gee the information from the first line
+                std::string first_line_str = line.substr(0, new_line_position);
+                line = first_line_str;
+            }
+            else {
+                // Gee the information from the second line
+                std::string first_line_str = line.substr(new_line_position + 1);
+                line = first_line_str;
+            }
+
+            GS_LOG_TRACE_MSG(trace, "DiscoverCameraLocation - relevant line of output file for selected camera was: " + line);
+        }
+
+        // Parse out the media and device numbers from what should be the first line of the media-ctl location report
+
+        int last_space_position = line.rfind(' ');
 
         std::string device_number_str;
 
-        if (lastSpacePos != (int)string::npos) {
-            device_number_str = line.substr(lastSpacePos + 1);
+        if (last_space_position != (int)string::npos) {
+            device_number_str = line.substr(last_space_position + 1);
         }
         else {
             GS_LOG_TRACE_MSG(error, "No space found");
             return false;
         }
 
-        int firstSpacePos = line.find(' ');
+        int first_space_position = line.find(' ');
 
         std::string media_number_str;
 
-        if (firstSpacePos != (int)string::npos) {
-            media_number_str = line.substr(0, firstSpacePos);
+        if (first_space_position != (int)string::npos) {
+            media_number_str = line.substr(0, first_space_position);
         }
         else {
             GS_LOG_TRACE_MSG(error, "No space found");
@@ -540,13 +594,13 @@ bool DiscoverCameraLocation(int& media_number, int& device_number) {
 }
 
 
-bool SendCameraCroppingCommand(cv::Vec2i& cropping_window_size, cv::Vec2i& cropping_window_offset) {
+bool SendCameraCroppingCommand(const GsCameraNumber camera_number, cv::Vec2i& cropping_window_size, cv::Vec2i& cropping_window_offset) {
 
     GS_LOG_TRACE_MSG(trace, "SendCameraCroppingCommand.");
     GS_LOG_TRACE_MSG(trace, "   cropping_window_size: (width, height) = " + std::to_string(cropping_window_size[0]) + ", " + std::to_string(cropping_window_size[1]) + ".");
     GS_LOG_TRACE_MSG(trace, "   cropping_window_offset: (X, Y) = " + std::to_string(cropping_window_offset[0]) + ", " + std::to_string(cropping_window_offset[1]) + ".");
 
-    std::string mediaCtlCmd = GetCmdLineForMediaCtlCropping(cropping_window_size, cropping_window_offset);
+    std::string mediaCtlCmd = GetCmdLineForMediaCtlCropping(camera_number, cropping_window_size, cropping_window_offset);
     GS_LOG_TRACE_MSG(trace, "mediaCtlCmd = " + mediaCtlCmd);
     int cmdResult = system(mediaCtlCmd.c_str());
 
@@ -688,14 +742,14 @@ bool ConfigureLibCameraOptions(RPiCamEncoder& app, const cv::Vec2i& cropping_win
 
 // For example, to set the GS cam back to its default, use  "(0, 0)/1456x1088"
 // 128x96 can deliver 532 FPS on the GS cam.
-std::string GetCmdLineForMediaCtlCropping(cv::Vec2i croppedHW, cv::Vec2i crop_offset_xY) {
+std::string GetCmdLineForMediaCtlCropping(const GsCameraNumber camera_number, cv::Vec2i croppedHW, cv::Vec2i crop_offset_xY) {
 
     std::string s;
 
     int media_number = -1;
     int device_number = -1;
 
-    if (!DiscoverCameraLocation(media_number, device_number)) {
+    if (!DiscoverCameraLocation(camera_number, media_number, device_number)) {
         GS_LOG_MSG(error, "Could not DiscoverCameraLocation");
         return "";
     }
@@ -708,7 +762,7 @@ std::string GetCmdLineForMediaCtlCropping(cv::Vec2i croppedHW, cv::Vec2i crop_of
 }
 
 
-bool RetrieveCameraInfo(cv::Vec2i& resolution, uint& frameRate, bool restartCamera) {
+bool RetrieveCameraInfo(const GsCameraNumber camera_number, cv::Vec2i& resolution, uint& frameRate, bool restartCamera) {
 
     GS_LOG_TRACE_MSG(trace, "RetrieveCameraInfo.");
 
@@ -761,7 +815,9 @@ bool RetrieveCameraInfo(cv::Vec2i& resolution, uint& frameRate, bool restartCame
         return false;
     }
 
-    auto const& cam = cameras[0];
+    int camera_slot_number = (camera_number == GsCameraNumber::kGsCamera1 || !GolfSimOptions::GetCommandLineOptions().run_single_pi_) ? 0 : 1;
+
+    auto const& cam = cameras[camera_slot_number];
 
     std::unique_ptr<libcamera::CameraConfiguration> config = cam->generateConfiguration({ libcamera::StreamRole::Raw });
     if (!config)
@@ -822,7 +878,7 @@ bool ConfigCameraForFullScreenWatching(const GolfSimCamera& c) {
     }
 
     // Ensure no cropping and full resolution on the camera 
-    std::string mediaCtlCmd = GetCmdLineForMediaCtlCropping(cv::Vec2i(width, height), cv::Vec2i(0, 0));
+    std::string mediaCtlCmd = GetCmdLineForMediaCtlCropping(c.camera_hardware_.camera_number_, cv::Vec2i(width, height), cv::Vec2i(0, 0));
     GS_LOG_TRACE_MSG(trace, "mediaCtlCmd = " + mediaCtlCmd);
     int cmdResult = system(mediaCtlCmd.c_str());
 
@@ -838,7 +894,7 @@ bool ConfigCameraForFullScreenWatching(const GolfSimCamera& c) {
 
 
 
-LibcameraJpegApp* ConfigureForLibcameraStill(GsCameraNumber camera_number) {
+LibcameraJpegApp* ConfigureForLibcameraStill(const GsCameraNumber camera_number) {
 
     GS_LOG_TRACE_MSG(trace, "ConfigureForLibcameraStill called for camera " + std::to_string((int)camera_number));
     // Check first if we are already setup and can skip this
@@ -925,6 +981,13 @@ LibcameraJpegApp* ConfigureForLibcameraStill(GsCameraNumber camera_number) {
                 still_shutter_time_uS = 6 * LibCameraInterface::kCamera2StillShutterTimeuS;
             }
         }
+
+        // Assume camera 1 will be at slot 0 in all cases.  Camera 2 will be at slot 1
+        // only in a single Pi system.
+        options->camera = (camera_number == GsCameraNumber::kGsCamera1 || !GolfSimOptions::GetCommandLineOptions().run_single_pi_) ? 0 : 1;
+        GS_LOG_TRACE_MSG(trace, "Camera options->camera set to camera slot: " + std::to_string(options->camera));
+
+
         // Shouldn't need gain to take a "normal" picture.   Default will be 1.0
         // from the command line options.
         options->gain = camera_gain;
@@ -989,7 +1052,7 @@ LibcameraJpegApp* ConfigureForLibcameraStill(GsCameraNumber camera_number) {
 
 
 
-bool DeConfigureForLibcameraStill(GsCameraNumber camera_number) {
+bool DeConfigureForLibcameraStill(const GsCameraNumber camera_number) {
 
     GS_LOG_TRACE_MSG(trace, "DeConfigureForLibcameraStill called for camera " + std::to_string((int)camera_number));
 
@@ -1140,6 +1203,18 @@ bool WaitForCam2Trigger(cv::Mat& return_image) {
         }
 
         SetLibCameraLoggingOff();
+
+        // On a two-Pi system, each Pi has just one camera, and that camera will be in slot 0
+        // On a single-pi system the one Pi 5 has both cameras.  And Camera 2 will be in slot 1
+        // because Camera 1 is in slot 0.
+        if (GolfSimOptions::GetCommandLineOptions().run_single_pi_) {
+            GS_LOG_TRACE_MSG(trace, "Running in single-pi mode, so assuming Camera 2 will be at slot 1.");
+            options->camera = 1;
+        }
+        else {
+            GS_LOG_TRACE_MSG(trace, "Not running in single-pi mode, so assuming Camera 2 will be at slot 0.");
+            options->camera = 0;
+        }
 
         if (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2Calibrate ||
             GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2BallLocation ||

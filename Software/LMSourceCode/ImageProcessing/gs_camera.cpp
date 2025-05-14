@@ -111,6 +111,9 @@ namespace golf_sim {
 
     bool GolfSimCamera::kPlacedBallUseLargestBall = true;
 
+    CameraHardware::CameraModel GolfSimCamera::kSystemSlot1CameraType = CameraHardware::CameraModel::PiGSCam6mmWideLens;
+    CameraHardware::CameraModel GolfSimCamera::kSystemSlot2CameraType = CameraHardware::CameraModel::PiGSCam6mmWideLens;
+
     BallImageProc* get_image_processor() {
         static BallImageProc* ip = nullptr;
 
@@ -123,6 +126,9 @@ namespace golf_sim {
 
 
     GolfSimCamera::GolfSimCamera() {
+
+        // TBD - Probably shouldn't be doing all of this in the constructor
+
         GS_LOG_TRACE_MSG(trace, "GolfSimCamera reading constants from JSON file.");
         // The following constants are only used internal to the GolfSimCamera class, and so can be initialized in the constructor
         GolfSimConfiguration::SetConstant("gs_config.logging.kLogIntermediateExposureImagesToFile", kLogIntermediateExposureImagesToFile);
@@ -229,8 +235,7 @@ namespace golf_sim {
         if (camera_hardware.expected_ball_radius_pixels_at_40cm_ > 0) {
             kExpectedBallRadiusPixelsAt40cm = camera_hardware.expected_ball_radius_pixels_at_40cm_;
         }
-        else
-        {
+        else {
             GS_LOG_TRACE_MSG(warning, "expected_ball_radius_pixels_at_40cm_ not set in camera in GolfSimCamera::getExpectedBallRadiusPixels().  Setting to default instead.");
         }
 
@@ -3710,12 +3715,6 @@ namespace golf_sim {
 
             GS_LOG_TRACE_MSG(trace, "TakeStillPicture called with camera number = " + std::to_string(camera_number));
 
-            // We will need a camera for context
-            // TBD - Refactor to avoid having to hard-set the camera model
-            CameraHardware::CameraModel  cameraModel = CameraHardware::PiGSCam6mmWideLens;
-            GolfSimCamera camera;
-            camera.camera_hardware_.init_camera_parameters(camera_number, cameraModel);
-
 #ifdef __unix__  // Ignore in Windows environment
 
             // The process for taking a picture in the Pi environment will depend on which camera
@@ -3723,6 +3722,12 @@ namespace golf_sim {
             // the picture due to the required strobing, triggering, etc.
 
             if (camera_number == GsCameraNumber::kGsCamera1) {
+                // We will need a camera for context
+                // TBD - Refactor to avoid having to hard-set the camera model
+                CameraHardware::CameraModel  cameraModel = CameraHardware::PiGSCam6mmWideLens;
+                GolfSimCamera camera;
+                camera.camera_hardware_.init_camera_parameters(camera_number, cameraModel);
+
                 if (!TakeRawPicture(color_image)) {
                     GS_LOG_MSG(error, "Failed to TakeRawPicture.");
                     return false;
@@ -3897,7 +3902,7 @@ namespace golf_sim {
 
             if (distance_direct_to_ball <= 0.0001) {
                 LoggingTools::Warning("DetermineFocalLengthForAutoCalibration called without setting the kAutoCalibrationBallPositionFromCameraMeters values.");
-                return -1.0;
+                return false;
             }
 
             if (kAutoCalibrationBallPositionFromCameraMeters[2] < 0.0) {

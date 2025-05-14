@@ -34,6 +34,7 @@ namespace golf_sim {
             PiCam2 = 2,
             PiHQCam6mmWideLens = 3,
             PiGSCam6mmWideLens = 4,
+            PiGSCam3_6mmLens = 5,
             kUnknown = 100
         };
 
@@ -47,6 +48,9 @@ namespace golf_sim {
             BallGoneFrames
         };
 
+        // This is the camera number from the perspective of the PiTrac system.
+        // So kGsCamera1 is the camera that watches the teed-up ball, and 
+        // kGsCamera2 is the camera that images the ball in flight
         GsCameraNumber camera_number_ = GsCameraNumber::kGsCamera1;
 
         CameraModel cameraModel = CameraModel::PiHQCam6mmWideLens;
@@ -82,6 +86,8 @@ namespace golf_sim {
 
         CameraHardware();
         ~CameraHardware();
+
+        static CameraModel string_to_camera_model(const std::string& model_enum_value_string);
 
         // Used when using test images instead of live photos
         // Pre-loads the test images to allow for faster simulated returns of them

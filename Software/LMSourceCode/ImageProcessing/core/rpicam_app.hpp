@@ -95,7 +95,8 @@ public:
 			std::string fmt = format.toString();
 			unsigned int mode_depth = fmt.find("8") != std::string::npos ? 8 :
 									  fmt.find("10") != std::string::npos ? 10 :
-									  fmt.find("12") != std::string::npos ? 12 : 16;
+									  fmt.find("12") != std::string::npos ? 12 :
+									  fmt.find("14") != std::string::npos ? 14 : 16;
 			return mode_depth;
 		}
 		libcamera::Size size;
@@ -134,8 +135,8 @@ public:
 	void OpenCamera();
 	void CloseCamera();
 
-	// MJLMOD - Now allowing flags to be sent to the viewfinder
-	void ConfigureViewfinder(unsigned int flags = FLAG_STILL_NONE);
+        // MJLMOD - Now allowing flags to be sent to the viewfinder
+        void ConfigureViewfinder(unsigned int flags = FLAG_STILL_NONE);
 	void ConfigureStill(unsigned int flags = FLAG_STILL_NONE);
 	void ConfigureVideo(unsigned int flags = FLAG_VIDEO_NONE);
 	void ConfigureZsl(unsigned int still_flags = FLAG_STILL_NONE);
@@ -186,6 +187,7 @@ public:
 
 	friend class BufferWriteSync;
 	friend class BufferReadSync;
+	friend class PostProcessor;
 	friend struct Options;
 
 protected:
@@ -250,7 +252,6 @@ private:
 	Mode selectMode(const Mode &mode) const;
 
 	std::unique_ptr<CameraManager> camera_manager_;
-	std::vector<std::shared_ptr<libcamera::Camera>> cameras_;
 	std::shared_ptr<Camera> camera_;
 	bool camera_acquired_ = false;
 	std::unique_ptr<CameraConfiguration> configuration_;
@@ -283,4 +284,5 @@ private:
 	uint64_t last_timestamp_;
 	uint64_t sequence_ = 0;
 	PostProcessor post_processor_;
+	libcamera::PixelFormat lores_format_ = libcamera::formats::YUV420;
 };

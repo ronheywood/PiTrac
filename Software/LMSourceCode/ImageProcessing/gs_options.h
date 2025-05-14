@@ -3,176 +3,164 @@
  * Copyright (C) 2022-2025, Verdant Consultants, LLC.
  */
 
-// The LM's command-line processing module.
+ // The LM's command-line processing module.
 
-#pragma once
-
-#include <fstream>
-#include <iostream>
-#include <optional>
-
-#include <boost/program_options.hpp>
+#include "gs_options.h"
 
 namespace golf_sim {
 
-	enum SystemMode {
-		kTest = 0,			// Just run unit tests.  Generall used when compiled in Windows
-		kCamera1 = 1,		// The mode when PiTrac is running normally and processing hits.  This mode is only used by the Pi 1/Camera 1 half of the system.
-		kCamera2 = 2,		// The mode when PiTrac is running normally and processing hits.  This mode is only used by the Pi 2/Camera 2 half of the system.
-		kCamera1TestStandalone = 3,
-		kCamera2TestStandalone = 4,
-		kCamera1Calibrate = 5,
-		kCamera2Calibrate = 6,
-		kTestSpin = 7,
-		kCamera1BallLocation = 8,
-		kCamera2BallLocation = 9,
-		kTestExternalSimMessage = 10,
-		kTestGSProServer = 11,
-		kAutomatedTesting = 12,
-		kCamera1AutoCalibrate = 13,
-		kCamera2AutoCalibrate = 14,
-	};
 
-	enum LoggingLevel {
-		kTrace = 0,      // Just run unit tests
-		kDebug = 1,
-		kInfo = 2,
-		kWarn = 3,
-		kError = 4,
-		kNone = 5
-	};
 
-	enum ArtifactSaveLevel {
-		kNoArtifacts = 0,		
-		kFinalResultsOnly = 1,	// produces images, but only at a few higher-level points in the processing
-		kAll = 2				// May slow the system to a crawl, with over a dozen large intermediate files being written
-	};
+GolfSimOptions GolfSimOptions::the_command_line_options_;
 
-	// TBD - More of a place-holder.  Not implemented yet.
-	enum GolferOrientation {
-		kRightHanded = 0,
-		kLeftHanded = 1
-	};
-
-	// TBD - Some question as to whether this should be defined here instead in GolfSimCamera class?
-	// Note that the cameras are given enumerated values to match the name (e.g., 1, 2, etc.)
-	enum GsCameraNumber {
-		kGsCamera1 = 1,
-		kGsCamera2 = 2
-	};
-
-	struct GolfSimOptions
-	{
-		GolfSimOptions()
-		{
-			using namespace boost::program_options;
-			// clang-format off
-			options_.add_options()
-				("help,h", value<bool>(&help_)->default_value(false)->implicit_value(true),
-					"Print this help message")
-				("version", value<bool>(&version_)->default_value(false)->implicit_value(true),
-					"Displays the build version number")
-				("golfer_orientation", value<std::string>(&golfer_orientation_string_)->default_value("right_handed"),
-					"Set the golfer's handed-ness (right_handed, left_handed)")
-				("system_mode", value<std::string>(&system_mode_string_)->default_value("test"),
-					"Set the system's operating mode (test, camera1, camera2, camera1Calibrate, camera2Calibrate, camera1_test_standalone, camera2_test_standalone, test_spin, camera1_ball_location, camera2_ball_location, test_gspro_message, test_gspro_server, automated_testing, camera1AutoCalibrate, camera2AutoCalibrate)")
-				("logging_level", value<std::string>(&logging_level_string_)->default_value("warn"),
-					"Set the system's logging level (trace, debug, info, warn, error, none)")
-				("artifact_save_level", value<std::string>(&artifact_save_level_string_)->default_value("final_results_only"),
-					"Set the system's level of saving artifact images to files (none, final_results_only, all)")
-				("shutdown", value<bool>(&shutdown_)->default_value(false)->implicit_value(true),
-					"Instructs any GolfSim instance connected to the ActiveMQ broker to shutdown")
-				("cam_still_mode", value<bool>(&camera_still_mode_)->default_value(false)->implicit_value(true),
-					"Take a single camera2 still picture (using one strobe flash) and exit")
-				("lm_comparison_mode", value<bool>(&lm_comparison_mode_)->default_value(false)->implicit_value(true),
-					"Configure for operating in another infrared-based LM environment")
-				("send_test_results", value<bool>(&send_test_results_)->default_value(false)->implicit_value(true),
-					"Send a single IPC results message (e.g., for testing) and exit")
-				("output_filename", value<std::string>(&output_filename_)->default_value("out.png"),
-					"Write any still picture to the specified filename")
-				("pulse_test", value<bool>(&perform_pulse_test_)->default_value(false)->implicit_value(true),
-					"Continually sends strobe and shutter signals")
-				("practice_ball", value<bool>(&practice_ball_)->default_value(false)->implicit_value(true),
-					"Configure system to expect a lightweight, soft, practice ball")
-				("wait_keys", value<bool>(&wait_for_key_on_images_)->default_value(false)->implicit_value(true),
-					"0 = Don't wait for a key press after showing each debug image, 1 = Do wait")
-				("show_images", value<bool>(&show_images_)->default_value(false)->implicit_value(true),
-					"0 = Don't show any debug/trace images in windows on the screen, 1 = Do")
-				("use_non_IR_camera", value<bool>(&use_non_IR_camera_)->default_value(false)->implicit_value(true),
-					"1 = The camera in use by this system is not an IR camera (and will likely need less gain)")						
-				("search_center_x", value<unsigned int>(&search_center_x_)->default_value(0),
-					"Set the x coordinate of the center of the ball-search circle")
-				("search_center_y", value<unsigned int>(&search_center_y_)->default_value(0),
-					"Set the y coordinate of the center of the ball-search circle")
-				("simulate_found_ball", value<bool>(&simulate_found_ball_)->default_value(false)->implicit_value(true),
-					"Causes camera1 system to act as though a ball was found even if none is present.")
-				("camera_gain", value<double>(&camera_gain_)->default_value(1.0),
-					"Amount of gain for taking pictures")
-				("msg_broker_address", value<std::string>(&msg_broker_address_)->default_value(""),
-					"Specify the full hostname or ip address and port of the host of the Active MQ broker. For example: tcp://10.0.0.41:61616 . Default is: <empty string>")
-				("base_image_logging_dir", value<std::string>(&base_image_logging_dir_)->default_value(""),
-					"Specify the full path (with an ending '/') where diagnostic images are to be written. Default is: <empty>")
-				("web_server_share_dir", value<std::string>(&web_server_share_dir_)->default_value(""),
-					"Specify the full path (with an ending '/') where diagnostic images are to be written. Default  is: <empty>")
-				("e6_host_address", value<std::string>(&e6_host_address_)->default_value(""),
-					"Specify the name or IP address of the host PC that is running the E6 simulator.  Default is: <empty string>, indicating no TruGolf sim is connected.")
-				("gspro_host_address", value<std::string>(&gspro_host_address_)->default_value(""),
-					"Specify the name or IP address of the host PC that is running the GSPro simulator.  Default is: <empty string>, indicating no GSPro sim is connected.")
-				("config_file", value<std::string>(&config_file_)->default_value("golf_sim_config.json"),
-					"Specify the filename with the JSON configuration.  Default is: golf_sim_config.json")
-				("cmd_file,cmd", value<std::string>(&command_line_file_)->implicit_value("config.txt"),
-					"Read the options from a file. If no filename is specified, default to config.txt. "
-					"In case of duplicate options, the ones provided on the command line will be used. "
-					"Note that the config file must only contain the long form options.")
-
-				;
-			// clang-format on
-		}
-
-		virtual ~GolfSimOptions() {}
-
-		static GolfSimOptions& GetCommandLineOptions();
-
-		// Returns 1 for camera-1-based modes and 2 for 2-based modes
-		GsCameraNumber GetCameraNumber();
-
-		bool help_;
-		bool version_;
-		bool shutdown_;
-		bool camera_still_mode_;
-		bool lm_comparison_mode_;
-		bool send_test_results_;
-		bool practice_ball_;
-		bool perform_pulse_test_;
-		bool use_non_IR_camera_;
-		bool simulate_found_ball_;
-		std::string output_filename_;
-		std::string system_mode_string_;
-		std::string artifact_save_level_string_;
-		std::string logging_level_string_;
-		std::string command_line_file_;
-		std::string msg_broker_address_;
-		std::string base_image_logging_dir_;
-		std::string web_server_share_dir_;
-		std::string e6_host_address_;
-		std::string gspro_host_address_;
-		std::string config_file_;
-		std::string golfer_orientation_string_;
-		SystemMode system_mode_;
-		LoggingLevel logging_level_;
-		ArtifactSaveLevel artifact_save_level_;
-		GolferOrientation golfer_orientation_;
-		bool wait_for_key_on_images_;
-		bool show_images_;
-		unsigned int search_center_x_ = 0;
-		unsigned int search_center_y_ = 0;
-		double camera_gain_ = 0.0;   // 1.0 might seem more appropriate, but we want to be able to see if this is set or not
-
-		virtual bool Parse(int argc, char* argv[]);
-		virtual void Print() const;
-
-	protected:
-		boost::program_options::options_description options_;
-		static GolfSimOptions the_command_line_options_;
-	};
+GolfSimOptions& GolfSimOptions::GetCommandLineOptions() {
+	return the_command_line_options_;
 }
+
+GsCameraNumber GolfSimOptions::GetCameraNumber() {
+	GsCameraNumber camera_number;
+
+	if (system_mode_ == kCamera1 || 
+		system_mode_ == kCamera1TestStandalone ||
+		system_mode_ == kTest ||
+		system_mode_ == kCamera1Calibrate ||
+		system_mode_ == kCamera1AutoCalibrate ||
+		system_mode_ == kCamera1BallLocation ) {
+		camera_number = GsCameraNumber::kGsCamera1;
+	} 
+	else {
+		camera_number = GsCameraNumber::kGsCamera2;
+	}
+
+	return camera_number;
+}
+
+bool GolfSimOptions::Parse(int argc, char *argv[])
+{
+	using namespace boost::program_options;
+
+	variables_map vm;
+	// Read options from the command line
+	store(parse_command_line(argc, argv, options_), vm);
+	notify(vm);
+
+	// Read options from a file if specified
+	std::ifstream ifs(command_line_file_.c_str());
+	if (ifs)
+	{
+		store(parse_config_file(ifs, options_), vm);
+		notify(vm);
+	}
+
+
+	std::map<std::string, int> mode_table =
+	{	{ "test", SystemMode::kTest },
+		{ "camera1", SystemMode::kCamera1 },
+		{ "camera2", SystemMode::kCamera2 },
+		{ "camera1_test_standalone", SystemMode::kCamera1TestStandalone },
+		{ "camera2_test_standalone", SystemMode::kCamera2TestStandalone },
+		{ "camera1Calibrate", SystemMode::kCamera1Calibrate },
+		{ "camera2Calibrate", SystemMode::kCamera2Calibrate },
+		{ "test_spin", SystemMode::kTestSpin },
+		{ "camera1_ball_location", SystemMode::kCamera1BallLocation },
+		{ "camera2_ball_location", SystemMode::kCamera2BallLocation },
+		{ "test_sim_message", SystemMode::kTestExternalSimMessage },
+		{ "test_gspro_server", SystemMode::kTestGSProServer },
+		{ "automated_testing", SystemMode::kAutomatedTesting },
+		{ "camera1AutoCalibrate", SystemMode::kCamera1AutoCalibrate },
+		{ "camera2AutoCalibrate", SystemMode::kCamera2AutoCalibrate },
+	};
+	if (mode_table.count(system_mode_string_) == 0)
+		throw std::runtime_error("Invalid system_mode: " + system_mode_string_);
+	system_mode_ = (SystemMode)mode_table[system_mode_string_];
+
+
+	std::map<std::string, int> artifact_save_level_table =
+	{	{ "none", ArtifactSaveLevel::kNoArtifacts },
+		{ "final_results_only", ArtifactSaveLevel::kFinalResultsOnly },
+		{ "all", ArtifactSaveLevel::kAll },
+	};
+	if (artifact_save_level_table.count(artifact_save_level_string_) == 0)
+		throw std::runtime_error("Invalid system_mode: " + artifact_save_level_string_);
+	artifact_save_level_ = (ArtifactSaveLevel)artifact_save_level_table[artifact_save_level_string_];
+
+
+	std::map<std::string, int> log_level_table =
+	{	{ "trace", LoggingLevel::kTrace },
+		{ "debug", LoggingLevel::kDebug },
+		{ "info", LoggingLevel::kInfo },
+		{ "warn", LoggingLevel::kWarn },
+		{ "error", LoggingLevel::kError },
+		{ "none", LoggingLevel::kNone },
+	};
+	if (log_level_table.count(logging_level_string_) == 0)
+		throw std::runtime_error("Invalid log_level: " + logging_level_string_);
+	logging_level_ = (LoggingLevel)log_level_table[logging_level_string_];
+
+	std::map<std::string, int> orientation_table =
+	{ { "right_handed", GolferOrientation::kRightHanded },
+		{ "left_handed", GolferOrientation::kLeftHanded } };
+	if (mode_table.count(system_mode_string_) == 0)
+		throw std::runtime_error("Invalid golfer_orientation: " + golfer_orientation_string_);
+	golfer_orientation_ = (GolferOrientation)orientation_table[golfer_orientation_string_];
+
+	if (help_)
+	{
+		std::cout << options_;
+		return true;
+	}
+
+	if (version_)
+	{
+		std::cout << "GolfSim build version: TBD" << std::endl;
+		return false;
+	}
+
+
+	return true;
+}
+
+void GolfSimOptions::Print() const
+{
+	std::cout << "Options:" << std::endl;
+	std::cout << "    system_mode: " << system_mode_string_ << std::endl;
+	std::cout << "    logging_level: " << logging_level_string_ << std::endl;
+	std::cout << "    artifact_save_level: " << artifact_save_level_string_ << std::endl;
+	std::cout << "    shutdown: " << std::to_string(shutdown_) << std::endl;
+	std::cout << "    cam_still_mode: " << std::to_string(camera_still_mode_) << std::endl;
+	std::cout << "    lm_comparison_mode: " << std::to_string(lm_comparison_mode_) << std::endl;	
+	std::cout << "    send_test_results: " << std::to_string(send_test_results_) << std::endl;
+	if (!output_filename_.empty())
+		std::cout << "    output_filename: " << output_filename_ << std::endl;
+	if (!msg_broker_address_.empty())
+		std::cout << "    msg_broker_address_: " << msg_broker_address_ << std::endl;
+	if (!base_image_logging_dir_.empty())
+		std::cout << "    base_image_logging_dir_: " << base_image_logging_dir_ << std::endl;
+	if (!web_server_share_dir_.empty())
+			std::cout << "    web_server_share_dir: " << web_server_share_dir_ << std::endl;
+	if (!e6_host_address_.empty())
+		std::cout << "    e6_host_address: " << e6_host_address_ << std::endl;
+	if (!gspro_host_address_.empty())
+		std::cout << "    gspro_host_address: " << gspro_host_address_ << std::endl;
+	if (!config_file_.empty())
+		std::cout << "    configuration file: " << config_file_ << std::endl;
+	std::cout << "    pulse_test: " << std::to_string(perform_pulse_test_) << std::endl;
+	std::cout << "    golfer_orientation: " << golfer_orientation_string_ << std::endl;
+	std::cout << "    practice_ball: " << std::to_string(practice_ball_) << std::endl;
+	std::cout << "    wait_keys: " << std::to_string(wait_for_key_on_images_) << std::endl;
+	
+	std::cout << "    run_single_pi: " << std::to_string(run_single_pi_) << std::endl;
+	std::cout << "    show_images: " << std::to_string(show_images_) << std::endl;
+	std::cout << "    use_non_IR_camera: " << std::to_string(use_non_IR_camera_) << std::endl;
+	if (!command_line_file_.empty())
+		std::cout << "    config file: " << command_line_file_ << std::endl;
+	if (search_center_x_ > 0)
+		std::cout << "    search_center_x: " << std::to_string(search_center_x_) << std::endl;
+	if (search_center_y_ > 0)
+		std::cout << "    search_center_y: " << std::to_string(search_center_y_) << std::endl;
+	if (camera_gain_ > 0)
+		std::cout << "    camera_gain (will override .json file settings): " << std::to_string(camera_gain_) << std::endl;
+
+}
+
+} // namespace golf_sim

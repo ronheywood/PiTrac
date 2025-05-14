@@ -31,4 +31,9 @@ else
     enable_opencv = false
 endif
 
+
+post_processing_headers = files([
+])
+
+
 install_headers(post_processing_headers, subdir: meson.project_name() / 'post_processing_stages')

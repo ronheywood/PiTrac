@@ -610,9 +610,7 @@ export PITRAC_E6_HOST_ADDRESS=10.0.0.29
           2. `cd  /usr/share/libcamera/pipeline/rpi/vc4`  
           3. `sudo cp  rpi_apps.yaml  rpi_apps.yaml.ORIGINAL`
 ```
-          4. In both `/usr/local/share/libcamera/pipeline/rpi/vc4/rpi_apps.yaml` and `usr/share/libcamera/pipeline/rpi/vc4/rpi_apps.yaml`, at the end of the pipeline section, add the following (including the last comma\!)  
-             <font color=#ff0000>Warning:</font> If running `libcamera-vid -t 0` results in a blank screen. Something went wrong in this step, causing the camera to timeout.
-             As a result, use `ps -aux | grep libcamera` to kill the pid `sudo kill -9 <pid_num>`. This will also cause other errors/issues while attemping to use `pitrac_lm`. 
+          4. In both `/usr/local/share/libcamera/pipeline/rpi/vc4/rpi_apps.yaml` and `usr/share/libcamera/pipeline/rpi/vc4/rpi_apps.yaml`, (to the extent they exist) at the end of the pipeline section, add the following (including the last comma\!)  
              ``` bash
              # Custom timeout value (in ms) for camera to use. This overrides  
              # the value computed by the pipeline handler based on frame  
@@ -623,12 +621,16 @@ export PITRAC_E6_HOST_ADDRESS=10.0.0.29
              #  
              "camera_timeout_value_ms": 1000000,
              ```  
+             NOTE - For the Pi 5, you may only have an "example.yaml" file in the above directories.  If so, just copy it to rpi_apps.yaml.
+<font color=#ff0000>Note for later -  Warning:</font> If you have a problem running `libcamera-vid -t 0` and doing so results in a blank screen. Something went wrong in this step, causing the camera to timeout.
+             As a result, use `ps -aux | grep libcamera` to kill the pid `sudo kill -9 <pid_num>`. This will also cause other errors/issues while attemping to use `pitrac_lm`. 
+
           5. The first file deals with the local file from the libcamera build, and the second one is the for libcamera that is installed with the O/S.  We will set both, just in case.  
-       2. Get the latest `imx296_noir.json` into `/usr/share/libcamera/ipa/rpi/pisp` (located inside ImageProcessing folder)
+       2. Get the latest `imx296_noir.json` into `/usr/share/libcamera/ipa/rpi/pisp or ...rpt/vc4` (located inside ImageProcessing folder)
           1. For the Pi 4:  
-             1. `sudo cp imx296_noir.json /usr/share/libcamera/ipa/rpi/vc4`  
+             1. `sudo cp imx296_noir.json.PI_4_FOR_VC4_DIRECTORY /usr/share/libcamera/ipa/rpi/vc4/imx296_noir.json`  
           2. For the Pi 5:  
-             1. `sudo cp imx296_noir.json /usr/share/libcamera/ipa/rpi/pisp`  
+             1. `sudo cp imx296_noir.json.PI_5_FOR_PISP_DIRECTORY /usr/share/libcamera/ipa/rpi/pisp/imx296_noir.json`  
     2. Go to the directory called ImageProcessing below whatever `PITRAC_ROOT` directory path you will be using to compile.  E.g.,   
        1. `cd $PITRAC_ROOT/ImageProcessing`  
     3. `chmod +x create_closed_source_objects.sh`  

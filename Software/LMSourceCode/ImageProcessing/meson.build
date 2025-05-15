@@ -25,6 +25,8 @@ add_global_arguments('-DBOOST_LOG_DYN_LINK', language : 'cpp')
 add_global_arguments('-DBOOST_BIND_GLOBAL_PLACEHOLDERS', language : 'cpp')
 
 
+fs = import('fs')
+
 # TBD FIX - The following may be redundant of the above options
 cpp_arguments = ['-pedantic', '-Wno-unused-parameter', '-faligned-new', '-DBOOST_LOG_DYN_LINK', '-Wno-error', '-Wno-deprecated-enum-enum-conversion', '-Wno-decprecated-declarations']
 
@@ -79,6 +81,24 @@ subdir('output')
 subdir('preview')
 subdir('post_processing_stages')
 
+
+# Generate a version string.
+version_cmd = [meson.project_source_root() / 'utils' / 'version.py', meson.project_version()]
+
+# Check if a version.gen file is present.
+# This would have been generated from the meson dist command.
+dist_version_file = meson.project_source_root() / 'version.gen'
+if fs.is_file(dist_version_file)
+    version_cmd += fs.read(dist_version_file)
+endif
+
+version_cpp = vcs_tag(command : version_cmd,
+                      replace_string: '@VER@',
+                      input : meson.project_source_root() / 'core' / 'version.cpp.in',
+                      output : 'version.cpp',
+                      fallback : meson.project_version())
+
+rpicam_app_src += version_cpp
 
 
 enable_recompile_closed_source = get_option('enable_recompile_closed_source')

@@ -1318,14 +1318,19 @@ bool PerformCameraSystemStartup() {
         case SystemMode::kCamera1TestStandalone:
         case SystemMode::kTestSpin: {
 
-            std::string trigger_mode_command = "sudo $PITRAC_ROOT/ImageProcessing/CameraTools/setCameraTriggerInternal.sh";
+            if (!GolfSimOptions::GetCommandLineOptions().run_single_pi_) {
+                std::string trigger_mode_command = "sudo $PITRAC_ROOT/ImageProcessing/CameraTools/setCameraTriggerInternal.sh";
 
-            GS_LOG_TRACE_MSG(trace, "trigger_mode_command = " + trigger_mode_command);
-            int command_result = system(trigger_mode_command.c_str());
+                GS_LOG_TRACE_MSG(trace, "trigger_mode_command = " + trigger_mode_command);
+                int command_result = system(trigger_mode_command.c_str());
 
-            if (command_result != 0) {
-                GS_LOG_TRACE_MSG(trace, "system(trigger_mode_command) failed.");
-                return false;
+                if (command_result != 0) {
+                    GS_LOG_TRACE_MSG(trace, "system(trigger_mode_command) failed.");
+                    return false;
+                }
+            }
+            else {
+                GS_LOG_TRACE_MSG(error, "Running in single-pi mode, so not setting camera triggering (internal or external) programmatically.  Instead, please see the following discussion on how to setup the boot/firmware.config.txt dtoverlays for triggering:  https://forums.raspberrypi.com/viewtopic.php?p=2315464#p2315464.");
             }
         }
         break;
@@ -1333,14 +1338,19 @@ bool PerformCameraSystemStartup() {
         case SystemMode::kCamera2:
         case SystemMode::kCamera2TestStandalone: {
 
-            std::string trigger_mode_command = "sudo $PITRAC_ROOT/ImageProcessing/CameraTools/setCameraTriggerExternal.sh";
+            if (!GolfSimOptions::GetCommandLineOptions().run_single_pi_) {
+                std::string trigger_mode_command = "sudo $PITRAC_ROOT/ImageProcessing/CameraTools/setCameraTriggerExternal.sh";
 
-            GS_LOG_TRACE_MSG(trace, "trigger_mode_command = " + trigger_mode_command);
-            int command_result = system(trigger_mode_command.c_str());
+                GS_LOG_TRACE_MSG(trace, "trigger_mode_command = " + trigger_mode_command);
+                int command_result = system(trigger_mode_command.c_str());
 
-            if (command_result != 0) {
-                GS_LOG_TRACE_MSG(trace, "system(trigger_mode_command) failed.");
-                return false;
+                if (command_result != 0) {
+                    GS_LOG_TRACE_MSG(trace, "system(trigger_mode_command) failed.");
+                    return false;
+                }
+            }
+            else {
+                GS_LOG_TRACE_MSG(error, "Running in single-pi mode, so not setting camera triggering (internal or external) programmatically.  Instead, please see the following discussion on how to setup the boot/firmware.config.txt dtoverlays for triggering:  https://forums.raspberrypi.com/viewtopic.php?p=2315464#p2315464.");
             }
 
             // Make sure we are using the NOIR settings

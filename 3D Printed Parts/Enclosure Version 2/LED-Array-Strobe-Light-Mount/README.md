@@ -20,7 +20,7 @@ Recommended print settings: 4 perimeter layers (less if the bolts are not expect
 
 | **Quantity** | **Hardware** | **Purpose** |
 | --- | --- | --- |
-| 4 each | M3 x 10mm self-tapping screws | LED Array Attachment Screws (array to back plate) |
+| 4 each | M3 x 8mm self-tapping screws | LED Array Attachment Screws (array to back plate) |
 | --- | --- | --- |
 | 4 each | M3 x 10mm self-tapping screws | LED Lens Holder Attachment Screws (lens to back plate) |
 | --- | --- | --- |
@@ -43,7 +43,7 @@ Mount the LED array to the backplate using four M3 self-tapping screws. Avoid to
 
 Next, place the lens standoff/riser, lens, and lens holder bracket on top of the array, making sure that the mirrored separate between the LED and the lens is centered and appropriately aligned.
 
-Then mount the lens to the backplate using four more M3 self-tapping screws. **IMPORTANT: Only tighten the screws enough to secure the holder bracket against the lens and mirrored riser. There will be a gab between the bracket and the plastic risers that accept the screws of the mount. This is by design. Over-tightening can crack or break the lens, standoff, and/or LED itself. Note the gap in the annotated print part image.**
+Then mount the lens to the backplate using four more M3 self-tapping screws. **IMPORTANT: Only tighten the screws enough to secure the holder bracket lightly against the lens and mirrored riser. There will be a gab between the bracket and the plastic risers that accept the screws of the mount. This is by design. Over-tightening can crack or break the lens, standoff, and/or LED itself. Note the gap in the annotated print part image.**
 
 Mount the backplate to the gimbal base using 2 M4 bolts. Finally, secure the entire mount to whatever base will hold it by using an M5 bolt.
 

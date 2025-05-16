@@ -33,7 +33,7 @@ Geekworm M901 PCIe to M.2 HAT Key-M NVMe SSD PIP PCIe Peripheral Board for Raspb
 |  |  |  |
 | 2 x 4 | 2.5M x 12mm bolt | Connector Board Mounting Bolts |
 | 2 x 4 | 2.5 Hex Nuts | Connector Board Mounting Bolts |
-| 8 | M3 x 10mm | LED and LED Lens Hold-down screws |
+| 8 | M3 x 8mm | LED and LED Lens Hold-down screws |
 |  |  |  |
 | 2 2 | M3 x 12mm M3 Nuts | Half-Join bolts and nuts for ceiling level walls |
 | 2 2 | M3 x 16mm M3 Nuts | Half-Join bolts and nuts for base and middle level walls |

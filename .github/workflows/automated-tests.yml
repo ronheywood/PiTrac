@@ -26,9 +26,12 @@ jobs:
           sudo apt-get install -y build-essential cmake
           sudo apt-get install -y libopencv-dev
           sudo apt-get install -y libboost-all-dev
-          # Additional dependencies for hardware interaction (may be mocked in tests)
-          sudo apt-get install -y liblgpio-dev
-          sudo apt-get install -y libspi-dev
+          sudo apt-get install -y pkg-config
+          sudo apt-get install -y libavcodec-dev libavformat-dev libavutil-dev
+          # For hardware interaction - we'll try to install these but allow failures
+          # since we're running in CI with CI_TEST_MODE=1
+          sudo apt-get install -y liblgpio-dev || true
+          sudo apt-get install -y spi-tools || true
 
       - name: Configure CMake
         run: |

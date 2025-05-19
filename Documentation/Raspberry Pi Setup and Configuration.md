@@ -693,7 +693,7 @@ rm webserver_name.tmp.txt
           2. `sudo chmod -R 777 golfsim`  
           3. `sudo systemctl restart tomee`  (the first error will ‘stick’ otherwise)  
        10. However you deploy the app, confirm you can see the PiTrac GUI by entering the following into your browser:  
-           1. `http://<The-Pi-2-name-or-IP>:8080/golfsim/monitor?config_filename=%2Fhome%2Fmleary%2FLM_Shares%2FWebShare%2Fgolf_sim_config.json`  
+           1. `http://<The-Pi-2-name-or-IP>:8080/golfsim/monitor?config_filename=%2Fhome%2F<Whatever-your-PiTrac-User-is-and-no-<>'s >y%2FLM_Shares%2FWebShare%2Fgolf_sim_config.json`  
        11. You should see the PiTrac GUI
 
 **CONGRATULATIONS\!** \- At this point, you’ve (hopefully) built the PiTrac software.  Please see the [Startup Documentation](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20Start-Up%20Documentation.md) for how to get PiTrac working\!

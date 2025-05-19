@@ -8,6 +8,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake
+          sudo apt-get install -y libopencv-dev
+          sudo apt-get install -y libboost-all-dev
+
+      - name: Configure CMake
+        run: |
+          cd Software/LMSourceCode
+          cmake -B build -S .
+
       - name: Build
         run: |
           cd Software/LMSourceCode
@@ -20,12 +32,3 @@ jobs:
         env:
           # Configure any environment variables needed for tests
           GS_TEST_SUITE_DIR: ${{ github.workspace }}/Software/LMSourceCode/test_suite
-
-      - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-results
-          path: |
-            Software/LMSourceCode/test_suite/*.csv
-            Software/LMSourceCode/test_suite/*.log

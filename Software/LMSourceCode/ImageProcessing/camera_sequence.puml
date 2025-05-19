@@ -1,0 +1,68 @@
+@startuml Camera System Sequence
+skinparam sequenceMessageAlign center
+
+participant "DualCameraSystem" as system
+participant "CameraFactory" as factory
+participant "MotionCamera\n:ICameraDevice" as motion
+participant "StrobeCamera\n:ICameraDevice" as strobe
+participant "RpiMotionAdapter\n:ICameraAdapter" as motionAdapter
+participant "RpiStrobeAdapter\n:ICameraAdapter" as strobeAdapter
+
+== System Initialization ==
+
+system -> factory : createMotionCamera(motionConfig)
+activate factory
+factory -> motionAdapter ** : create
+factory -> motion ** : create with adapter
+factory --> system : motion camera instance
+deactivate factory
+
+system -> factory : createStrobeCamera(strobeConfig)
+activate factory
+factory -> strobeAdapter ** : create
+factory -> strobe ** : create with adapter
+factory --> system : strobe camera instance
+deactivate factory
+
+== Ball Monitoring ==
+
+system -> motion : startMotionDetection()
+activate motion
+motion -> motionAdapter : configureCamera()
+motion -> motionAdapter : setCropRegion()
+motion -> motionAdapter : startCamera()
+motion --> system : monitoring started
+deactivate motion
+
+== Ball Motion Detection ==
+
+motion -> system : onMotionDetected()
+activate system
+
+system -> motion : stopMotionDetection()
+motion -> motionAdapter : stopCamera()
+
+system -> strobe : configureStrobeSync()
+activate strobe
+strobe -> strobeAdapter : configureCamera()
+strobe -> strobeAdapter : setupStrobeSync()
+strobe --> system : strobe ready
+deactivate strobe
+
+== Shot Capture ==
+
+system -> strobe : capture()
+activate strobe
+strobe -> strobeAdapter : captureStrobedSequence()
+strobeAdapter -> strobeAdapter : triggerStrobe()
+strobeAdapter --> strobe : frame captured
+strobe --> system : capture complete
+deactivate strobe
+
+== Process Results ==
+
+system -> strobe : getLatestFrame()
+strobe --> system : captured frame
+system -> system : processResults()
+
+@enduml

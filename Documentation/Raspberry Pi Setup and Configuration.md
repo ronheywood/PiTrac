@@ -561,9 +561,51 @@ WantedBy=multi-user.target
        1. Edit `/opt/tomee/conf/server.xml` and just before the `</Host>` near the end of the file, put:  
        2. \<Context docBase="/home/\<PiTracUserName\>/LM\_Shares/WebShare" path="/golfsim/WebShare" /\>  
        3. This will allow the Tomee system to access a directory that is outside of the main Tomee installation tree.  This directory will be used to get debugging images from the other Pi into the web-based GUI that this Pi will be serving up.  
-       4. NOTE \- if the shared directory that is mounted off of the other Pi does not exist, Tomee may not be able to start  
+       4. NOTE \- if the shared directory that is mounted off of the other Pi does not exist, Tomee may not be able to start
+       5. The server.xml file should look similar to:
+          ```      <Host name="localhost"  appBase="webapps"
+            unpackWARs="true" autoDeploy="true">
+
+        <!-- SingleSignOn valve, share authentication between web applications
+             Documentation at: /docs/config/valve.html -->
+        <!--
+        <Valve className="org.apache.catalina.authenticator.SingleSignOn" />
+        -->
+
+        <!-- Access log processes all example.
+             Documentation at: /docs/config/valve.html
+             Note: The pattern used is equivalent to using pattern="common" -->
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+               prefix="localhost_access_log" suffix=".txt"
+               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+
+        <Context docBase="/home/pitrac/LM_Shares/WebShare" path="/golfsim/WebShare" />
+
+      </Host>
+    </Engine>
+  </Service>
+</Server>```
+
    15. Allow symbolic linking.  In conf/context.xml, add before the end:  
        1. `<Resources allowLinking="true" />`
+       2. The context.xml should look similar to:
+          ```<!-- The contents of this file will be loaded for each web application -->
+<Context>
+
+    <!-- Default set of monitored resources. If one of these changes, the    -->
+    <!-- web application will be reloaded.                                   -->
+    <WatchedResource>WEB-INF/web.xml</WatchedResource>
+    <WatchedResource>WEB-INF/tomcat-web.xml</WatchedResource>
+    <WatchedResource>${catalina.base}/conf/web.xml</WatchedResource>
+
+    <!-- Uncomment this to enable session persistence across Tomcat restarts -->
+    <!--
+    <Manager pathname="SESSIONS.ser" />
+    -->
+
+    <Resources allowLinking="true" />
+
+</Context>```
    16. Install the systemctl siervice we just created and start it:  
        1. `sudo systemctl daemon-reload`  
        2. `sudo systemctl enable tomee`  

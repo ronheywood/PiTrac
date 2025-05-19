@@ -8,6 +8,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            /var/cache/apt/archives
+            ~/.cache/pip
+            Software/LMSourceCode/ImageProcessing/build
+          key: ${{ runner.os }}-dependencies-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-dependencies-
 
       - name: Install dependencies
         run: |
@@ -15,21 +26,36 @@ jobs:
           sudo apt-get install -y build-essential cmake
           sudo apt-get install -y libopencv-dev
           sudo apt-get install -y libboost-all-dev
+          # Additional dependencies for hardware interaction (may be mocked in tests)
+          sudo apt-get install -y liblgpio-dev
+          sudo apt-get install -y libspi-dev
 
       - name: Configure CMake
         run: |
           cd Software/LMSourceCode/ImageProcessing
           cmake -B build -S .
+        env:
+          CMAKE_BUILD_TYPE: Release
+          PITRAC_SLOT1_CAMERA_TYPE: "auto"  # Required by gs_config.cpp
 
       - name: Build
         run: |
           cd Software/LMSourceCode/ImageProcessing
           cmake --build build --config Release
+      
+      - name: Create Test Directories
+        run: |
+          mkdir -p Software/LMSourceCode/ImageProcessing/test_suite
+          mkdir -p Software/LMSourceCode/ImageProcessing/test_data
 
       - name: Run Automated Tests
         run: |
           cd Software/LMSourceCode/ImageProcessing/build
           ./gs_automated_testing
         env:
-          # Configure any environment variables needed for tests
+          # Configure environment variables needed for tests
           GS_TEST_SUITE_DIR: ${{ github.workspace }}/Software/LMSourceCode/ImageProcessing/test_suite
+          TEST_DATA_DIR: ${{ github.workspace }}/Software/LMSourceCode/ImageProcessing/test_data
+          PITRAC_SLOT1_CAMERA_TYPE: "auto"
+          # Disable hardware access in CI environment
+          CI_TEST_MODE: "1"

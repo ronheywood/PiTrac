@@ -1,0 +1,31 @@
+name: Automated Tests
+
+on: [push, pull_request]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          cd Software/LMSourceCode
+          cmake --build build --config Release
+
+      - name: Run Automated Tests
+        run: |
+          cd Software/LMSourceCode/build
+          ./gs_automated_testing
+        env:
+          # Configure any environment variables needed for tests
+          GS_TEST_SUITE_DIR: ${{ github.workspace }}/Software/LMSourceCode/test_suite
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: |
+            Software/LMSourceCode/test_suite/*.csv
+            Software/LMSourceCode/test_suite/*.log

@@ -31,11 +31,13 @@ jobs:
           # For hardware interaction - we'll try to install these but allow failures
           # since we're running in CI with CI_TEST_MODE=1
           sudo apt-get install -y liblgpio-dev || true
-          sudo apt-get install -y spi-tools || true
-
+          sudo apt-get install -y spi-tools || true      
+          
       - name: Configure CMake
         run: |
           cd Software/LMSourceCode/ImageProcessing
+          # Create compatibility symlinks if needed by the code
+          ln -sf core/rpicam_app.hpp core/libcamera_app.hpp || true
           cmake -B build -S .
         env:
           CMAKE_BUILD_TYPE: Release

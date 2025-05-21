@@ -344,7 +344,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
           3. When done (after the install step), do sudo ldconfig to refresh the shared libraries  
           4. On the Pi 4 (if it has less than 6GB memory), add “-j 2” at the end of the ninja \-C build command to limit the amount of memory used during the build.  E.g., ninja \-C build \-j 2  
              - On low-memory Pi’s, if you run out of memory, the computer will often just freeze and hang, requiring a hard-reboot
-          5. libcamnera can be very verbose for higher logging levels.  We suggest you effectively disable some of the logging by editing the file `libcamera/subprojects/libpisp/src/libpisp/common/logging.hpp` and replacing the contents with the following in order to help minimize the trace-log junk:
+          5. libcamnera can be very verbose for higher logging levels if you are using an early version of libcamera.  We suggest you effectively disable some of the logging by editing the file `libcamera/subprojects/libpisp/src/libpisp/common/logging.hpp` and replacing the contents with the following in order to help minimize the trace-log junk.  If the file does not exist, ignore this step.
              `#pragma once
 
 #include <cassert>

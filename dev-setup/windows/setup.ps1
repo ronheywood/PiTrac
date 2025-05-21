@@ -2,7 +2,7 @@
 # This is a wrapper around the psake build script to make it easier to run
 
 param (
-    [string]$Task = "Help"
+    [string]$Task = "Setup"
 )
 
 # Ensure PSake is installed

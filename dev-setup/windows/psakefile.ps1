@@ -1,4 +1,4 @@
-Task Default -Depends Help
+Task Default -Depends Setup
 
 Task Help {
     Write-Host "PiTrac Windows Setup Script" -ForegroundColor Cyan
@@ -9,7 +9,7 @@ Task Help {
     Write-Host "  Invoke-psake .\run.psake.ps1 Help"
 }
 
-Task Install {
+Task Setup {
     Write-Host "Installing PiTrac dependencies..." -ForegroundColor Green
     # Install Chocolatey if not already installed
     if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {

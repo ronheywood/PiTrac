@@ -16,7 +16,7 @@ jobs:
             /var/cache/apt/archives
             ~/.cache/pip
             Software/LMSourceCode/ImageProcessing/build
-          key: ${{ runner.os }}-dependencies-${{ hashFiles('**/CMakeLists.txt') }}
+          key: ${{ runner.os }}-dependencies-${{ hashFiles('**/CMakeLists.txt', 'Software/LMSourceCode/ImageProcessing/**/*.h', 'Software/LMSourceCode/ImageProcessing/**/*.hpp') }}
           restore-keys: |
             ${{ runner.os }}-dependencies-
 
@@ -33,12 +33,18 @@ jobs:
           sudo apt-get install -y liblgpio-dev || true
           sudo apt-get install -y spi-tools || true      
           
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ runner.os }}-ccache-${{ github.ref }}
+          max-size: 1G
+
       - name: Configure CMake
         run: |
           cd Software/LMSourceCode/ImageProcessing
           # Create compatibility symlinks if needed by the code
           ln -sf core/rpicam_app.hpp core/libcamera_app.hpp || true
-          cmake -B build -S .
+          cmake -B build -S . -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
         env:
           CMAKE_BUILD_TYPE: Release
           PITRAC_SLOT1_CAMERA_TYPE: "auto"  # Required by gs_config.cpp

@@ -82,16 +82,19 @@ namespace golf_sim {
 
     void SetLibCameraLoggingOff() {
 
-        // TBD - JUST FOR TESTING
-        return;
+        // Unless we want REALLY detail information, just tell libcamera to be quiet,
+        // even for higher-level logging that libcamera might otherwise want to emit.
 
-        GS_LOG_TRACE_MSG(trace, "SetLibCameraLoggingOff");
-        libcamera::logSetTarget(libcamera::LoggingTargetNone);
-	/* TBD - Not working, so avoid the extra log message for now
-        libcamera::logSetLevel("*", "ERROR");
-        libcamera::logSetLevel("", "ERROR");
-	*/
-        RPiCamApp::verbosity = 0;
+        if (GolfSimOptions::GetCommandLineOptions().logging_level_ != kTrace) {
+            GS_LOG_TRACE_MSG(trace, "SetLibCameraLoggingOff");
+            libcamera::logSetTarget(libcamera::LoggingTargetNone);
+
+            /* TBD - Not working, so avoid the extra log message for now
+                libcamera::logSetLevel("*", "ERROR");
+                libcamera::logSetLevel("", "ERROR");
+            */
+            RPiCamApp::verbosity = 0;
+        }
     }
 
     /**
@@ -968,7 +971,10 @@ LibcameraJpegApp* ConfigureForLibcameraStill(const GsCameraNumber camera_number)
 
             camera_contrast = LibCameraInterface::kCamera2Contrast;
 
+            // TBD - This code seems backward.  But everything is working right now, 
+            // so let's not change until we can really test it all.
             if (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2Calibrate ||
+                GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2OnePulseOnly ||
                 GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2BallLocation ||
                 GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate) {
 

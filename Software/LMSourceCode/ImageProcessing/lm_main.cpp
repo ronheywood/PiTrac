@@ -1024,7 +1024,8 @@ void run_main(int argc, char* argv[])
             return;
         }
 
-        GsCameraNumber camera_number = (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1) ? GsCameraNumber::kGsCamera1 : GsCameraNumber::kGsCamera2;
+        GsCameraNumber camera_number = (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1 ||
+                                        GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1BallLocation) ? GsCameraNumber::kGsCamera1 : GsCameraNumber::kGsCamera2;
 
         if (camera_number == GsCameraNumber::kGsCamera1) {
             GS_LOG_TRACE_MSG(trace, "Running in cam_still_mode on camera1 system.  Will take one picture.");
@@ -1239,7 +1240,8 @@ void run_main(int argc, char* argv[])
                 return;
             }
 
-            GsCameraNumber camera_number = (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1) ? GsCameraNumber::kGsCamera1 : GsCameraNumber::kGsCamera2;
+            GsCameraNumber camera_number = (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1 ||
+                                            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1BallLocation) ? GsCameraNumber::kGsCamera1 : GsCameraNumber::kGsCamera2;
 
             if (camera_number == GsCameraNumber::kGsCamera1) {
                 GS_LOG_TRACE_MSG(trace, "Running in cam_still_mode on camera1 system.  Will take one picture.");

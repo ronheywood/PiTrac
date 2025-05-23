@@ -974,7 +974,7 @@ LibcameraJpegApp* ConfigureForLibcameraStill(const GsCameraNumber camera_number)
             // TBD - This code seems backward.  But everything is working right now, 
             // so let's not change until we can really test it all.
             if (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2Calibrate ||
-                GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2OnePulseOnly ||
+                /* GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2OnePulseOnly || */
                 GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2BallLocation ||
                 GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate) {
 

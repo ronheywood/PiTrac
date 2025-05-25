@@ -9,6 +9,8 @@
 #include <boost/foreach.hpp>
 #include <cstdlib>
 #include <memory>
+#include <regex>
+#include <functional>
 
 #include "logging_tools.h"
 #include "gs_camera.h"
@@ -18,6 +20,48 @@
 // Having to set the constants in this way creates more entanglement than we'd like.  TBD - Re-architect
 #include "libcamera_interface.h"
 
+// Helper function to expand environment variables in a string (supports %VAR%, $VAR, ${VAR})
+static std::string expand_env_vars(const std::string& input) {
+    std::string result = input;
+    // Only expand if string contains % or $
+    if (result.find('%') != std::string::npos) {
+        // Windows-style: %VAR%
+        std::regex win_env_re("%([A-Za-z0-9_]+)%");
+        std::string replaced;
+        std::sregex_iterator it(result.begin(), result.end(), win_env_re);
+        std::sregex_iterator end;
+        size_t last_pos = 0;
+        while (it != end) {
+            replaced.append(result, last_pos, it->position() - last_pos);
+            std::string val = safe_getenv((*it)[1].str().c_str());
+            replaced.append(val);
+            last_pos = it->position() + it->length();
+            ++it;
+        }
+        replaced.append(result, last_pos, std::string::npos);
+        result = replaced;
+    }
+    if (result.find('$') != std::string::npos) {
+        // POSIX-style: $VAR or ${VAR}
+        std::regex posix_env_re(R"(\$\{([A-Za-z0-9_]+)\}|\$([A-Za-z0-9_]+))");
+        std::string replaced;
+        std::sregex_iterator it(result.begin(), result.end(), posix_env_re);
+        std::sregex_iterator end;
+        size_t last_pos = 0;
+        while (it != end) {
+            replaced.append(result, last_pos, it->position() - last_pos);
+            std::string var = (*it)[1].matched ? (*it)[1].str() : (*it)[2].str();
+            std::string val = safe_getenv(var.c_str());
+            replaced.append(val);
+            last_pos = it->position() + it->length();
+            ++it;
+        }
+        replaced.append(result, last_pos, std::string::npos);
+        result = replaced;
+    }
+    return result;
+}
+} // end anonymous namespace
 
 namespace golf_sim {
 
@@ -292,14 +336,16 @@ bool GolfSimConfiguration::ReadValues() {
 	}
 
 	 void GolfSimConfiguration::SetConstant(const std::string& tag_name, std::string& constant_value) {
-		 try {
-			 constant_value = configuration_root_.get<std::string>(tag_name, "");
-		 }
-		 catch (std::exception const& e)
-		 {
-			 GS_LOG_MSG(error, "GolfSimConfiguration::SetConstant failed. ERROR: *** " + std::string(e.what()) + " ***");
-			 constant_value = "";
-		 }
+    try {
+        constant_value = configuration_root_.get<std::string>(tag_name, "");
+        // Expand environment variables in the string
+        constant_value = expand_env_vars(constant_value);
+    }
+    catch (std::exception const& e)
+    {
+        GS_LOG_MSG(error, "GolfSimConfiguration::SetConstant failed. ERROR: *** " + std::string(e.what()) + " ***");
+        constant_value = "";
+    }
 	 }
 
 	 void GolfSimConfiguration::SetConstant(const std::string& tag_name, cv::Vec3d& vec) {

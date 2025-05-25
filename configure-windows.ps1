@@ -41,6 +41,11 @@ function Set-EnvVar-IfNeeded {
     }
 }
 
+# Set PITRAC_ROOT as a machine environment variable for Windows builds
+$pitRacRoot = Join-Path $PSScriptRoot 'Software\LMSourceCode'
+Set-EnvVar-IfNeeded -Name 'PITRAC_ROOT' -Value $pitRacRoot -Scope 'Machine'
+Write-Host "Set PITRAC_ROOT to $pitRacRoot (Machine scope)"
+
 # Helper function to download and install Boost if not present
 function Ensure-BoostInstalled {
     param(

@@ -5,8 +5,8 @@
             "kLogIntermediateSpinImagesToFile": "0",
             "kLogWebserverImagesToFile": "1",
             "kLogDiagnosticImagesToUniqueFiles": "1",
-            "kLinuxBaseImageLoggingDir": ".\/",
-            "kPCBaseImageLoggingDir": "D:\\GolfSim\\LM\\Images\\"
+            "kLinuxBaseImageLoggingDir": "%PITRAC_ROOT%/Images/",
+            "kPCBaseImageLoggingDir": "%PITRAC_ROOT%/Images/"
         },
         "modes": {
             "kStartInPuttingMode": "0"
@@ -365,7 +365,7 @@
                 "0.435"
             ],
             "kNumberPicturesForFocalLengthAverage": "6",
-            "kTestAutoCalibrationFileName": "M:\\Dev\\PiTrac\\Software\\LMSourceCode\\Images\\autocalibrate_cam1_still_picture_1.png"
+            "kTestAutoCalibrationFileName": "%PITRAC_ROOT%/Images/autocalibrate_cam1_still_picture_1.png"
         },
         "golf_simulator_interfaces": {
             "kLaunchMonitorIdString": "PiTrac LM 0.1",
@@ -402,10 +402,10 @@
             "kVSkip": "5"
         },
         "testing": {
-            "kBaseTestImageDir": "C:\\kata\\PiTrac\\Software\\LMSourceCode\\Images\\",
+            "kBaseTestImageDir": "%PITRAC_ROOT%/Images/",
             "kTwoImageTestTeedBallImage": "gs_log_img__log_ball_final_found_ball_img.png",
             "kTwoImageTestStrobedImage": "log_cam2_last_strobed_img.png",
-            "kAutomatedTestSuiteDirectory": "C:\\kata\\PiTrac\\Software\\LMSourceCode\\Testing\\TestSuite_2025_02_07\/",
+            "kAutomatedTestSuiteDirectory": "%PITRAC_ROOT%/Testing/TestSuite_2025_02_07/",
             "kAutomatedTestExpectedResultsCSV": "Uneekor Comparison 2025-02-07_Small_Test.csv",
             "kAutomatedTestResultsCSV": "PiTrac_Test_Results.csv",
             "kAutomatedTestToleranceBallSpeedMPH": "4",

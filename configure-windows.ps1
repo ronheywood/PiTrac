@@ -32,12 +32,12 @@ function Set-EnvVar-IfNeeded {
         [string]$Name,
         [string]$Value
     )
-    $current = [Environment]::GetEnvironmentVariable($Name, 'User')
+    $current = [Environment]::GetEnvironmentVariable($Name, 'Machine')
     if ($current -ne $Value) {
-        Write-Host "Setting environment variable $Name to $Value"
-        [Environment]::SetEnvironmentVariable($Name, $Value, 'User')
+        Write-Host "Setting environment variable $Name to $Value (Machine scope)"
+        [Environment]::SetEnvironmentVariable($Name, $Value, 'Machine')
     } else {
-        Write-Host "$Name already set."
+        Write-Host "$Name already set at Machine scope."
     }
 }
 
@@ -67,7 +67,7 @@ function Set-BoostEnvironment {
     $boostTargetDir = "C:\Dev_Libs\boost"
     $boostExeUrl = "https://sourceforge.net/projects/boost/files/boost-binaries/1.87.0/boost_1_87_0-msvc-14.3-64.exe/download"
     Ensure-BoostInstalled -boostTargetDir $boostTargetDir -boostExeUrl $boostExeUrl
-    Set-EnvVar-IfNeeded -Name "BOOST_ROOT" -Value $boostTargetDir
+    Set-EnvVar-IfNeeded -Name "BOOST_ROOT" -Value $boostTargetDir -Scope 'Machine'
 }
 
 function Test-OpenCVProjectPath {
@@ -105,7 +105,7 @@ function Set-OpenCvEnvironment {
     $scriptPath = $MyInvocation.PSCommandPath
     $scriptDir = Split-Path -Parent $scriptPath
     $vcxprojPath = Join-Path $scriptDir 'Software\LMSourceCode\ImageProcessing\ImageProcessing.vcxproj'
-    $opencvDir = [Environment]::GetEnvironmentVariable("OPENCV_DIR", 'User')
+    $opencvDir = [Environment]::GetEnvironmentVariable("OPENCV_DIR", 'Machine')
     if (-not $opencvDir -or -not (Test-Path $opencvDir)) {
         $opencvConfigured = Test-OpenCVProjectPath -vcxprojPath $vcxprojPath
         if (-not $opencvConfigured) {
@@ -113,6 +113,7 @@ function Set-OpenCvEnvironment {
         }
         return;
     }
+    Set-EnvVar-IfNeeded -Name "OPENCV_DIR" -Value $opencvDir -Scope 'Machine'
 }
 
 # Main script
@@ -126,7 +127,12 @@ Install-Package-IfNeeded -PackageName "7zip" -ChocoName "7zip"
 Set-OpenCvEnvironment
 Set-BoostEnvironment
 
+#Ensure machine environment variables are loaded
+Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+refreshenv
+
 Write-Host "Setup complete!"
 Write-Host "You can now open the Visual Studio solution and build the solution."
+Write-Host "Alternatively run ./build_and_run_windows.ps1"
 
 # End of configure-windows.ps1

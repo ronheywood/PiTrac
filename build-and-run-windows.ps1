@@ -37,10 +37,33 @@ function Get-VsDevPath {
     exit 1
 }
 
-#$msbuild = Get-MSBuildPath
-#$vsDev = Get-VsDevPath
-$msbuild = 'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe'
-$vsDev = 'C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\Tools\VsDevCmd.bat'
+function Test-VisualStudioCppWorkload {
+    param([string]$msbuildPath)
+    # Go up to the Visual Studio install root
+    $vsRoot = Split-Path (Split-Path (Split-Path (Split-Path $msbuildPath)))
+    # Search for cl.exe anywhere under the VS root
+    $cl = Get-ChildItem -Path $vsRoot -Recurse -Filter cl.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+    return ($null -ne $cl)
+}
+
+function Get-ValidMSBuildWithCpp {
+    $candidates = Get-MSBuildPath -ListAll
+    foreach ($msbuild in $candidates) {
+        if (Test-Path $msbuild) {
+            if (Test-VisualStudioCppWorkload $msbuild) {
+                return $msbuild
+            }
+        }
+    }
+    return $null
+}
+
+$msbuild = Get-ValidMSBuildWithCpp
+if (-not $msbuild) {
+    Write-Host "No Visual Studio installation with both MSBuild and C++ build tools (cl.exe) was found. Please install the 'Desktop development with C++' workload in at least one Visual Studio edition." -ForegroundColor Red
+    exit 1
+}
+$vsDev = Get-VsDevPath
 
 $scriptDir = $PSScriptRoot
 $solution = Join-Path $scriptDir "Software\LMSourceCode\GolfSim.sln"

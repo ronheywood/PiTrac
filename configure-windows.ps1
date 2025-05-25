@@ -2,9 +2,6 @@
 # This script installs Chocolatey, OpenCV, Boost, Visual Studio 2022 Community Edition, and psake.
 # It also sets environment variables for OPENCV_DIR and BOOST_ROOT.
 
-param(
-    [switch]$Force
-)
 
 function Install-Choco {
     if (!(Get-Command choco -ErrorAction SilentlyContinue)) {
@@ -36,7 +33,7 @@ function Set-EnvVar-IfNeeded {
         [string]$Value
     )
     $current = [Environment]::GetEnvironmentVariable($Name, 'User')
-    if ($current -ne $Value -or $Force) {
+    if ($current -ne $Value) {
         Write-Host "Setting environment variable $Name to $Value"
         [Environment]::SetEnvironmentVariable($Name, $Value, 'User')
     } else {
@@ -66,49 +63,70 @@ function Ensure-BoostInstalled {
     }
 }
 
+function Set-BoostEnvironment {
+    $boostTargetDir = "C:\Dev_Libs\boost"
+    $boostExeUrl = "https://sourceforge.net/projects/boost/files/boost-binaries/1.87.0/boost_1_87_0-msvc-14.3-64.exe/download"
+    Ensure-BoostInstalled -boostTargetDir $boostTargetDir -boostExeUrl $boostExeUrl
+    Set-EnvVar-IfNeeded -Name "BOOST_ROOT" -Value $boostTargetDir
+}
+
+function Test-OpenCVProjectPath {
+    param(
+        [string]$vcxprojPath
+    )
+
+    [xml]$vcxproj = Get-Content $vcxprojPath
+    $includeDir = $vcxproj.Project.ItemDefinitionGroup | Where-Object { $_.Condition -like "*Debug|x64*" } | ForEach-Object { $_.ClCompile.AdditionalIncludeDirectories } | Select-Object -First 1
+    $opencvInclude = $null
+    if ($includeDir) {
+        $parts = $includeDir -split ";"
+        $opencvInclude = $parts | Where-Object { $_ -match "opencv" } | Select-Object -First 1
+    }
+    $opencvRoot = $null
+    if ($opencvInclude -and ($opencvInclude -match "(.+?)\\build\\include")) {
+        $opencvRoot = $Matches[1] + "\build"
+    }
+
+    if ($opencvRoot -and (Test-Path $opencvRoot)) {
+        Write-Host "OpenCV project path is valid: $opencvRoot"
+        return $true
+    } 
+    elseif ($opencvRoot) {
+        Write-Host "OpenCV project path is set but not found: $opencvRoot"
+        return $false
+    } 
+
+    Write-Host "Could not determine OpenCV root from project file."
+    return $false
+}
+
+function Set-OpenCvEnvironment {
+    # Analyze project file for expected OpenCV location
+    $scriptPath = $MyInvocation.PSCommandPath
+    $scriptDir = Split-Path -Parent $scriptPath
+    $vcxprojPath = Join-Path $scriptDir 'Software\LMSourceCode\ImageProcessing\ImageProcessing.vcxproj'
+    $opencvDir = [Environment]::GetEnvironmentVariable("OPENCV_DIR", 'User')
+    if (-not $opencvDir -or -not (Test-Path $opencvDir)) {
+        $opencvConfigured = Test-OpenCVProjectPath -vcxprojPath $vcxprojPath
+        if (-not $opencvConfigured) {
+            Write-Host "OpenCV is not properly configured. Please ensure OpenCV is installed and the project file is updated."
+        }
+        return;
+    }
+}
+
 # Main script
 Write-Host "--- PiTrac Windows Configuration Script ---"
 
 Install-Choco
-
-Install-Package-IfNeeded -PackageName "OpenCV" -ChocoName "opencv"
-
 #Install-Package-IfNeeded -PackageName "Visual Studio 2022 Community" -ChocoName "visualstudio2022community"
 Install-Package-IfNeeded -PackageName "psake" -ChocoName "psake"
 Install-Package-IfNeeded -PackageName "7zip" -ChocoName "7zip"
 
-# Analyze project file for expected OpenCV location
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$vcxprojPath = Join-Path $scriptDir 'Software\LMSourceCode\ImageProcessing\ImageProcessing.vcxproj'
-[xml]$vcxproj = Get-Content $vcxprojPath
+Set-OpenCvEnvironment
+Set-BoostEnvironment
 
-# Find the first AdditionalIncludeDirectories for x64 Debug
-$includeDir = $vcxproj.Project.ItemDefinitionGroup | Where-Object { $_.Condition -like "*Debug|x64*" } | ForEach-Object { $_.ClCompile.AdditionalIncludeDirectories } | Select-Object -First 1
-$opencvInclude = $null
-if ($includeDir) {
-    $parts = $includeDir -split ";"
-    $opencvInclude = $parts | Where-Object { $_ -match "opencv" } | Select-Object -First 1
-}
-
-# Infer OpenCV root from include path
-$opencvRoot = $null
-if ($opencvInclude -and ($opencvInclude -match "(.+?)\\build\\include")) {
-    $opencvRoot = $Matches[1] + "\\build"
-}
-
-if ($opencvRoot -and !(Test-Path $opencvRoot)) {
-    Write-Host "Installing OpenCV to $opencvRoot via Chocolatey..."
-    choco install opencv --params "/InstallDir:$opencvRoot" -y
-} elseif ($opencvRoot) {
-    Write-Host "OpenCV already present at $opencvRoot"
-} else {
-    Write-Host "Could not determine OpenCV root from project file. Skipping targeted install."
-}
-
-# Download and install Boost if not present
-$boostTargetDir = "C:\Dev_Libs\boost"
-$boostExeUrl = "https://sourceforge.net/projects/boost/files/boost-binaries/1.87.0/boost_1_87_0-msvc-14.3-64.exe/download"
-Ensure-BoostInstalled -boostTargetDir $boostTargetDir -boostExeUrl $boostExeUrl
-
-Write-Host "\nSetup complete!"
+Write-Host "Setup complete!"
 Write-Host "You can now open the Visual Studio solution and build the solution."
+
+# End of configure-windows.ps1

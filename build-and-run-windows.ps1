@@ -79,8 +79,25 @@ if (-not (Test-Path $solution)) {
     Write-Host "Solution file not found: $solution"
     exit 1
 }
+
+# Add detailed MSBuild logging for troubleshooting
+$enableLogging = $false
+if ($args.Count -gt 0 -and $args[0].ToLower() -eq 'log') {
+    $enableLogging = $true
+}
+
+$msbuildArgs = @(
+    '/p:Configuration=Debug',
+    '/p:Platform=x64'
+)
+if ($enableLogging) {
+    $msbuildArgs += '/verbosity:detailed'
+    $msbuildArgs += '/fileLogger'
+    $msbuildArgs += '/fileLoggerParameters:LogFile=msbuild.log;Append;Verbosity=detailed'
+}
+
 # Run msbuild inside a new cmd.exe process that first calls VsDevCmd.bat
-$msbuildCmd = '"' + $msbuild + '" "' + $solution + '" /p:Configuration=Debug /p:Platform=x64'
+$msbuildCmd = '"' + $msbuild + '" "' + $solution + '" ' + ($msbuildArgs -join ' ')
 $cmd = "/c call `"$vsDev`" && $msbuildCmd"
 Write-Host "Running: cmd $cmd"
 $buildResult = Start-Process cmd -ArgumentList $cmd -Wait -PassThru
@@ -91,21 +108,6 @@ if ($buildResult.ExitCode -ne 0) {
 } else {
     Write-Host "Build succeeded!" -ForegroundColor Green
 }
-
-# Set up environment variables for OpenCV and Boost
-$opencvDir = [Environment]::GetEnvironmentVariable("OPENCV_DIR", "User")
-$boostRoot = [Environment]::GetEnvironmentVariable("BOOST_ROOT", "User")
-
-if (-not $opencvDir) {
-    Write-Host "OPENCV_DIR environment variable is not set. Please run configure-windows.ps1 first."
-    exit 1
-}
-if (-not $boostRoot) {
-    Write-Host "BOOST_ROOT environment variable is not set. Please run configure-windows.ps1 first."
-    exit 1
-}
-
-$env:PATH = "$env:PATH;$opencvDir\x64\vc16\bin;$boostRoot\lib64-msvc-14.3"
 
 # Path to the built executable (relative to script location)
 $exe = Join-Path $scriptDir "Software\LMSourceCode\x64\Debug\ImageProcessing.exe"

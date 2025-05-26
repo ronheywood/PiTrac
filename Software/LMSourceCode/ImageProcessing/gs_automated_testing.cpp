@@ -100,8 +100,6 @@ bool GsAutomatedTesting::AbsResultsPass(const int expected, const int result, co
     return !(std::abs(expected - result) > abs_tolerances);
 }
 
-
-
 /**
  * Converts the vector of inches to a vector of meters.
  *
@@ -275,7 +273,7 @@ bool GsAutomatedTesting::TestFinalShotResultData() {
     std::ofstream testing_results_csv_file(kAutomatedTestSuiteDirectory + kAutomatedTestResultsCSV);
     GS_LOG_TRACE_MSG(trace, "Writing CSV result data to: " + kAutomatedTestResultsCSV);
     testing_results_csv_file << "Shot ID,,Comparison (PiTrac value minus Uneekor),,,,,,System Data,,,,,,,,,,,,,,,,,,," << std::endl;
-    testing_results_csv_file << "Ball, PiTrac Shot, Speed ? (mph), VLA ? , HLA ? °, Back Spin ? (rpm), Side Spin ? (rpm), , Uneekor Speed, PiTrac Speed, , Uneekor VLA°, PiTrac VLA°, , Uneekor HLA°, PiTrac HLA°, , Uneekor Back Spin, PiTrac Back Spin, , Uneekor Side Spin, PiTrac Side Spin, , Ball ID Picture, Spin Ball 1, Spin Ball 2, Test Result Ball, Notes" << std::endl;
+    testing_results_csv_file << "Ball, PiTrac Shot, Speed ? (mph), VLA ? , HLA ? ï¿½, Back Spin ? (rpm), Side Spin ? (rpm), , Uneekor Speed, PiTrac Speed, , Uneekor VLAï¿½, PiTrac VLAï¿½, , Uneekor HLAï¿½, PiTrac HLAï¿½, , Uneekor Back Spin, PiTrac Back Spin, , Uneekor Side Spin, PiTrac Side Spin, , Ball ID Picture, Spin Ball 1, Spin Ball 2, Test Result Ball, Notes" << std::endl;
     
 
     boost::timer::cpu_timer timer1;
@@ -514,7 +512,6 @@ bool GsAutomatedTesting::ReadTestImages(const std::string& img_1_base_filename, 
 
     return true;
 }
-
 
 // This function is deprecated.  Leaving it here for now just in case.
 // It originally tested the exact ball-position calculations against canned data.

@@ -1,0 +1,60 @@
+cmake_minimum_required(VERSION 3.10)
+project(PiTracTests)
+
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Option for enabling code coverage
+option(ENABLE_COVERAGE "Enable code coverage reporting" OFF)
+
+# Find required packages
+find_package(OpenCV REQUIRED)
+find_package(Boost REQUIRED COMPONENTS unit_test_framework filesystem system)
+
+# Include directories
+include_directories(
+    ${OpenCV_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
+    .
+)
+
+# Add test executable
+add_executable(boost_tests
+    boost_tests.cpp
+    gs_automated_testing.cpp
+    gs_config.cpp
+)
+
+# Set up code coverage if enabled
+if(ENABLE_COVERAGE)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        message(STATUS "Enabling code coverage for GCC/Clang")
+        # Add coverage flags
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 --coverage")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+    elseif(MSVC)
+        message(STATUS "Code coverage is supported through OpenCppCoverage on Windows")
+        # OpenCppCoverage is used externally on Windows
+    endif()
+endif()
+
+# Link libraries
+target_link_libraries(boost_tests
+    ${OpenCV_LIBS}
+    ${Boost_LIBRARIES}
+)
+
+# Add compiler definitions for Boost Test
+target_compile_definitions(boost_tests PRIVATE
+    BOOST_TEST_DYN_LINK
+    BOOST_TEST_MODULE=PiTracTests
+)
+
+# Install target for tests
+install(TARGETS boost_tests DESTINATION bin)
+
+# Output message about running tests
+message(STATUS "Build Boost tests with: cmake --build . --config Debug")
+message(STATUS "Run tests with: ./boost_tests --log_level=test_suite")

@@ -141,11 +141,11 @@ std::string RPiCamApp::CameraModel() const
 
 void RPiCamApp::OpenCamera()
 {
+	GS_LOG_TRACE_MSG(trace, "RPiCamApp::OpenCamera()");
+
 	// Make a preview window.
 	preview_ = std::unique_ptr<Preview>(make_preview(options_.get()));
 	preview_->SetDoneCallback(std::bind(&RPiCamApp::previewDoneCallback, this, std::placeholders::_1));
-
-	LOG(2, "Opening camera...");
 
 	if (!camera_manager_)
 		initCameraManager();
@@ -168,11 +168,23 @@ void RPiCamApp::OpenCamera()
 
 	LOG(2, "Acquired camera " << cam_id);
 
-	if (!options_->post_process_file.empty())
-	{
-		post_processor_.LoadModules(options_->post_process_libs);
-		post_processor_.Read(options_->post_process_file);
+	GS_LOG_TRACE_MSG(trace, "Checking for post_process information.");
+
+	try {
+		if (!options_->post_process_file.empty())
+		{
+			GS_LOG_TRACE_MSG(trace, "Found post_process file: " + options_->post_process_file);
+			post_processor_.LoadModules(options_->post_process_libs);
+			post_processor_.Read(options_->post_process_file);
+		}
 	}
+	catch (std::exception const& e)
+	{
+		GS_LOG_MSG(error, "ERROR: *** " + std::string(e.what()) + " ***.  Continuing");
+	}
+
+	GS_LOG_TRACE_MSG(trace, "Done loading modules for post_process information.");
+
 	// The queue takes over ownership from the post-processor.
 	post_processor_.SetCallback(
 		[this](CompletedRequestPtr &r) { this->msg_queue_.Post(Msg(MsgType::RequestComplete, std::move(r))); });
@@ -219,6 +231,9 @@ void RPiCamApp::OpenCamera()
 		libcamera::logSetLevel("RPI", "INFO");
 		libcamera::logSetLevel("Camera", "INFO");
 	}
+
+	GS_LOG_TRACE_MSG(trace, "RPiCamApp::OpenCamera() - complete.");
+
 }
 
 void RPiCamApp::CloseCamera()

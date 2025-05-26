@@ -124,10 +124,10 @@ try {
     $exeArgs = @(
         "--show_images", "1",
         "--lm_comparison_mode=0",
-        "--logging_level", "trace",
+        "--logging_level", "info",
         "--artifact_save_level=all",
-        "--wait_keys", "1",
-        "--system_mode", "camera1_test_standalone",
+        "--wait_keys", "0",
+        "--system_mode", "automated_testing",
         "--search_center_x", "800",
         "--search_center_y", "550"
     )

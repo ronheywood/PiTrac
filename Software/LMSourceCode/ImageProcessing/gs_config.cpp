@@ -18,18 +18,6 @@
 // Having to set the constants in this way creates more entanglement than we'd like.  TBD - Re-architect
 #include "libcamera_interface.h"
 
-// Helper function to safely get environment variable as std::string
-static std::string safe_getenv(const char* varname) {
-    char* buffer = nullptr;
-    size_t sz = 0;
-    if (_dupenv_s(&buffer, &sz, varname) == 0 && buffer != nullptr) {
-        std::string value(buffer);
-        free(buffer);
-        return value;
-    }
-    return std::string();
-}
-
 
 namespace golf_sim {
 
@@ -52,6 +40,23 @@ namespace golf_sim {
 		}
 
 		return true;
+	}
+
+	// Helper function to safely get environment variable as std::string
+	std::string GolfSimConfiguration::safe_getenv(const std::string& varname) {
+		char* buffer = nullptr;
+		size_t sz = 0;
+#ifndef __unix__  // _dupenv_s does not exist yet in standard unix environment
+
+		if (_dupenv_s(&buffer, &sz, varname.c_str()) == 0 && buffer != nullptr) {
+			std::string value(buffer);
+			free(buffer);
+			return value;
+		}
+#else
+		return getenv(varname.c_str());
+#endif
+		return std::string();
 	}
 
 

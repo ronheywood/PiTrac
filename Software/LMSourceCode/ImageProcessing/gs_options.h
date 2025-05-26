@@ -16,7 +16,7 @@
 namespace golf_sim {
 
 	enum SystemMode {
-		kTest = 0,			// Just run unit tests.  Generall used when compiled in Windows
+		kTest = 0,			// Just run unit tests.  Generally used when compiled in Windows
 		kCamera1 = 1,		// The mode when PiTrac is running normally and processing hits.  This mode is only used by the Pi 1/Camera 1 half of the system.
 		kCamera2 = 2,		// The mode when PiTrac is running normally and processing hits.  This mode is only used by the Pi 2/Camera 2 half of the system.
 		kCamera1TestStandalone = 3,
@@ -31,6 +31,7 @@ namespace golf_sim {
 		kAutomatedTesting = 12,
 		kCamera1AutoCalibrate = 13,
 		kCamera2AutoCalibrate = 14,
+		kCamera2OnePulseOnly = 15,
 	};
 
 	enum LoggingLevel {
@@ -75,7 +76,7 @@ namespace golf_sim {
 				("golfer_orientation", value<std::string>(&golfer_orientation_string_)->default_value("right_handed"),
 					"Set the golfer's handed-ness (right_handed, left_handed)")
 				("system_mode", value<std::string>(&system_mode_string_)->default_value("test"),
-					"Set the system's operating mode (test, camera1, camera2, camera1Calibrate, camera2Calibrate, camera1_test_standalone, camera2_test_standalone, test_spin, camera1_ball_location, camera2_ball_location, test_gspro_message, test_gspro_server, automated_testing, camera1AutoCalibrate, camera2AutoCalibrate)")
+					"Set the system's operating mode (test, camera1, camera2, camera1Calibrate, camera2Calibrate, camera1_test_standalone, camera2_test_standalone, test_spin, camera1_ball_location, camera2_ball_location, test_gspro_message, test_gspro_server, automated_testing, camera1AutoCalibrate, camera2AutoCalibrate, camera2_one_pulse_only)")
 				("logging_level", value<std::string>(&logging_level_string_)->default_value("warn"),
 					"Set the system's logging level (trace, debug, info, warn, error, none)")
 				("artifact_save_level", value<std::string>(&artifact_save_level_string_)->default_value("final_results_only"),

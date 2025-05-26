@@ -29,6 +29,9 @@ namespace golf_sim {
 
 		static bool Initialize(const std::string& configuration_filename = "gs_config.json");
 
+		// Uses a safer version of getenv when in Windows environment.
+		static std::string safe_getenv(const std::string& varname);
+
 		static PiModel GetPiModel();
 
 		// Reads any values that need to be initialized early, such as static members of

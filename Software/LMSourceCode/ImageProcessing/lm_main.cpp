@@ -1293,8 +1293,11 @@ void run_main(int argc, char* argv[])
 
                     i++;
                 }
+                else {
+                    GS_LOG_MSG(warning, "Unable to find ball.  Check to ensure it is near the kCamera1 of kCamera2PositionsFromExpectedBallMeters and is adequately lit.");
+                }
 
-                GolfSimCamera::ShowAndLogBalls("LastFailedBallImage_" + std::to_string(i), img, empty_balls, true);
+                GolfSimCamera::ShowAndLogBalls("LastAttemptedBallImage_" + std::to_string(i), img, empty_balls, true);
 
             }
 

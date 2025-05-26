@@ -132,6 +132,26 @@ Install-Package-IfNeeded -PackageName "7zip" -ChocoName "7zip"
 Set-OpenCvEnvironment
 Set-BoostEnvironment
 
+#Add required paths to system PATH environment variable
+$pathAdditions = @(
+    "$env:PITRAC_ROOT\Software\LMSourceCode\ImageProcessing\bin",
+    "$env:OPENCV_DIR\x64\vc16\bin", 
+    "$env:BOOST_ROOT\lib64-msvc-14.3"
+)
+
+# Update the current session path
+$env:Path += ";" + ($pathAdditions -join ";")
+
+# Add to machine PATH if not already present
+$machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+foreach ($pathItem in $pathAdditions) {
+    if ($machinePath -notlike "*$pathItem*") {
+        Write-Host "Adding $pathItem to PATH environment variable (Machine scope)"
+        $machinePath += ";$pathItem"
+    }
+}
+[Environment]::SetEnvironmentVariable("Path", $machinePath, "Machine")
+
 #Ensure machine environment variables are loaded
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
 refreshenv

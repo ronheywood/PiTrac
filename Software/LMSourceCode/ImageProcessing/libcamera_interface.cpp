@@ -72,9 +72,9 @@ namespace golf_sim {
     cv::Vec2i LibCameraInterface::current_watch_resolution_;
     cv::Vec2i LibCameraInterface::current_watch_offset_;
 
-    LibCameraInterface::CameraConfiguration LibCameraInterface::libcamera_configuration_[] = {LibCameraInterface::CameraConfiguration::kNotConfigured, LibCameraInterface::CameraConfiguration::kNotConfigured};
+    LibCameraInterface::CameraConfiguration LibCameraInterface::libcamera_configuration_[] = { LibCameraInterface::CameraConfiguration::kNotConfigured, LibCameraInterface::CameraConfiguration::kNotConfigured };
 
-    LibcameraJpegApp* LibCameraInterface::libcamera_app_[] = {nullptr, nullptr};
+    LibcameraJpegApp* LibCameraInterface::libcamera_app_[] = { nullptr, nullptr };
 
     bool camera_location_found_ = false;
     int previously_found_media_number_ = -1;
@@ -98,12 +98,12 @@ namespace golf_sim {
     }
 
     /**
-     * \brief  Once a ball has been identified in the image, this method will continuously watch the 
+     * \brief  Once a ball has been identified in the image, this method will continuously watch the
      * area where the ball is by taking images as quickly as possible and comparing each
      * image to the prior image.  See motion_detect_stage.cpp for details on detection.
      * As soon as movement is detected, signals are sent to the camera 2 and strobe to take
      * a picture.
-     * 
+     *
      * \param ball The teed-up ball that was previously located in the image
      * \param image The image with the ball
      * \param motion_detected Returns whether motion was detected at the time the method ended
@@ -127,7 +127,7 @@ namespace golf_sim {
         // We have access to the set of frames before and after the hit, so process
         // club data here
 
-        if (!GolfSimClubData::ProcessClubStrikeData(RecentFrames) ) {
+        if (!GolfSimClubData::ProcessClubStrikeData(RecentFrames)) {
             GS_LOG_MSG(warning, "Failed to GolfSimClubData::ProcessClubStrikeData(RecentFrames().");
             // TBD - Ignore for now
             // return false;
@@ -154,7 +154,7 @@ namespace golf_sim {
     }
 
 
-    bool WatchForBallMovement(GolfSimCamera& camera, const GolfBall& ball, bool & motion_detected) {
+    bool WatchForBallMovement(GolfSimCamera& camera, const GolfBall& ball, bool& motion_detected) {
 
         GS_LOG_TRACE_MSG(trace, "WatchForBallMovement");
 
@@ -167,7 +167,7 @@ namespace golf_sim {
         // be processed in each frame (cropping)
 
         // Will be setup when camera is configured for cropping, then is used in the ball-watcher-loop
-        RPiCamEncoder app;  
+        RPiCamEncoder app;
 
         if (!ConfigCameraForCropping(ball, camera, app)) {
             GS_LOG_MSG(error, "Failed to ConfigCameraForCropping.");
@@ -353,7 +353,7 @@ namespace golf_sim {
             return false;
         }
 
-        GS_LOG_TRACE_MSG(info, "Camera FPS = " + std::to_string(cropped_frame_rate_fps) + ".");
+        GS_LOG_TRACE_MSG(trace, "Camera FPS = " + std::to_string(cropped_frame_rate_fps) + ".");
 
         if (!ConfigureLibCameraOptions(app, watching_crop_size, cropped_frame_rate_fps)) {
             GS_LOG_TRACE_MSG(error, "Failed to ConfigureLibCameraOptions.");
@@ -367,18 +367,36 @@ namespace golf_sim {
         float roi_offset_x = (ball_x - (camera.camera_hardware_.resolution_x_ - crop_offset_x)) - largest_inscribed_square_side_length_of_ball / 2.0 + watching_crop_width;
         float roi_offset_y = (ball_y - (camera.camera_hardware_.resolution_y_ - crop_offset_y)) - largest_inscribed_square_side_length_of_ball / 2.0 + watching_crop_height;
 
+        if (roi_offset_x < 0.0) {
+            roi_offset_x = 0.0;
+        }
+
+        if (roi_offset_y < 0.0) {
+            roi_offset_y = 0.0;
+        }
+
         GS_LOG_TRACE_MSG(trace, "Final roi x/y offset is: " + std::to_string(roi_offset_x) + "/" + std::to_string(roi_offset_y) + ".");
 
-        cv::Vec2i roi_offset = cv::Vec2i((uint)roi_offset_x, (uint)roi_offset_y);
+        cv::Vec2i roi_offset = cv::Vec2i((int)roi_offset_x, (int)roi_offset_y);
 
         // Assume the ball is perfectly round, so the roi is square.  We don't want to watch for movement
         // anywhere but within the ball.
-        float roi_size_x = largest_inscribed_square_side_length_of_ball;
-        float roi_size_y = largest_inscribed_square_side_length_of_ball;
+        // Also, the roi can't be any larger than the hardware cropping we are doing.
+        float roi_size_x = std::min((float)largest_inscribed_square_side_length_of_ball, watching_crop_width);
+        float roi_size_y = std::min((float)largest_inscribed_square_side_length_of_ball, watching_crop_height);
 
-        // Clamp the offset if necessary
-        roi_offset_x = std::clamp(roi_offset_x, 0.0f, watching_crop_width - roi_size_x);
-        roi_offset_y = std::clamp(roi_offset_y, 0.0f, watching_crop_height - roi_size_y);
+        GS_LOG_TRACE_MSG(trace, "roi_size_x/y is: " + std::to_string(roi_size_x) + "/" + std::to_string(roi_size_y) + ".");
+
+        // Clamp the offsets if necessary
+        // Also handle the case where the ball is so big on the screen that it is actually larger than 
+        // the cropped roi
+        if (roi_size_x < watching_crop_width) {
+            roi_offset_x = std::clamp(roi_offset_x, 0.0f, watching_crop_width - roi_size_x);
+        }
+
+        if (roi_size_y < watching_crop_height) {
+            roi_offset_y = std::clamp(roi_offset_y, 0.0f, watching_crop_height - roi_size_y);
+        }
 
         GS_LOG_TRACE_MSG(trace, "Final roi width/height is: " + std::to_string(roi_size_x) + "/" + std::to_string(roi_size_y) + ".");
 
@@ -789,8 +807,10 @@ bool RetrieveCameraInfo(const GsCameraNumber camera_number, cv::Vec2i& resolutio
 
                 options->no_raw = true;  // See https://forums.raspberrypi.com/viewtopic.php?t=369927
 
-                // TBD - Need to set the camera number (0 or 1, likely) when we have more than one camera
-                // options->camera = 0;
+                // Set the camera number (0 or 1, likely) when we have more than one camera
+                options->camera = (camera_number == GsCameraNumber::kGsCamera1 || !GolfSimOptions::GetCommandLineOptions().run_single_pi_) ? 0 : 1;
+                GS_LOG_TRACE_MSG(trace, "  Camera options->camera set to camera slot: " + std::to_string(options->camera));
+
 
                 // Get the camera open for a moment so that we can read its settings
                 app.OpenCamera();
@@ -1336,7 +1356,7 @@ bool PerformCameraSystemStartup() {
                 }
             }
             else {
-                GS_LOG_TRACE_MSG(error, "Running in single-pi mode, so not setting camera triggering (internal or external) programmatically.  Instead, please see the following discussion on how to setup the boot/firmware.config.txt dtoverlays for triggering:  https://forums.raspberrypi.com/viewtopic.php?p=2315464#p2315464.");
+                GS_LOG_TRACE_MSG(trace, "Running in single-pi mode, so not setting camera triggering (internal or external) programmatically.  Instead, please see the following discussion on how to setup the boot/firmware.config.txt dtoverlays for triggering:  https://forums.raspberrypi.com/viewtopic.php?p=2315464#p2315464.");
             }
         }
         break;

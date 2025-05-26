@@ -245,6 +245,7 @@ bool MotionDetectStage::Process(CompletedRequestPtr &completed_request)
 			int new_value = *new_value_ptr;
 			int old_value = *old_value_ptr;
 
+			// TBD - Remove
 			// LOG(1, "sampledFrameStride: " << sampledFrameStride << ". old= " << old_value << " new= " << new_value << " .New_ptr: " << (long)new_value_ptr << ".Old_ptr : " << (long)old_value_ptr << ".");
 
 
@@ -252,7 +253,7 @@ bool MotionDetectStage::Process(CompletedRequestPtr &completed_request)
 			regions += std::abs(new_value - old_value) > config_.difference_m * old_value + config_.difference_c;
 		}
 
-		local_motion_detected= regions >= region_threshold_;
+		local_motion_detected = (regions >= region_threshold_);
 
 		// Break out early if we've already figured out there's motion
 		if (local_motion_detected) {
@@ -260,6 +261,9 @@ bool MotionDetectStage::Process(CompletedRequestPtr &completed_request)
 			break;
 		}
 	}
+
+	// TBD - Only for testing - REMOVE
+	// std::cout << regions << std::endl;
 
  	if (config_.verbose && local_motion_detected) {
 		// TBD - Avoid output here to reduce latencyLOG(1, "*************  Motion " << (local_motion_detected? "detected" : "stopped"));
@@ -273,6 +277,7 @@ bool MotionDetectStage::Process(CompletedRequestPtr &completed_request)
 		// as possible, because otherwise the ball will fly past the camera 2 FoV
 		if (gs::GolfSimOptions::GetCommandLineOptions().system_mode_ != gs::kCamera1TestStandalone) {
 			gs::PulseStrobe::SendExternalTrigger();
+			GS_LOG_MSG(trace, "---> SendExternalTrigger");
 		}
 		else {
 			// simulate the other system sending an image back
@@ -304,7 +309,7 @@ bool MotionDetectStage::Process(CompletedRequestPtr &completed_request)
 		completed_request->post_process_metadata.Set("motion_detect.result", false);
 	}
 	else {
-		GS_LOG_MSG(trace, "No post-motion frames after this one - setting result local_motion_detected of: " + std::to_string(local_motion_detected) + ".");
+		// TBD - Too Much Logging - GS_LOG_MSG(trace, "No post-motion frames after this one - setting result local_motion_detected of: " + std::to_string(local_motion_detected) + ".");
 		completed_request->post_process_metadata.Set("motion_detect.result", local_motion_detected);
 		// Signal motion to the outside world.
 		motion_detected_ = local_motion_detected;
@@ -354,7 +359,7 @@ bool MotionDetectStage::Process(CompletedRequestPtr &completed_request)
 
 		cv::putText(mat, frame_label, cv::Point(text_x, text_y), cv::FONT_HERSHEY_SIMPLEX, 0.8, c_label, 2, cv::LINE_AA);
 
-		GS_LOG_MSG(trace, "Pushing Post-Motion Frame No. " + std::to_string(postMotionFramesToCapture_) + " - Seq. No. " + std::to_string(completed_request->sequence));
+		// TBD - Too Much Logging - GS_LOG_MSG(trace, "Pushing Post-Motion Frame No. " + std::to_string(postMotionFramesToCapture_) + " - Seq. No. " + std::to_string(completed_request->sequence));
 
 		golf_sim::RecentFrames.push_back(frameInfo);
 

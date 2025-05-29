@@ -28,26 +28,19 @@ jobs:
           sudo apt-get install -y libboost-all-dev
           sudo apt-get install -y pkg-config
           sudo apt-get install -y libavcodec-dev libavformat-dev libavutil-dev
-          sudo apt-get install libcamera-tools gstreamer1.0-libcamera
-          # Check if libcamera headers exist and create symlink if needed
-          if [ ! -f /usr/include/libcamera/formats.h ]; then
-            # Find where the headers might be located
-            LIBCAMERA_FORMATS=$(find /usr -name formats.h | grep libcamera || true)
-            if [ ! -z "$LIBCAMERA_FORMATS" ]; then
-              LIBCAMERA_DIR=$(dirname $(dirname $LIBCAMERA_FORMATS))
-              echo "Found libcamera headers at $LIBCAMERA_DIR"
-              sudo ln -sf $LIBCAMERA_DIR /usr/include/libcamera
-            else
-              # If headers are not found, try to install from source
-              echo "Could not find libcamera headers, installing from source"
-              git clone https://git.libcamera.org/libcamera/libcamera.git
-              cd libcamera
-              meson build -Dpipelines=raspberrypi -Dipas=raspberrypi -Dv4l2=true
-              ninja -C build
-              sudo ninja -C build install
-              sudo ldconfig
-            fi
-          fi
+          
+          # Install meson build system and other build dependencies
+          sudo apt-get install -y meson python3-pip python3-yaml python3-ply python3-jinja2
+          sudo apt-get install -y libgnutls28-dev openssl libssl-dev
+          sudo apt-get install -y libudev-dev libevent-dev
+          # Clone and build libcamera
+          git clone https://git.libcamera.org/libcamera/libcamera.git
+          cd libcamera
+          meson setup build -Dpipelines=raspberrypi -Dipas=raspberrypi -Dv4l2=true
+          ninja -C build
+          sudo ninja -C build install
+          sudo ldconfig
+          
           # Add libcamera development packages
           sudo apt-get install -y libcamera-dev
           # For hardware interaction - we'll try to install these but allow failures

@@ -36,7 +36,7 @@ jobs:
           # Clone and build libcamera
           git clone https://git.libcamera.org/libcamera/libcamera.git
           cd libcamera
-          meson setup build -Dpipelines=raspberrypi -Dipas=rpi/pisp -Dv4l2=true
+          meson setup build -Dpipelines=auto -Dipas=auto -Dv4l2=true
           ninja -C build
           sudo ninja -C build install
           sudo ldconfig

@@ -23,11 +23,12 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake
+          sudo apt-get install -y build-essential cmake  ninja-build
           sudo apt-get install -y libopencv-dev
           sudo apt-get install -y libboost-all-dev
           sudo apt-get install -y pkg-config
           sudo apt-get install -y libavcodec-dev libavformat-dev libavutil-dev
+          sudo apt-get install libcamera-tools gstreamer1.0-libcamera
           # For hardware interaction - we'll try to install these but allow failures
           # since we're running in CI with CI_TEST_MODE=1
           sudo apt-get install -y liblgpio-dev || true
@@ -44,7 +45,7 @@ jobs:
           cd Software/LMSourceCode/ImageProcessing
           # Create compatibility symlinks if needed by the code
           ln -sf core/rpicam_app.hpp core/libcamera_app.hpp || true
-          cmake -B build -S . -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake -B build -S . -G Ninja -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
         env:
           CMAKE_BUILD_TYPE: Release
           PITRAC_SLOT1_CAMERA_TYPE: "auto"  # Required by gs_config.cpp
@@ -52,7 +53,7 @@ jobs:
       - name: Build
         run: |
           cd Software/LMSourceCode/ImageProcessing
-          cmake --build build --config Release
+          ninja -C build
       
       - name: Create Test Directories
         run: |

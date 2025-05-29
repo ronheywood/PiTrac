@@ -23,31 +23,25 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake  ninja-build
-          sudo apt-get install -y libopencv-dev
-          sudo apt-get install -y libboost-all-dev
-          sudo apt-get install -y pkg-config
-          sudo apt-get install -y libavcodec-dev libavformat-dev libavutil-dev
+          sudo apt-get install -y libevent-dev  
+          sudo apt install -y pybind11-dev
+          sudo apt -y install doxygen
+          sudo apt install -y python3-graphviz  
+          sudo apt install -y python3-sphinx
+          sudo apt install -y python3-yaml python3-ply  
+          sudo apt install -y libavdevice-dev
+          sudo apt install -y qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5
+          sudo apt install -y libcamera-dev libepoxy-dev libjpeg-dev libtiff5-dev libpng-dev   
+          sudo apt install -y qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5
+          sudo apt install libavcodec-dev libavdevice-dev libavformat-dev libswresample-dev
           
-          # Install meson build system and other build dependencies
-          sudo apt-get install -y meson python3-pip python3-yaml python3-ply python3-jinja2
-          sudo apt-get install -y libgnutls28-dev openssl libssl-dev
-          sudo apt-get install -y libudev-dev libevent-dev
-          # Clone and build libcamera
-          git clone https://git.libcamera.org/libcamera/libcamera.git
-          cd libcamera
-          meson setup build -Dpipelines=rpi/pisp -Dipas=rpi/pisp -Dv4l2=true
-          ninja -C build
-          sudo ninja -C build install
+          git clone https://github.com/raspberrypi/rpicam-apps.git
+          cd rpicam-apps
+          meson setup build -Denable_libav=disabled -Denable_drm=enabled -Denable_egl=disabled -Denable_qt=disabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
+          meson compile -C build
+          sudo meson install -C build
           sudo ldconfig
 
-          # Add libcamera development packages
-          sudo apt-get install -y libcamera-dev
-          # For hardware interaction - we'll try to install these but allow failures
-          # since we're running in CI with CI_TEST_MODE=1
-          sudo apt-get install -y liblgpio-dev || true
-          sudo apt-get install -y spi-tools || true      
-          
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:

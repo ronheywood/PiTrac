@@ -88,6 +88,11 @@ jobs:
           ninja -C build
           sudo ninja -C build install
 
+      - name: Install OpenCV 4
+        run: |
+          sudo apt-get install libopencv-dev
+          sudo apt-get install python3-opencv
+
       - name: RPI Cam App PreRequisites
         run: |
           sudo apt install -y libexif-dev

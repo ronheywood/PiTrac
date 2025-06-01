@@ -64,9 +64,19 @@ jobs:
           Cflags: -I$${includedir}
           EOL
 
+      - name: Install libcamera PreRequisites
+        run: |
+          sudo apt-get install -y libevent-dev
+          sudo apt install -y pybind11-dev
+          sudo apt -y install doxygen
+          sudo apt install -y python3-graphviz
+          sudo apt install -y python3-sphinx
+          sudo apt install -y python3-yaml python3-ply
+          sudo apt install -y libavdevice-dev
+          sudo apt install -y qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5
+
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ runner.os }}-ccache-${{ github.ref }}
           max-size: 1G
-

@@ -7,8 +7,13 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
+      - name: Create Dev directory
+        run: mkdir -p ~/Dev
+        
       - uses: actions/checkout@v4
-      
+        with:
+          path: ~/Dev/PiTrac
+        
       - name: Cache dependencies
         uses: actions/cache@v3
         with:
@@ -44,7 +49,6 @@ jobs:
 
       - name: Install liblgpio
         run: |
-          mkdir -p ~/Dev
           cd ~/Dev
           wget http://abyz.me.uk/lg/lg.zip
           unzip lg.zip
@@ -107,6 +111,20 @@ jobs:
           meson compile -C build  
           sudo meson install -C build  
           sudo ldconfig
+      
+      - name: Configure PiTrac
+        run: |
+            export PITRAC_ROOT=~/Dev/PiTrac/Software/LMSourceCode  
+            export PITRAC_BASE_IMAGE_LOGGING_DIR=~/LM_Shares/Images/
+            export PITRAC_WEBSERVER_SHARE_DIR=~/LM_Shares/WebShare/
+            sudo apt-get -y install libraspberrypi-dev raspberrypi-kernel-headers   
+
+      - name: Build PiTrac
+        run: |
+            cd $PITRAC_ROOT/ImageProcessing
+            chmod +x create_closed_source_objects.sh
+            meson setup build
+            ninja -C build
 
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1.2

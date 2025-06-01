@@ -74,6 +74,16 @@ jobs:
           sudo apt install -y python3-yaml python3-ply
           sudo apt install -y libavdevice-dev
           sudo apt install -y qtbase5-dev libqt5core5a libqt5gui5 libqt5widgets5
+          sudo apt install -y python3-pip git python3-jinja2
+
+      - name: Make libcamera
+        run: |
+          cd ~/Dev
+          git clone https://github.com/raspberrypi/libcamera.git
+          cd libcamera
+          meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp -Dv4l2=true -Dgstreamer=enabled -Dtest=false -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled -Ddocumentation=disabled -Dpycamera=enabled
+          ninja -C build
+          sudo ninja -C build install
 
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1.2

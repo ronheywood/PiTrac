@@ -9,6 +9,10 @@
 # Use TomEE plume as base image
 FROM tomee:10.0.0-M3-plume
 
+# Reinstall libc-bin from package sources to ensure compatibility
+RUN rm /var/lib/dpkg/info/libc-bin.*
+RUN apt-get install libc-bin
+
 # Install OpenJDK and required packages
 RUN apt-get update && apt-get install -y \
     openjdk-17-jdk \
@@ -16,7 +20,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Set JAVA_HOME
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-arm64
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # Set environment variables

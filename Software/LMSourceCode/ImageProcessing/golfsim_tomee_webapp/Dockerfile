@@ -6,22 +6,33 @@
 # - ActiveMQ (Apache License 2.0)
 # See DOCKER-LICENSE-COMPLIANCE.md for full license details
 
-# Use TomEE plume as base image
-FROM tomee:10.0.0-M3-plume
+# Use OpenJDK base image with Debian that supports apt-get
+FROM openjdk:17-jdk-slim-bullseye
 
-# Reinstall libc-bin from package sources to ensure compatibility
-RUN rm /var/lib/dpkg/info/libc-bin.*
-RUN apt-get install libc-bin
-
-# Install OpenJDK and required packages
+# Update package list and install required packages
 RUN apt-get update && apt-get install -y \
-    openjdk-17-jdk \
+    wget \
+    unzip \
     maven \
     && rm -rf /var/lib/apt/lists/*
 
-# Set JAVA_HOME
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-arm64
-ENV PATH="${JAVA_HOME}/bin:${PATH}"
+# Download and install TomEE
+RUN cd /tmp && \
+    wget https://repo1.maven.org/maven2/org/apache/tomee/apache-tomee/10.0.0/apache-tomee-10.0.0-plume.zip && \
+    unzip apache-tomee-10.0.0-plume.zip && \
+    mv apache-tomee-plume-10.0.0 /usr/local/tomee && \
+    rm -rf apache-tomee-10.0.0-plume.zip
+
+# Set CATALINA_HOME to point to TomEE
+ENV CATALINA_HOME=/usr/local/tomee
+ENV PATH=$CATALINA_HOME/bin:$PATH
+
+# Reinstall libc-bin from package sources to ensure compatibility
+RUN rm -f /var/lib/dpkg/info/libc-bin.* || true
+RUN apt-get update && apt-get install -y --reinstall libc-bin && rm -rf /var/lib/apt/lists/*
+
+# Verify Java installation
+RUN java -version && javac -version && echo "JAVA_HOME: $JAVA_HOME"
 
 # Set environment variables
 ENV PITRAC_ROOT=/app/PiTrac/Software/LMSourceCode \
@@ -36,8 +47,9 @@ RUN mkdir -p /app/LM_Shares/Images \
     /app/Dev/WebAppDev
 
 # Configure TomEE
-COPY conf/tomcat-users.xml /usr/local/tomee/conf/tomcat-users.xml
-COPY conf/context.xml /usr/local/tomee/webapps/manager/META-INF/context.xml
+COPY conf/tomcat-users.xml $CATALINA_HOME/conf/tomcat-users.xml
+COPY conf/context.xml $CATALINA_HOME/webapps/manager/META-INF/context.xml
+RUN chmod +x $CATALINA_HOME/bin/catalina.sh
 
 # Set up directory structure and files
 WORKDIR /app/PiTrac/Software/LMSourceCode/ImageProcessing/golfsim_tomee_webapp
@@ -59,9 +71,13 @@ WORKDIR /app/Dev/WebAppDev
 RUN cp -r /app/PiTrac/Software/LMSourceCode/ImageProcessing/golfsim_tomee_webapp/* . && \
     sed -i 's/\r$//' refresh_from_dev.sh && \
     chmod +x refresh_from_dev.sh && \
-    ./refresh_from_dev.sh && \
-    mvn package && \
-    cp target/golfsim.war /usr/local/tomee/webapps/
+    ./refresh_from_dev.sh
+
+# Build and deploy application
+RUN mvn package && \
+    rm -rf $CATALINA_HOME/webapps/ROOT && \
+    cp target/golfsim.war $CATALINA_HOME/webapps/ && \
+    cp target/golfsim.war $CATALINA_HOME/webapps/ROOT.war
 
 # Create volume mount points
 VOLUME ["/app/LM_Shares/Images", "/app/LM_Shares/WebShare"]
@@ -71,3 +87,6 @@ COPY DOCKER-LICENSE-COMPLIANCE.md /usr/share/doc/
 
 # Expose TomEE ports
 EXPOSE 8080
+
+# Start TomEE server
+CMD ["catalina.sh", "run"]

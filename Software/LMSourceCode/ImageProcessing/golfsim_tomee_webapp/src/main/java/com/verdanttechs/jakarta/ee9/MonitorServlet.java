@@ -147,13 +147,11 @@ public class MonitorServlet extends HttpServlet {
                 // Also set the current result object to have the same club type
                 current_result_.club_type_ = club;
 
-            } catch (Exception e) {
-                System.out.println("Caught: " + e);
-                e.printStackTrace();
             }
-
-        }
-
+            catch (Exception e) {
+                logger.error("Exception publishing changed club event", e);
+            }
+    }
 
     public static class GsIPCResult {
 

@@ -1,0 +1,270 @@
+---
+name: Windows Build and Test
+on:
+  push:
+    paths:
+      - '.github/workflows/**.yml'
+      - Software/LMSourceCode/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - Software/LMSourceCode/**
+  workflow_dispatch: null
+env:
+  OPENCV_VERSION: 4.10.0
+  BOOST_VERSION: 1.87.0
+  BOOST_MSVC_VERSION: "14.3"
+  SOLUTION_PATH: Software\LMSourceCode\GolfSim.sln
+  PROJECT_PATH: Software\LMSourceCode\ImageProcessing\ImageProcessing.vcxproj
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        configuration:
+          - Debug
+          - Release
+        platform:
+          - x64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+      - name: Setup VS Dev Environment
+        uses: TheMrMilchmann/setup-msvc-dev@v3
+        with:
+          arch: x64
+      - name: Cache OpenCV
+        id: cache-opencv
+        uses: actions/cache@v4
+        with:
+          path: C:\opencv
+          key: opencv-${{ env.OPENCV_VERSION }}-windows-x64
+      - name: Install OpenCV
+        if: steps.cache-opencv.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: >
+          $url =
+          "https://github.com/opencv/opencv/releases/download/$env:OPENCV_VERSION/opencv-$env:OPENCV_VERSION-windows.exe"
+
+          Write-Host "Downloading OpenCV from: $url"
+
+          Invoke-WebRequest -Uri $url -OutFile "opencv-installer.exe"
+
+          Write-Host "Installing OpenCV..."
+
+          .\opencv-installer.exe -o"C:\" -y
+
+          Write-Host "OpenCV installation completed"
+      - name: Cache Boost
+        id: cache-boost
+        uses: actions/cache@v4
+        with:
+          path: C:\boost
+          key: boost-${{ env.BOOST_VERSION }}-windows-x64-msvc${{ env.BOOST_MSVC_VERSION
+            }}
+      - name: Install Boost
+        if: steps.cache-boost.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: >
+          $boostVersionUnderscores = $env:BOOST_VERSION -replace '\.', '_'
+
+          $url = "https://sourceforge.net/projects/boost/files/boost-binaries/$env:BOOST_VERSION/boost_$boostVersionUnderscores-msvc-$env:BOOST_MSVC_VERSION-64.exe/download"
+
+          Write-Host "Downloading Boost from: $url"
+
+          Invoke-WebRequest -Uri $url -OutFile "boost-installer.exe" -UserAgent "Mozilla/5.0"
+
+          Write-Host "Installing Boost..."
+
+          .\boost-installer.exe /S /D=C:\boost
+
+          Write-Host "Boost installation completed"
+      - name: Verify dependencies
+        shell: pwsh
+        run: |
+          Write-Host "Checking OpenCV installation..."
+          if (Test-Path "C:\opencv\build\include\opencv2\opencv.hpp") {
+            Write-Host "✓ OpenCV headers found"
+          } else {
+            Write-Host "✗ OpenCV headers not found"
+            exit 1
+          }
+
+          if (Test-Path "C:\opencv\build\x64\vc16\lib\opencv_world*.lib") {
+            Write-Host "✓ OpenCV libraries found"
+          } else {
+            Write-Host "✗ OpenCV libraries not found"
+            exit 1
+          }
+
+          Write-Host "Checking Boost installation..."
+          if (Test-Path "C:\boost\boost\version.hpp") {
+            Write-Host "✓ Boost headers found"
+          } else {
+            Write-Host "✗ Boost headers not found"
+            exit 1
+          }
+
+          if (Test-Path "C:\boost\lib64-msvc-$env:BOOST_MSVC_VERSION") {
+            Write-Host "✓ Boost libraries found"
+          } else {
+            Write-Host "✗ Boost libraries not found"
+            exit 1
+          }
+      - name: Update project properties
+        shell: pwsh
+        run: >
+          $vcxprojPath = "$env:PROJECT_PATH"
+
+          Write-Host "Updating project file: $vcxprojPath"
+
+
+          # Read the project file
+
+          [xml]$proj = Get-Content $vcxprojPath
+
+          $ns = @{msb = "http://schemas.microsoft.com/developer/msbuild/2003"}
+
+
+          # Define paths
+
+          $opencvInclude = "C:\opencv\build\include"
+
+          $boostInclude = "C:\boost"
+
+          $opencvLibDir = "C:\opencv\build\x64\vc16\lib"
+
+          $boostLibDir = "C:\boost\lib64-msvc-$env:BOOST_MSVC_VERSION"
+
+          $opencvBinDir = "C:\opencv\build\x64\vc16\bin"
+
+          $boostBinDir = "C:\boost\lib64-msvc-$env:BOOST_MSVC_VERSION"
+
+
+          # Update each configuration
+
+          $configurations = @('Debug|x64', 'Release|x64')
+
+
+          foreach ($config in $configurations) {
+            Write-Host "Updating configuration: $config"
+            
+            # Find or create ItemDefinitionGroup for this configuration
+            $configCondition = "'`$(Configuration)|`$(Platform)'=='$config'"
+            $itemDefGroup = $proj.SelectSingleNode("//msb:ItemDefinitionGroup[@Condition=$configCondition]", $ns)
+            
+            if ($null -eq $itemDefGroup) {
+              $itemDefGroup = $proj.CreateElement("ItemDefinitionGroup", $proj.DocumentElement.NamespaceURI)
+              $itemDefGroup.SetAttribute("Condition", $configCondition)
+              $proj.DocumentElement.AppendChild($itemDefGroup)
+            }
+            
+            # Add ClCompile section
+            $clCompile = $itemDefGroup.SelectSingleNode("msb:ClCompile", $ns)
+            if ($null -eq $clCompile) {
+              $clCompile = $proj.CreateElement("ClCompile", $proj.DocumentElement.NamespaceURI)
+              $itemDefGroup.AppendChild($clCompile)
+            }
+            
+            # Set AdditionalIncludeDirectories
+            $includeDir = $clCompile.SelectSingleNode("msb:AdditionalIncludeDirectories", $ns)
+            if ($null -eq $includeDir) {
+              $includeDir = $proj.CreateElement("AdditionalIncludeDirectories", $proj.DocumentElement.NamespaceURI)
+              $clCompile.AppendChild($includeDir)
+            }
+            $includeDir.InnerText = "$opencvInclude;$boostInclude;%(AdditionalIncludeDirectories)"
+            
+            # Set PreprocessorDefinitions
+            $preprocDefs = $clCompile.SelectSingleNode("msb:PreprocessorDefinitions", $ns)
+            if ($null -eq $preprocDefs) {
+              $preprocDefs = $proj.CreateElement("PreprocessorDefinitions", $proj.DocumentElement.NamespaceURI)
+              $clCompile.AppendChild($preprocDefs)
+            }
+            
+            if ($config -match "Debug") {
+              $preprocDefs.InnerText = "BOOST_BIND_GLOBAL_PLACEHOLDERS;BOOST_ALL_DYN_LINK;BOOST_USE_WINAPI_VERSION=0x0A00;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)"
+            } else {
+              $preprocDefs.InnerText = "BOOST_BIND_GLOBAL_PLACEHOLDERS;BOOST_ALL_DYN_LINK;BOOST_USE_WINAPI_VERSION=0x0A00;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)"
+            }
+            
+            # Add Link section
+            $link = $itemDefGroup.SelectSingleNode("msb:Link", $ns)
+            if ($null -eq $link) {
+              $link = $proj.CreateElement("Link", $proj.DocumentElement.NamespaceURI)
+              $itemDefGroup.AppendChild($link)
+            }
+            
+            # Set AdditionalLibraryDirectories
+            $libDir = $link.SelectSingleNode("msb:AdditionalLibraryDirectories", $ns)
+            if ($null -eq $libDir) {
+              $libDir = $proj.CreateElement("AdditionalLibraryDirectories", $proj.DocumentElement.NamespaceURI)
+              $link.AppendChild($libDir)
+            }
+            $libDir.InnerText = "$opencvLibDir;$boostLibDir;%(AdditionalLibraryDirectories)"
+            
+            # Set AdditionalDependencies
+            $deps = $link.SelectSingleNode("msb:AdditionalDependencies", $ns)
+            if ($null -eq $deps) {
+              $deps = $proj.CreateElement("AdditionalDependencies", $proj.DocumentElement.NamespaceURI)
+              $link.AppendChild($deps)
+            }
+            
+            if ($config -match "Debug") {
+              $deps.InnerText = "opencv_world${env:OPENCV_VERSION -replace '\.',''}d.lib;`$(CoreLibraryDependencies);%(AdditionalDependencies)"
+            } else {
+              $deps.InnerText = "opencv_world${env:OPENCV_VERSION -replace '\.',''}.lib;`$(CoreLibraryDependencies);%(AdditionalDependencies)"
+            }
+          }
+
+
+          # Save the updated project file
+
+          $proj.Save($vcxprojPath)
+
+          Write-Host "Project file updated successfully"
+      - name: Setup PATH for runtime
+        shell: pwsh
+        run: |
+          $opencvBin = "C:\opencv\build\x64\vc16\bin"
+          $boostBin = "C:\boost\lib64-msvc-$env:BOOST_MSVC_VERSION"
+          $currentPath = $env:PATH
+          $newPath = "$opencvBin;$boostBin;$currentPath"
+          echo "PATH=$newPath" >> $env:GITHUB_ENV
+          Write-Host "Updated PATH for runtime"
+      - name: Build solution
+        shell: cmd
+        run: >
+          echo Building solution with MSBuild...
+
+          msbuild "%SOLUTION_PATH%" /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m /v:minimal
+      - name: Run smoke test
+        shell: cmd
+        working-directory: Software\LMSourceCode\ImageProcessing\${{ matrix.platform
+          }}\${{ matrix.configuration }}
+        run: >
+          echo Running PiTrac smoke test...
+
+          echo Current directory: %CD%
+
+          dir
+
+          echo Testing if executable exists...
+
+          if exist ImageProcessing.exe (
+            echo Running smoke test with CI-friendly parameters...
+            ImageProcessing.exe --show_images 0 --wait_keys 0 --system_mode automated_testing --logging_level info --help
+            if %ERRORLEVEL% EQU 0 (
+              echo Smoke test passed - application started and showed help
+            ) else (
+              echo Smoke test failed with error code %ERRORLEVEL%
+              exit /b %ERRORLEVEL%
+            )
+          ) else (
+            echo ERROR: ImageProcessing.exe not found
+            exit /b 1
+          )

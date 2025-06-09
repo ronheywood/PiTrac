@@ -3,6 +3,28 @@
 
 This document provides instructions for setting up the PiTrac development environment on Windows for debugging and development purposes.
 
+## Quick Setup (Recommended)
+
+**For automated setup, run the PowerShell script:**
+
+```powershell
+# Navigate to the windows-setup directory
+cd "c:\kata\PiTrac\Software\LMSourceCode\ImageProcessing\windows-setup"
+
+# Run the automated setup script
+.\setup-environment.ps1
+```
+
+This script will:
+- Prompt you for OpenCV and Boost installation paths
+- Validate the installations
+- Set the required environment variables
+- Provide guidance for next steps
+
+## Manual Setup
+
+If you prefer to set up the environment manually, follow the instructions below.
+
 ## Prerequisites
 
 1. **Visual Studio 2022** (Community, Professional, or Enterprise)
@@ -46,9 +68,9 @@ $env:BOOST_DIR = "C:\Dev_Libs\boost"
 
 ## Installation Instructions
 
-### 1. Install OpenCV 4.10.0
+### 1. Install OpenCV 4.11.0
 
-1. Download OpenCV 4.10.0 from [opencv.org](https://opencv.org/releases/)
+1. Download OpenCV 4.11.0 from [opencv.org](https://opencv.org/releases/)
 2. Extract to `C:\tools\opencv` (or your preferred location)
 3. Set `OPENCV_DIR` environment variable to point to this location
 
@@ -108,6 +130,31 @@ To verify your setup:
 5. Build the project in Debug configuration
 
 ## Troubleshooting
+
+### Automation Scripts
+
+This directory includes PowerShell scripts to automate environment setup:
+
+- **`setup-environment.ps1`** - Master setup script (runs both OpenCV and Boost setup)
+- **`setup-opencv.ps1`** - OpenCV-specific environment setup
+- **`setup-boost.ps1`** - Boost-specific environment setup
+
+To use the scripts:
+
+```powershell
+# Full automated setup
+.\setup-environment.ps1
+
+# Or run individual scripts
+.\setup-opencv.ps1
+.\setup-boost.ps1
+```
+
+The scripts will:
+- Validate installation paths and directory structure
+- Check for required library files
+- Set environment variables persistently
+- Provide detailed feedback and error messages
 
 ### Common Issues
 

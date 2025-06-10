@@ -33,6 +33,7 @@
 
 #include "gs_globals.h"
 #include "gs_options.h"
+#include "gs_config.h"
 #include "gs_ipc_system.h"
 #include "logging_tools.h"
 
@@ -242,23 +243,9 @@ namespace golf_sim {
             return false;
         }
 
-        std::string system_id;
+        std::string system_id = GolfSimConfiguration::GetSystemID();
 
-        // Ensure we identify who we are so that we can avoid getting our own
-        // messages reflected back to su (and chewing up time + bandwidth)
-        // Note that if the system is in still or auto-calibrate modes, this is system 1, regardless of which
-        // camera is going to take the picture.
-        if (GolfSimOptions::GetCommandLineOptions().GetCameraNumber() == GsCameraNumber::kGsCamera1 ||
-            GolfSimOptions::GetCommandLineOptions().camera_still_mode_ ||
-            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1AutoCalibrate ||
-            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate ||
-            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1BallLocation ||
-            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2BallLocation) {
-            system_id = "LM_1";
-        }
-        else {
-            system_id = "LM_2";
-        }
+        bool single_pi_mode = GolfSimOptions::GetCommandLineOptions().run_single_pi_;
 
         GS_LOG_TRACE_MSG(trace, "GolfSimMessageProducer system_id: " + system_id);
 

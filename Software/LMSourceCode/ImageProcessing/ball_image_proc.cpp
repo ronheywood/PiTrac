@@ -464,7 +464,7 @@ namespace golf_sim {
             GS_LOG_TRACE_MSG(trace, "Skipping pre-Canny Blur");
         }
 
-        // TBD - REMOVED THIS FOR NOW
+        // TBD - REMOVED THIS FOR NOW - IT DOESN'T SEEM TO HELP
         for (int i = 0; i < 0; i++) {
             cv::erode(search_image, search_image, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)), cv::Point(-1, -1), 3);
             cv::dilate(search_image, search_image, cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)), cv::Point(-1, -1), 3);

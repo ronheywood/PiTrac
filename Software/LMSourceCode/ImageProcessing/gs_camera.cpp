@@ -58,7 +58,7 @@ namespace golf_sim {
     double GolfSimCamera::kPreImageWeightingGreen = 1.0;
     double GolfSimCamera::kPreImageWeightingRed = 1.0;
 
-    float GolfSimCamera::kBallAreaMaskRadiusRatio = 5.0f;
+    float GolfSimCamera::kTeedBallSearchAreaMaskRadiusRatio = 5.0f;
     double GolfSimCamera::kCamera1CalibrationDistanceToBall = 0.5;
     double GolfSimCamera::kCamera2CalibrationDistanceToBall = 0.5;
 
@@ -168,7 +168,7 @@ namespace golf_sim {
         GolfSimConfiguration::SetConstant("gs_config.calibration.kCamera1CalibrationDistanceToBall", kCamera1CalibrationDistanceToBall);
         GolfSimConfiguration::SetConstant("gs_config.calibration.kCamera2CalibrationDistanceToBall", kCamera2CalibrationDistanceToBall);
 
-        GolfSimConfiguration::SetConstant("gs_config.ball_position.kBallAreaMaskRadiusRatio", kBallAreaMaskRadiusRatio);
+        GolfSimConfiguration::SetConstant("gs_config.ball_position.kTeedBallSearchAreaMaskRadiusRatio", kTeedBallSearchAreaMaskRadiusRatio);
         
         GolfSimConfiguration::SetConstant("gs_config.cameras.kCamera1XOffsetForTilt", kCamera1XOffsetForTilt);
         GolfSimConfiguration::SetConstant("gs_config.cameras.kCamera1YOffsetForTilt", kCamera1YOffsetForTilt);
@@ -364,7 +364,7 @@ namespace golf_sim {
 
         ip->min_ball_radius_ = min;
         ip->max_ball_radius_ = max;
-        GS_LOG_TRACE_MSG(trace, "Looking for a ball with min/max radius (pixels) of: " + std::to_string(min) + ", " + std::to_string(max));
+        GS_LOG_TRACE_MSG(trace, "GetCalibratedBall Looking for a ball with min/max radius (pixels) of: " + std::to_string(min) + ", " + std::to_string(max));
 
         // Expect the ball in the center of the image if not otherwise specified
         int expected_ball_X = expectedBallCenter[0];
@@ -382,7 +382,8 @@ namespace golf_sim {
                            (int)(2. * search_area_radius), (int)(2. * search_area_radius) };
         }
 
-        int mask_radius = int(expectedRadius * kBallAreaMaskRadiusRatio);
+        int mask_radius = int(expectedRadius * kTeedBallSearchAreaMaskRadiusRatio);
+        GS_LOG_TRACE_MSG(trace, "GetCalibratedBall using search mask_radius (computed using kTeedBallSearchAreaMaskRadiusRatio=" + std::to_string(kTeedBallSearchAreaMaskRadiusRatio) + " of: " + std::to_string(mask_radius));
 
         ip->area_mask_image_ = CvUtils::GetAreaMaskImage(rgbImg.cols, rgbImg.rows, expected_ball_X, expected_ball_Y, mask_radius, roi);
         LoggingTools::DebugShowImage("AreaMaskImage Photo", ip->area_mask_image_);
@@ -1771,7 +1772,7 @@ namespace golf_sim {
 
                 GolfBall& current_ball = initial_balls[outer_index];
 
-                for (size_t i = initial_balls.size() - 1; i > outer_index; i--) {
+                for (size_t i = initial_balls.size() - 1; (initial_balls.size() > 0) && (i > outer_index); i--) {
                     GolfBall& b = initial_balls[i];
 
                     double ball_angle_degrees = 0;
@@ -3828,7 +3829,7 @@ namespace golf_sim {
             bool result = ip->GetBall(color_image, ball, return_balls, nullROI, search_mode);
 
             if (!result || return_balls.empty()) {
-                GS_LOG_MSG(error, "GetBall() failed to get a ball.");
+                GS_LOG_MSG(error, "GetBall() failed to get a ball.  Consider setting  --show_images=1  in order to determine why no ball was found.");
                 return -1.0;
             }
 
@@ -4009,18 +4010,24 @@ namespace golf_sim {
                 return false;
             }
 
+            GS_LOG_TRACE_MSG(trace, "Expected (x,y,z) distances to ball: " + LoggingTools::FormatVec3f(kAutoCalibrationBallPositionFromCameraMeters));
+
             double distance_direct_to_ball = CvUtils::GetDistance(kAutoCalibrationBallPositionFromCameraMeters);
             
             if (distance_direct_to_ball <= 0.0) {
                 GS_LOG_MSG(error, "Could not calculate a valid distance_direct_to_ball.");
                 return false;
             }
+            
+            GS_LOG_TRACE_MSG(trace, "Expected distance_direct_to_ball is: " + std::to_string(distance_direct_to_ball));
 
             // TBD - would a smaller radius range help with more accurately ID'ing the balls and 
             // determining the focal length?
             double expectedRadius = getExpectedBallRadiusPixels(camera.camera_hardware_, camera.camera_hardware_.resolution_x_, distance_direct_to_ball);
-            ip->min_ball_radius_ = int(1.2 * expectedRadius * kMinRadiusRatio);
-            ip->max_ball_radius_ = int(0.8 * expectedRadius * kMaxRadiusRatio);
+            ip->min_ball_radius_ = int(0.8 * expectedRadius * kMinRadiusRatio);
+            ip->max_ball_radius_ = int(1.2 * expectedRadius * kMaxRadiusRatio);
+
+            GS_LOG_TRACE_MSG(trace, "Min/Max expected ball radii are: " + std::to_string(ip->min_ball_radius_) + " / " + std::to_string(ip->max_ball_radius_));
 
             GS_LOG_TRACE_MSG(trace, "Determining focal length for auto-calibration. Will average " + std::to_string(number_attempts) + " samples.");
 
@@ -4032,6 +4039,8 @@ namespace golf_sim {
                     GS_LOG_MSG(error, "FAILED to TakeStillPicture");
                     return false;
                 }
+
+                LoggingTools::LogImage("", color_image, std::vector < cv::Point >{}, true, "Focal_Length_Autocalibration_Input_Image_" + std::to_string(i) + ".png");
 
                 // This code will take the place of determining the angles by hand measurements
                 // At this point, we don't know at what angles the camera we're calibrating is oriented.
@@ -4046,7 +4055,7 @@ namespace golf_sim {
                 }
 
                 // The intermediate image is useful to see if the circles are being identified accurately
-                LoggingTools::LogImage("", ip->final_result_image_, std::vector < cv::Point >{}, true, "Focal_Length_Autocalibration_Image_" + std::to_string(i) + ".png");
+                LoggingTools::LogImage("", ip->final_result_image_, std::vector < cv::Point >{}, true, "Focal_Length_Autocalibration_Results_Image_" + std::to_string(i) + ".png");
 
                 number_samples++;
 

@@ -1084,8 +1084,9 @@ void run_main(int argc, char* argv[])
         
         case SystemMode::kCamera2:
         case SystemMode::kCamera2TestStandalone:
+        case SystemMode::kRunCam2ProcessForPi1Processing:
         {
-            GS_LOG_MSG(info, "Running in kCamera2 or kCamera2TestStandalone mode.");
+            GS_LOG_MSG(info, "Running in kCamera2 or kCamera2TestStandalone or kRunCam2ProcessForPi1Processing mode.");
 
             state::InitializingCamera2System camera2_state;
             RunGolfSimFsm(camera2_state);

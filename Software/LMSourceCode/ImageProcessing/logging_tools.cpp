@@ -377,6 +377,10 @@ namespace golf_sim {
 
         InternalLog(trace, "ShowImage(" + name + ", " + SummarizeImage(img));
 
+        if (DisplayIntermediateImages()) {
+            LogImage(name, img, pointFeatures);
+        }
+
         name = name + " (" + std::to_string(CvUtils::CvWidth(img)) + ", " + std::to_string(CvUtils::CvHeight(img)) + ")";
         cv::namedWindow((cv::String)name, cv::WINDOW_NORMAL);
 

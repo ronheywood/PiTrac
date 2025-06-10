@@ -91,7 +91,7 @@
             "kMaxMovedBallRadiusRatio": "1.5",
             "kMinRadiusRatio": "0.8",
             "kMaxRadiusRatio": "1.7",
-            "kBallAreaMaskRadiusRatio": "9.0",
+            "kTeedBallSearchAreaMaskRadiusRatio": "11.0",
             "kMinBallRadiusPixelsForProximityWarning": "160"
         },
         "ball_exposure_selection": {
@@ -161,7 +161,7 @@
             "kBallRadiusMeters": "0.021335"
         },
         "strobing": {
-            "number_bits_for_fast_on_pulse_": "6",
+            "number_bits_for_fast_on_pulse_": "4",
             "number_bits_for_slow_on_pulse_": "8",
             "kBaudRateForFastPulses": "115200",
             "kBaudRateForSlowPulses": "115200",
@@ -251,122 +251,142 @@
             "kMaxWatchingCropWidth": "96",
             "kMaxWatchingCropHeight": "88"
         },
-      "cameras": {
-        "kCameraMotionDetectSettings": ".\/assets\/motion_detect.json",
-        "kCamera1FocalLength": "6.4030723439413677",
-        "kCamera2FocalLength": "6.11",
-        "comment - kCamera1Gain = 6 and kCamera1Contrast=1.3 is good for practice ball. For regular ball, 3 and 1.5": "0",
-        "kCamera1Gain": "1.0",
-        "kCamera1HighFPSGain": "15.0",
-        "kCamera1Contrast": "1.0",
-        "kCamera2Gain": "4.0",
-        "kCamera2ComparisonGain": "0.8",
-        "kCamera2CalibrateOrLocationGain": "1.0",
-        "kCamera2Contrast": "1.2",
-        "kCamera2PuttingGain": "1.5",
-        "kCamera2PuttingContrast": "1.2",
-        "kCamera1StillShutterTimeuS": "40000",
-        "kCamera2StillShutterTimeuS": "15000",
-        "kCamera1PositionsFromExpectedBallMeters": [
-          "0.40",
-          "-0.20",
-          "0.50"
-        ],
-        "kCamera2PositionsFromExpectedBallMeters": [
-          "0.0",
-          "-0.051",
-          "0.55"
-        ],
-        "kCamera2OffsetFromCamera1OriginMeters": [
-          "0.03",
-          "-0.19",
-          "0.0"
-        ],
-        "kCamera1Angles": [
-          "48.587453708172063",
-          "-20.597432130360897"
-        ],
-        "kCamera2Angles": [
-          "0",
-          "6.77"
-        ],
-        "kCamera1XOffsetForTilt": "0",
-        "kCamera1YOffsetForTilt": "0",
-        "kCamera2XOffsetForTilt": "0",
-        "kCamera2YOffsetForTilt": "0",
-        "kCamera1CalibrationMatrix": [
-          [
-            "1.825268110451985876e+03",
-            "0.000000000000000000e+00",
-            "6.560920394665909043e+02"
-          ],
-          [
-            "0.000000000000000000e+00",
-            "1.827901989005196810e+03",
-            "5.319678162262430305e+02"
-          ],
-          [
-            "0.000000000000000000e+00",
-            "0.000000000000000000e+00",
-            "1.000000000000000000e+00"
-          ]
-        ],
-        "kCamera1DistortionVector": [
-          "-0.546987",
-          "0.432329",
-          "-0.006607",
-          "0.008145",
-          "-0.344390"
-        ],
-        "kCamera2CalibrationMatrix": [
-          [
-            "1.836374063510859514e+03",
-            "0.000000000000000000e+00",
-            "7.506562375932951454e+02"
-          ],
-          [
-            "0.000000000000000000e+00",
-            "1.842554330618142558e+03",
-            "5.583207746468583537e+02"
-          ],
-          [
-            "0.000000000000000000e+00",
-            "0.000000000000000000e+00",
-            "1.000000000000000000e+00"
-          ]
-        ],
-        "kCamera2DistortionVector": [
-          "-0.504763",
-          "0.173410",
-          "0.001554",
-          "0.000916",
-          "0.355220"
-        ],
-        "kNumInitialCamera2PrimingPulses": "12",
-        "kPauseBeforeCamera2PrimingPulsesMs": "2000",
-        "kPauseBeforeSendingPreImageTriggerMs": "2000",
-        "kPauseAfterSendingPreImageTriggerMs": "2000",
-        "kPauseBeforeSendingImageFlushMs": "300",
-        "kPauseBeforeSendingFinalImageTriggerMs": "2000",
-        "kPauseBeforeSendingLastPrimingPulse": "1500",
-        "kExpectedBallRadiusPixelsAt40cmCamera1": "87",
-        "kExpectedBallRadiusPixelsAt40cmCamera2": "87"
-      },
-        "calibration": {
-            "Looking out from cameras, positive X distance is to the right, positive y is up, and positive Z is outward": "0",
-            "kAutoCalibrationBallPositionFromCamera1Meters": [
-                "-0.525",
-                "-0.275",
-                "0.45"
+        "cameras": {
+            "kCameraMotionDetectSettings": ".\/assets\/motion_detect.json",
+            "kCamera1FocalLength": "6.3977095405621016",
+            "kCamera2FocalLength": "6.3201357950061094",
+            "comment - kCamera1Gain = 6 and kCamera1Contrast=1.3 is good for practice ball. For regular ball, 3 and 1.5": "0",
+            "kCamera1Gain": "1.0",
+            "kCamera1HighFPSGain": "15.0",
+            "kCamera1Contrast": "1.0",
+            "kCamera2Gain": "4.0",
+            "kCamera2ComparisonGain": "0.8",
+            "kCamera2CalibrateOrLocationGain": "1.0",
+            "kCamera2Contrast": "1.2",
+            "kCamera2PuttingGain": "1.5",
+            "kCamera2PuttingContrast": "1.2",
+            "kCamera1StillShutterTimeuS": "40000",
+            "kCamera2StillShutterTimeuS": "15000",
+            "kCamera1PositionsFromExpectedBallMeters": [
+                "-0.504",
+                "-0.234",
+                "0.491"
             ],
-            "kAutoCalibrationBallPositionFromCamera2Meters": [
+            "kCamera2PositionsFromExpectedBallMeters": [
                 "0.0",
-                "0.095",
-                "0.435"
+                "-0.051",
+                "0.55"
             ],
-            "kNumberPicturesForFocalLengthAverage": "6",
-            "kTestAutoCalibrationFileName": "M:\\Dev\\PiTrac\\Software\\LMSourceCode\\Images\\autocalibrate_cam1_still_picture_1.png"
+            "kCamera2OffsetFromCamera1OriginMeters": [
+                "0.03",
+                "-0.19",
+                "0.0"
+            ],
+            "kCamera1Angles": [
+                "37.101564086763098",
+                "-29.422574962478969"
+            ],
+            "kCamera2Angles": [
+                "-3.2842076943897336",
+                "3.1293017046429936"
+            ],
+            "kCamera1XOffsetForTilt": "0",
+            "kCamera1YOffsetForTilt": "0",
+            "kCamera2XOffsetForTilt": "0",
+            "kCamera2YOffsetForTilt": "0",
+            "kCamera1CalibrationMatrix": [
+                [
+                    "1.825268110451985876e+03",
+                    "0.000000000000000000e+00",
+                    "6.560920394665909043e+02"
+                ],
+                [
+                    "0.000000000000000000e+00",
+                    "1.827901989005196810e+03",
+                    "5.319678162262430305e+02"
+                ],
+                [
+                    "0.000000000000000000e+00",
+                    "0.000000000000000000e+00",
+                    "1.000000000000000000e+00"
+                ]
+            ],
+            "kCamera1DistortionVector": [
+                "-0.546987",
+                "0.432329",
+                "-0.006607",
+                "0.008145",
+                "-0.344390"
+            ],
+            "kCamera2CalibrationMatrix": [
+                [
+                    "1.836374063510859514e+03",
+                    "0.000000000000000000e+00",
+                    "7.506562375932951454e+02"
+                ],
+                [
+                    "0.000000000000000000e+00",
+                    "1.842554330618142558e+03",
+                    "5.583207746468583537e+02"
+                ],
+                [
+                    "0.000000000000000000e+00",
+                    "0.000000000000000000e+00",
+                    "1.000000000000000000e+00"
+                ]
+            ],
+            "kCamera2DistortionVector": [
+                "-0.504763",
+                "0.173410",
+                "0.001554",
+                "0.000916",
+                "0.355220"
+            ],
+            "kNumInitialCamera2PrimingPulses": "12",
+            "kPauseBeforeCamera2PrimingPulsesMs": "2000",
+            "kPauseBeforeSendingPreImageTriggerMs": "2000",
+            "kPauseAfterSendingPreImageTriggerMs": "2000",
+            "kPauseBeforeSendingImageFlushMs": "300",
+            "kPauseBeforeSendingFinalImageTriggerMs": "2000",
+            "kPauseBeforeSendingLastPrimingPulse": "1500",
+            "kExpectedBallRadiusPixelsAt40cmCamera1": "87",
+            "kExpectedBallRadiusPixelsAt40cmCamera2": "87"
         },
+      "calibration": {
+        "Looking out from cameras, positive X distance is to the right, positive y is up, and positive Z is outward": "0",
+        "kAutoCalibrationBallPositionFromCamera1Meters": [
+          "-0.504",
+          "-0.234",
+          "0.491"
+        ],
+        "kAutoCalibrationBallPositionFromCamera2Meters": [
+          "0.0",
+          "0.088",
+          "0.466"
+        ],
+        "k_VERSION_1_ENCLOSURE_AutoCalibrationBallPositionFromCamera1Meters": [
+          "-0.525",
+          "-0.275",
+          "0.45"
+        ],
+        "k_VERSION_1_ENCLOSURE_AutoCalibrationBallPositionFromCamera2Meters": [
+          "0.0",
+          "0.095",
+          "0.435"
+        ],
+        "k_VERSION_2_ENCLOSURE_AutoCalibrationBallPositionFromCamera1Meters": [
+          "-0.504",
+          "-0.234",
+          "0.491"
+        ],
+        "k_VERSION_2_ENCLOSURE_AutoCalibrationBallPositionFromCamera2Meters": [
+          "0.0",
+          "0.088",
+          "0.466"
+        ],
+        "kNumberPicturesForFocalLengthAverage": "6",
+        "kTestAutoCalibrationFileName": "M:\\Dev\\PiTrac\\Software\\LMSourceCode\\Images\\autocalibrate_cam1_still_picture_1.png"
+      },
         "golf_simulator_interfaces": {
             "kLaunchMonitorIdString": "PiTrac LM 0.1",
             "kSkipSpinCalculation": "0",
@@ -398,8 +418,8 @@
             "kRegionThreshold": "0.2",
             "kMaxRegionThreshold": "0.2",
             "kFramePeriod": "0",
-            "kHSkip": "5",
-            "kVSkip": "5"
+            "kHSkip": "2",
+            "kVSkip": "2"
         },
         "testing": {
             "kBaseTestImageDir": "M:\/GolfSim\/TestImages\/WrongSideSpin_03\/",

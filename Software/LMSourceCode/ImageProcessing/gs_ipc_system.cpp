@@ -264,11 +264,11 @@ namespace golf_sim {
 
 
 
-        bool GolfSimIpcSystem::DispatchRequestForCamera2TestStillImage(const GolfSimIPCMessage& message) {
+    bool GolfSimIpcSystem::DispatchRequestForCamera2TestStillImage(const GolfSimIPCMessage& message) {
 
         GS_LOG_TRACE_MSG(trace, "DispatchRequestForCamera2TestStillImage Received Ipc Message.");
 
-        // This message is telling the camera 2 system to get to  take a one-strobe picture, whereas
+        // This message is telling the camera 2 system to get ready to take a one-strobe picture, whereas
         // the camera will be externally triggered from the camera 1 system once the ball appears
         // to have been hit.
         // The main difference between this and the usual camera2 picture request is that the
@@ -283,13 +283,14 @@ namespace golf_sim {
                 break;
 
             case SystemMode::kCamera2:
+            case SystemMode::kRunCam2ProcessForPi1Processing:
             {
                 // TBD - Not sure we need this message?
                 break;
             }
             default:
             {
-                LoggingTools::Warning("GolfSimIpcSystem::DispatchRequestForCamera2ImageMessage found unknown command_line_options_.system_mode_ .");
+                LoggingTools::Warning("GolfSimIpcSystem::DispatchRequestForCamera2TestStillImage found unknown command_line_options_.system_mode_ .");
                 return false;
 
                 break;
@@ -323,6 +324,7 @@ namespace golf_sim {
             }
             case SystemMode::kCamera2:
             case SystemMode::kCamera2TestStandalone:
+            case SystemMode::kRunCam2ProcessForPi1Processing:
             {
                 // Let the FSM deal with the message by entering a related message into the queue
                 GolfSimEventElement armCamera2MessageReceived{ new GolfSimEvent::ArmCamera2MessageReceived{ } };

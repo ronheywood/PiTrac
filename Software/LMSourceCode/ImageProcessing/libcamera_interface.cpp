@@ -263,8 +263,20 @@ namespace golf_sim {
             watching_crop_height = LibCameraInterface::kMaxWatchingCropHeight;
         }
 
-        // Ensure the ball is not so small that the inscribed watching area ( for high FPS )
-        // is larger than the ball and could pick up unrelated movement outside of the ball
+        // One issue here is that the current GS camera will not crop any smaller than 98x88.  So, if the ball is smaller
+        // than that, we still have to go with the 98x88 and deal with the smaller ball later within the ROI processing
+
+        // We will later want to Ensure the ball is not so small that the inscribed watching area ( for high FPS )
+        // is larger than the ball and could pick up unrelated movement outside of the ball.
+        // We will deal with this when determining the ROI
+        uint largest_inscribed_square_side_length_of_ball = (double)(CvUtils::CircleRadius(ball.ball_circle_)) * sqrt(2);
+
+        // Reduce the size of the inscribed square a little bit to ensure the motion detection ROI will be within the ball
+        largest_inscribed_square_side_length_of_ball *= 0.9;
+        GS_LOG_TRACE_MSG(trace, "largest_inscribed_square_side_length_of_ball is: " + std::to_string(largest_inscribed_square_side_length_of_ball));
+
+#ifdef NOT_DOING_THIS_NOW
+
         uint largest_inscribed_square_side_length_of_ball = (double)(CvUtils::CircleRadius(ball.ball_circle_)) * sqrt(2);
         GS_LOG_TRACE_MSG(trace, "largest_inscribed_square_side_length_of_ball is: " + std::to_string(largest_inscribed_square_side_length_of_ball));
 
@@ -276,15 +288,22 @@ namespace golf_sim {
                 watching_crop_width = largest_inscribed_square_side_length_of_ball;
             }
             if (largest_inscribed_square_side_length_of_ball < watching_crop_height) {
-                GS_LOG_TRACE_MSG(trace, "Increasing cropping window height because largest ball square side = " + std::to_string(largest_inscribed_square_side_length_of_ball));
+                GS_LOG_TRACE_MSG(trace, "Decreasing cropping window height because largest ball square side = " + std::to_string(largest_inscribed_square_side_length_of_ball));
                 watching_crop_height = largest_inscribed_square_side_length_of_ball;
             }
         }
+
+#endif
 
         // Starting with Pi 5, the crop height and width have to be divisible by 2. 
         // Enforce that here
         watching_crop_width += ((int)watching_crop_width % 2);
         watching_crop_height += ((int)watching_crop_height % 2);
+
+        // TBD - After all that, and just for the current GS camera, we'll just set the cropping size to the smalllest possible size (for FPS)
+        // and either center the ball within that area, or put the ball in the bottom-right of the 
+        // viewport if we want to see the club data.
+
 
         GS_LOG_TRACE_MSG(trace, "Final crop width/height is: " + std::to_string(watching_crop_width) + "/" + std::to_string(watching_crop_height) + ".");
 
@@ -297,19 +316,59 @@ namespace golf_sim {
         float ball_x = CvUtils::CircleX(ball.ball_circle_);
         float ball_y = CvUtils::CircleY(ball.ball_circle_);
 
+        GS_LOG_TRACE_MSG(trace, "Ball location (x,y) is: " + std::to_string(ball_x) + "/" + std::to_string(ball_y) + ".");
 
         // Assume first is that the ball will be centered in the cropping window, then tweak
         // it next if we're in club strike mode. Club strike imaging may require an offset.
         // NOTE - the crop offset is from the bottom right!  Not the top-left.
-        float crop_offset_x = camera.camera_hardware_.resolution_x_ - (ball_x + watching_crop_width / 2.0);
-        float crop_offset_y = camera.camera_hardware_.resolution_y_ - (ball_y + watching_crop_height / 2.0);
 
-        // If we're trying to get club images, then skew the image so that the golf ball "watch" ROI is
+        float crop_offset_x = 0.0;
+        float crop_offset_y = 0.0;
+
+        // TBD - Not sure why the cropped window has to be skewed like this, but otherwise, the ball
+        // is often off-center.
+        const float crop_offset_scale_adjustment_x = 1.0; // 0.99;
+        const float crop_offset_scale_adjustment_y = 1.0; //0.99;
+
+        const float crop_offset_adjustment_x = -5; // pixels
+        const float crop_offset_adjustment_y = -13; // pixels
+
+        // The video resolution is a little different than the still-photo resolution.
+        // So scale the center of the ball accordingly.
+        float x_scale = crop_offset_scale_adjustment_x; // NOT IMPLEMENTED YET   ((float)camera.camera_hardware_.video_resolution_x_ / (float)camera.camera_hardware_.resolution_x_);
+        crop_offset_x = crop_offset_adjustment_x + (x_scale * (camera.camera_hardware_.resolution_x_ - (ball_x + watching_crop_width / 2.0)));
+
+        float y_scale = crop_offset_scale_adjustment_y; // NOT IMPLEMENTED YET  ((float)camera.camera_hardware_.video_resolution_y_ / (float)camera.camera_hardware_.resolution_y_);
+        crop_offset_y = crop_offset_adjustment_y + (y_scale * (camera.camera_hardware_.resolution_y_ - (ball_y + watching_crop_height / 2.0)));
+
+        GS_LOG_TRACE_MSG(trace, "Video--to-still scaling factor (x,y) is: " + std::to_string(x_scale) + "/" + std::to_string(y_scale) + ".");
+        GS_LOG_TRACE_MSG(trace, "Video resolution (x,y) is: " + std::to_string(camera.camera_hardware_.video_resolution_x_) + "/" + std::to_string(camera.camera_hardware_.video_resolution_y_) + ".");
+        GS_LOG_TRACE_MSG(trace, "Initial crop offset (x,y) is: " + std::to_string(crop_offset_x) + "/" + std::to_string(crop_offset_y) + ".");
+
+        // If we're trying to get club images, then skew the cropping so that the ball ends up near the
+        // bottom-right such that the the golf ball "watch" ROI will eventually also be 
         // all the way at the bottom right (to give more room so see the club)
         if (GolfSimClubData::kGatherClubData) {
             crop_offset_x += (0.5 * watching_crop_width - 0.5 * largest_inscribed_square_side_length_of_ball);
             crop_offset_y += (0.5 * watching_crop_height - 0.5 * largest_inscribed_square_side_length_of_ball);
         }
+
+        GS_LOG_TRACE_MSG(trace, "Post-Club-Data crop offset (x,y) is: " + std::to_string(crop_offset_x) + "/" + std::to_string(crop_offset_y) + ".");
+
+        // Check for and correct if the resulting crop window would be outside the full resolution image
+        // If we need to correct something, preserve the crop width and correct the offset.
+        // NOTE - Camera resolutions are 1 greater than the greatest pixel position
+        if ((((camera.camera_hardware_.resolution_x_ - 1) - crop_offset_x) + watching_crop_width) >= camera.camera_hardware_.resolution_x_) {
+            GS_LOG_TRACE_MSG(trace, "Correcting X crop offset to avoid going outside the screen.");
+            crop_offset_x = (camera.camera_hardware_.video_resolution_x_ - crop_offset_x) - 1;
+        }
+
+        if ((((camera.camera_hardware_.resolution_y_ - 1) - crop_offset_y) + watching_crop_height) >= camera.camera_hardware_.resolution_y_) {
+            GS_LOG_TRACE_MSG(trace, "Correcting Y crop offset to avoid going outside the screen.");
+            crop_offset_y = (camera.camera_hardware_.video_resolution_y_ - crop_offset_y) - 1;
+        }
+
+        GS_LOG_TRACE_MSG(trace, "Final (adjusted) crop offset x/y is: " + std::to_string(crop_offset_x) + "/" + std::to_string(crop_offset_y) + ".");
 
         cv::Vec2i watching_crop_size = cv::Vec2i((uint)watching_crop_width, (uint)watching_crop_height);
         cv::Vec2i watching_crop_offset = cv::Vec2i((uint)crop_offset_x, (uint)crop_offset_y);
@@ -324,25 +383,13 @@ namespace golf_sim {
             return true;
         }
 
-
-        // Check for and correct if the resulting crop window would be outside the full resolution image
-        // If we need to correct something, preserve the crop width and correct the offset.
-        // NOTE - Camera resolutions are 1 greater than the greatest pixel position
-        if ((((camera.camera_hardware_.resolution_x_ - 1) - crop_offset_x) + watching_crop_width) >= camera.camera_hardware_.resolution_x_) {
-            crop_offset_x = (camera.camera_hardware_.resolution_x_ - crop_offset_x) - 1;
-        }
-
-        if ((((camera.camera_hardware_.resolution_y_ - 1) - crop_offset_y) + watching_crop_height) >= camera.camera_hardware_.resolution_y_) {
-            crop_offset_y = (camera.camera_hardware_.resolution_y_ - crop_offset_y) - 1;
-        }
-
-        GS_LOG_TRACE_MSG(trace, "Final (adjusted) crop offset x/y is: " + std::to_string(crop_offset_x) + "/" + std::to_string(crop_offset_y) + ".");
-
         if (!SendCameraCroppingCommand(camera.camera_hardware_.camera_number_, watching_crop_size, watching_crop_offset)) {
             GS_LOG_TRACE_MSG(error, "Failed to SendCameraCroppingCommand.");
             return false;
         }
 
+
+        // TBD - Note - this entire thing should work on x,y vectors to the extent possible.
 
         // Determine what the resulting frame rate is in the resulting camera mode  (and confirm the resolution)
         // The camera would have been stopped after we took the first picture, so need re-start for this call
@@ -362,44 +409,70 @@ namespace golf_sim {
 
         // For the post processing, we also need to know what portion of the cropped window
         // is of interest in terms of determining ball movement.
-        // Offsets are from the top-left corner of the cropped window
-        // NOTE - We have to convert from the center of the ROI to the top-left
-        float roi_offset_x = (ball_x - (camera.camera_hardware_.resolution_x_ - crop_offset_x)) - largest_inscribed_square_side_length_of_ball / 2.0 + watching_crop_width;
-        float roi_offset_y = (ball_y - (camera.camera_hardware_.resolution_y_ - crop_offset_y)) - largest_inscribed_square_side_length_of_ball / 2.0 + watching_crop_height;
-
-        if (roi_offset_x < 0.0) {
-            roi_offset_x = 0.0;
-        }
-
-        if (roi_offset_y < 0.0) {
-            roi_offset_y = 0.0;
-        }
-
-        GS_LOG_TRACE_MSG(trace, "Final roi x/y offset is: " + std::to_string(roi_offset_x) + "/" + std::to_string(roi_offset_y) + ".");
-
-        cv::Vec2i roi_offset = cv::Vec2i((int)roi_offset_x, (int)roi_offset_y);
-
+        // Unlike the cropping window, Offsets here are from the top-left corner of the cropped window
         // Assume the ball is perfectly round, so the roi is square.  We don't want to watch for movement
         // anywhere but within the ball.
-        // Also, the roi can't be any larger than the hardware cropping we are doing.
-        float roi_size_x = std::min((float)largest_inscribed_square_side_length_of_ball, watching_crop_width);
-        float roi_size_y = std::min((float)largest_inscribed_square_side_length_of_ball, watching_crop_height);
+        // NOTE - We have to convert from the center of the ROI to the top-left
 
-        GS_LOG_TRACE_MSG(trace, "roi_size_x/y is: " + std::to_string(roi_size_x) + "/" + std::to_string(roi_size_y) + ".");
+        float roi_offset_x = 0.0;
+        float roi_offset_y = 0.0;
 
-        // Clamp the offsets if necessary
-        // Also handle the case where the ball is so big on the screen that it is actually larger than 
-        // the cropped roi
-        if (roi_size_x < watching_crop_width) {
-            roi_offset_x = std::clamp(roi_offset_x, 0.0f, watching_crop_width - roi_size_x);
+        float roi_size_x = 0.0;
+        float roi_size_y = 0.0;
+
+        float size_difference_x = largest_inscribed_square_side_length_of_ball - watching_crop_width;
+        float size_difference_y = largest_inscribed_square_side_length_of_ball - watching_crop_height;
+
+        GS_LOG_TRACE_MSG(trace, "x/y differences between the inscribed aquare and the watching crop are: " + std::to_string(size_difference_x) + "/" + std::to_string(size_difference_y) + ".");
+
+        if (size_difference_x >= 0.0) {
+            // The cropped area is already fully inside the ball (assuming we're not dealing with club strike data
+            // so just have the ROI match the cropping area
+            roi_size_x = watching_crop_width;
+            roi_offset_x = 0.0;
+        }
+        else {
+            // The cropping area is larger than a square inscribed in the ball circle, so we want to focus the
+            // ROI on just the area of that square.
+            roi_size_x = largest_inscribed_square_side_length_of_ball * x_scale;
+            // Essentially center the ROI within the image, assuming that the ball is centered in the cropping area
+            // (which will likely not be the case if we are widening the cropping area for club strike data)
+            roi_offset_x = -0.5 * (roi_size_x - watching_crop_width);
         }
 
-        if (roi_size_y < watching_crop_height) {
-            roi_offset_y = std::clamp(roi_offset_y, 0.0f, watching_crop_height - roi_size_y);
+        if (size_difference_y >= 0.0) {
+            // The cropped area is already fully inside the ball (assuming we're not dealing with club strike data
+            // so just have the ROI match the cropping area
+            roi_size_y = watching_crop_height;
+            roi_offset_y = 0.0;
         }
+        else {
+            // The cropping area is larger than a square inscribed in the ball circle, so we want to focus the
+            // ROI on just the area of that square.
+            roi_size_y = largest_inscribed_square_side_length_of_ball * y_scale;
+            // Essentially center the ROI within the image, assuming that the ball is centered in the cropping area
+            // (which will likely not be the case if we are widening the cropping area for club strike data)
+            roi_offset_y = -0.5 * (roi_size_y - watching_crop_height);
+        }
+
+        roi_offset_x = std::max(roi_offset_x, 0.0f);
+        roi_offset_y = std::max(roi_offset_y, 0.0f);
+
+        if (camera.camera_hardware_.video_resolution_x_ < 0 || camera.camera_hardware_.video_resolution_y_ < 0) {
+            GS_LOG_TRACE_MSG(error, "camera.camera_hardware_.video_resolution_x_ or _y_ have not been set.  Exiting.");
+            return false;
+        }
+
+        roi_offset_x = std::min(roi_offset_x, (float)camera.camera_hardware_.video_resolution_x_);
+        roi_offset_y = std::min(roi_offset_y, (float)camera.camera_hardware_.video_resolution_y_);
+
+        GS_LOG_TRACE_MSG(trace, "Final roi x/y offset is: " + std::to_string(roi_offset_x) + "/" + std::to_string(roi_offset_y) + ".");
+        GS_LOG_TRACE_MSG(trace, "Final roi x/y size is: " + std::to_string(roi_size_x) + "/" + std::to_string(roi_size_y) + ".");
+
 
         GS_LOG_TRACE_MSG(trace, "Final roi width/height is: " + std::to_string(roi_size_x) + "/" + std::to_string(roi_size_y) + ".");
 
+        cv::Vec2i roi_offset = cv::Vec2i((int)roi_offset_x, (int)roi_offset_y);
         cv::Vec2i roi_size = cv::Vec2i((uint)roi_size_x, (uint)roi_size_y);
 
         if (!ConfigurePostProcessing(roi_size, roi_offset)) {
@@ -743,6 +816,8 @@ bool ConfigureLibCameraOptions(RPiCamEncoder& app, const cv::Vec2i& cropping_win
         options->tuning_file = "/usr/share/libcamera/ipa/rpi/vc4/imx296.json";
     }
     setenv("LIBCAMERA_RPI_TUNING_FILE", options->tuning_file.c_str(), 1);
+    GS_LOG_TRACE_MSG(trace, "LIBCAMERA_RPI_TUNING_FILE set to: " + options->tuning_file);
+
     options->post_process_file = LibCameraInterface::kCameraMotionDetectSettings;
 
     if (!GolfSimClubData::kGatherClubData) {
@@ -1055,6 +1130,7 @@ LibcameraJpegApp* ConfigureForLibcameraStill(const GsCameraNumber camera_number)
             }
         }
         setenv("LIBCAMERA_RPI_TUNING_FILE", options->tuning_file.c_str(), 1);
+        GS_LOG_TRACE_MSG(trace, "LIBCAMERA_RPI_TUNING_FILE set to: " + options->tuning_file);
 
         if (options->verbose >= 2)
             options->Print();
@@ -1288,6 +1364,7 @@ bool WaitForCam2Trigger(cv::Mat& return_image) {
         }
         
         setenv("LIBCAMERA_RPI_TUNING_FILE", options->tuning_file.c_str(), 1);
+        GS_LOG_TRACE_MSG(trace, "LIBCAMERA_RPI_TUNING_FILE set to: " + options->tuning_file);
 
         if (options->verbose >= 2)
             options->Print();
@@ -1391,7 +1468,7 @@ bool PerformCameraSystemStartup() {
                 tuning_file = "/usr/share/libcamera/ipa/rpi/vc4/imx296_noir.json";
             }
             setenv("LIBCAMERA_RPI_TUNING_FILE", tuning_file.c_str(), 1);
-
+            GS_LOG_TRACE_MSG(trace, "LIBCAMERA_RPI_TUNING_FILE set to: " + tuning_file);
         }
         break;
 

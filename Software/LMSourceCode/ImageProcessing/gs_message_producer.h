@@ -62,7 +62,7 @@ namespace golf_sim {
 
     public:
 
-        // Creaters andtarts the listener (consumer) messaging thread.
+        // Creates and starts the listener (consumer) messaging thread.
         // Acts as a factory
         static GolfSimMessageProducer* Initialize(std::string& broker_URI);
 

@@ -68,6 +68,12 @@ namespace golf_sim {
 		// Remove the named node in the json tree if it exists.  
 		// Returns true if the node had previously existed, false if not
 		static bool RemoveTreeNode(const std::string& tag_name);
+
+		// Returns "LM_1" or "LM_2" based on the current process configuration
+		// This string may be used, e.g., to identify the system to the ActiveMQ
+		// messaging system.  
+		static std::string GetSystemID();
+
 	protected:
 
 		static boost::property_tree::ptree configuration_root_;

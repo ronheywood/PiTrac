@@ -31,7 +31,8 @@ namespace golf_sim {
 		kAutomatedTesting = 12,
 		kCamera1AutoCalibrate = 13,
 		kCamera2AutoCalibrate = 14,
-		kCamera2OnePulseOnly = 15,
+		kRunCam2ProcessForPi1Processing = 15,  // This is for when a process is running on camera 2 for the purpose of auto-calibration or taking pictures for ball location
+		kCamera2OnePulseOnly = 16,
 	};
 
 	enum LoggingLevel {
@@ -76,7 +77,7 @@ namespace golf_sim {
 				("golfer_orientation", value<std::string>(&golfer_orientation_string_)->default_value("right_handed"),
 					"Set the golfer's handed-ness (right_handed, left_handed)")
 				("system_mode", value<std::string>(&system_mode_string_)->default_value("test"),
-					"Set the system's operating mode (test, camera1, camera2, camera1Calibrate, camera2Calibrate, camera1_test_standalone, camera2_test_standalone, test_spin, camera1_ball_location, camera2_ball_location, test_gspro_message, test_gspro_server, automated_testing, camera1AutoCalibrate, camera2AutoCalibrate, camera2_one_pulse_only)")
+					"Set the system's operating mode (test, camera1, camera2, camera1Calibrate, camera2Calibrate, camera1_test_standalone, camera2_test_standalone, test_spin, camera1_ball_location, camera2_ball_location, test_gspro_message, test_gspro_server, automated_testing, camera1AutoCalibrate, camera2AutoCalibrate, runCam2ProcessForPi1Processing, camera2_one_pulse_only)")
 				("logging_level", value<std::string>(&logging_level_string_)->default_value("warn"),
 					"Set the system's logging level (trace, debug, info, warn, error, none)")
 				("artifact_save_level", value<std::string>(&artifact_save_level_string_)->default_value("final_results_only"),

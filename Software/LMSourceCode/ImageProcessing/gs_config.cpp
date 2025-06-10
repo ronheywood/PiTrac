@@ -14,6 +14,7 @@
 #include "gs_camera.h"
 #include "gs_ui_system.h"
 #include "gs_config.h"
+#include "gs_options.h"
 
 // Having to set the constants in this way creates more entanglement than we'd like.  TBD - Re-architect
 #include "libcamera_interface.h"
@@ -490,5 +491,36 @@ bool GolfSimConfiguration::ReadValues() {
 
 		 return true;
 	 }
+
+	 std::string GolfSimConfiguration::GetSystemID() {
+
+		 std::string system_id;
+
+		 bool single_pi_mode = GolfSimOptions::GetCommandLineOptions().run_single_pi_;
+
+		 // Ensure we identify who we are so that we can avoid getting our own
+		 // messages reflected back to su (and chewing up time + bandwidth)
+		 // Note that if the system is in still or auto-calibrate modes, this is system 1, regardless of which
+		 // camera is going to take the picture.
+		 // In cases where the Pi 2/ Camera 2 system needs to take a picture, that will happen in a separate
+		 // process that (as far as it knows) will run just like it does when operating in the normal launch
+		 // monitor mode.
+		 if ((GolfSimOptions::GetCommandLineOptions().GetCameraNumber() == GsCameraNumber::kGsCamera1 && 
+					(GolfSimOptions::GetCommandLineOptions().system_mode_ != SystemMode::kRunCam2ProcessForPi1Processing)) ||
+			 (GolfSimOptions::GetCommandLineOptions().camera_still_mode_ && GolfSimOptions::GetCommandLineOptions().GetCameraNumber() == GsCameraNumber::kGsCamera2) ||
+			 GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1AutoCalibrate ||
+			 GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate) {
+
+			 system_id = "LM_1";
+		 }
+		 else {
+			 system_id = "LM_2";
+		 }
+
+		 GS_LOG_MSG(trace, "GolfSimConfiguration::GetSystemID returning: " + system_id);
+
+		 return system_id;
+	 }
+
 
 } // namespace golf_sim

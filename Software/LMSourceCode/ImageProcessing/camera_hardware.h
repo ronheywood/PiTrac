@@ -63,10 +63,15 @@ namespace golf_sim {
         cv::Mat calibrationMatrix;
         cv::Mat cameraDistortionVector;
 
-        // These SHOULD depend on camera model - TBD?
+        // These SHOULD depend on camera model
         // -1 if not set via init_camera_parameters or otherwise overridden
         int resolution_x_ = -1;
         int resolution_y_ = -1;
+
+        // For some cameras, the video resolution may be different (and 
+        // typically lower) than the still-picture resolution
+        int video_resolution_x_ = -1;
+        int video_resolution_y_ = -1;
 
         cv::Vec2d camera_angles_;
 

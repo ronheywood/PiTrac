@@ -77,7 +77,7 @@ namespace golf_sim {
 
         // How much larger the mask should be than the expected size of the ball
         // This allows the calibration to work even if the ball is a little off-center
-        static float kBallAreaMaskRadiusRatio;
+        static float kTeedBallSearchAreaMaskRadiusRatio;
 
         // Once the ball has been moved (hit), we expect it's radius will be relatively close to the original radius
         // where is started (or close) as a minimum, as well as a little larger or smaller.

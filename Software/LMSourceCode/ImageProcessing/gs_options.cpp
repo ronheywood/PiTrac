@@ -6,6 +6,7 @@
  // The LM's command-line processing module.
 
 #include "gs_options.h"
+#include "logging_tools.h"
 
 namespace golf_sim {
 
@@ -69,7 +70,8 @@ bool GolfSimOptions::Parse(int argc, char *argv[])
 		{ "automated_testing", SystemMode::kAutomatedTesting },
 		{ "camera1AutoCalibrate", SystemMode::kCamera1AutoCalibrate },
 		{ "camera2AutoCalibrate", SystemMode::kCamera2AutoCalibrate },
-		{ "camera2_one_pulse_only", SystemMode::kCamera2AutoCalibrate },		
+		{ "runCam2ProcessForPi1Processing", SystemMode::kRunCam2ProcessForPi1Processing },
+		{ "camera2_one_pulse_only", SystemMode::kCamera2OnePulseOnly },
 	};
 	if (mode_table.count(system_mode_string_) == 0)
 		throw std::runtime_error("Invalid system_mode: " + system_mode_string_);

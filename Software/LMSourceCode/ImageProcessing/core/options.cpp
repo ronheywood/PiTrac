@@ -18,6 +18,7 @@
 #include <libcamera/formats.h>
 #include <libcamera/logging.h>
 #include <libcamera/property_ids.h>
+#include "logging_tools.h"
 
 #include "core/options.hpp"
 
@@ -375,8 +376,10 @@ bool Options::Parse(int argc, char *argv[])
 
 	// We have to pass the tuning file name through an environment variable.
 	// Note that we only overwrite the variable if the option was given.
-	if (tuning_file != "-")
+	if (tuning_file != "-") {
 		setenv("LIBCAMERA_RPI_TUNING_FILE", tuning_file.c_str(), 1);
+		GS_LOG_TRACE_MSG(trace, "LIBCAMERA_RPI_TUNING_FILE set to: " + tuning_file);
+	}
 
 	if (hdr != "off" && hdr != "single-exp" && hdr != "sensor" && hdr != "auto")
 		throw std::runtime_error("Invalid HDR option provided: " + hdr);

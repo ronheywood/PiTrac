@@ -90,7 +90,7 @@ namespace golf_sim {
             { "100", CameraModel::kUnknown },
         };
         if (camera_table.count(model_enum_value_string) == 0)
-            throw std::runtime_error("Invalid camera model_enum_value_string: " + model_enum_value_string + ".  Expected an integer. Check environment varaibles.");
+            throw std::runtime_error("Invalid camera model_enum_value_string: " + model_enum_value_string + ".  Expected an integer. Check environment variables.");
         
         CameraHardware::CameraModel camera_model = (CameraHardware::CameraModel)camera_table[model_enum_value_string];
 
@@ -200,6 +200,12 @@ namespace golf_sim {
                 resolution_y_ = 1088;
             }
 
+            video_resolution_x_ = resolution_x_;
+            video_resolution_y_ = 1080;
+
+            GS_LOG_TRACE_MSG(trace, "Video resolution (x,y) is: " + std::to_string(video_resolution_x_) + "/" + std::to_string(video_resolution_y_) + ".");
+
+
             std::string ball_radius_pixels_at_40cm_name = "kExpectedBallRadiusPixelsAt40cmCamera" + std::string(camera_number == GsCameraNumber::kGsCamera1 ? "1" : "2");
 
             GolfSimConfiguration::SetConstant("gs_config.cameras." + ball_radius_pixels_at_40cm_name, expected_ball_radius_pixels_at_40cm_);
@@ -270,6 +276,8 @@ namespace golf_sim {
                 resolution_y_ = 3040;
             }
 
+            video_resolution_x_ = resolution_x_;
+            video_resolution_y_ = resolution_y_;
 
             // These are defaults from measurements from a real camera, but may differ from
             // camera instance to instance.
@@ -320,6 +328,9 @@ namespace golf_sim {
                 resolution_y_ = 2464;
             }
 
+            video_resolution_x_ = resolution_x_;
+            video_resolution_y_ = resolution_y_;
+
             if (resolution_x_ == 3280) {
                 calibrationMatrix = (cv::Mat_<float>(3, 3) <<
                     2716.386350, 0.000000, 1766.508245,
@@ -355,12 +366,15 @@ namespace golf_sim {
             focal_length_ = 3.6f;
             horizontalFoV = 53.5f;
             verticalFoV = 41.41f;
-            // TBD - Other params
+            // TBD - Other params for other potential resolutions
 
             //            resolution_x_ = 1024;
             //            resolution_y_ = 768;
             resolution_x_ = 2592;
             resolution_y_ = 1944;
+            video_resolution_x_ = resolution_x_;
+            video_resolution_y_ = resolution_y_;
+
             //            resolution_x_ = 1024;
             //            resolution_y_ = 768;
         }
@@ -369,7 +383,10 @@ namespace golf_sim {
             focal_length_ = 3.6f;
             resolution_x_ = 1024;
             resolution_y_ = 768;
+            video_resolution_x_ = resolution_x_;
+            video_resolution_y_ = resolution_y_;
         }
+
 
         // Customize any parameters that have been set in the JSON config file
 

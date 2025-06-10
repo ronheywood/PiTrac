@@ -10,7 +10,21 @@
 #include <functional>
 #include <string>
 
+#ifdef __unix__
 #include <libcamera/base/span.h>
+#else
+// Windows-compatible alternatives for libcamera types
+namespace libcamera {
+    template<typename T>
+    struct Span {
+        T* data_;
+        size_t size_;
+        Span(T* data = nullptr, size_t size = 0) : data_(data), size_(size) {}
+        T* data() const { return data_; }
+        size_t size() const { return size_; }
+    };
+}
+#endif
 
 #include "core/stream_info.hpp"
 

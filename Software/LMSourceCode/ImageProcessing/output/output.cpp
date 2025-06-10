@@ -10,7 +10,9 @@
 
 #include "circular_output.hpp"
 #include "file_output.hpp"
+#ifndef _WIN32
 #include "net_output.hpp"
+#endif
 #include "output.hpp"
 
 Output::Output(VideoOptions const *options)
@@ -100,13 +102,15 @@ void Output::outputBuffer(void *mem, size_t size, int64_t timestamp_us, uint32_t
 }
 
 Output *Output::Create(VideoOptions const *options)
-{
-	if (options->codec == "libav" || (options->codec == "h264" && options->GetPlatform() != Platform::VC4))
+{	if (options->codec == "libav" || (options->codec == "h264" && options->GetPlatform() != Platform::VC4))
 		return new Output(options);
 
+#ifndef _WIN32
 	if (strncmp(options->output.c_str(), "udp://", 6) == 0 || strncmp(options->output.c_str(), "tcp://", 6) == 0)
 		return new NetOutput(options);
-	else if (options->circular)
+	else
+#endif
+	if (options->circular)
 		return new CircularOutput(options);
 	else if (!options->output.empty())
 		return new FileOutput(options);

@@ -2,11 +2,26 @@ cmake_minimum_required(VERSION 3.6)
 
 include(GNUInstallDirs)
 
-pkg_check_modules(LIBDRM QUIET libdrm)
-pkg_check_modules(X11 QUIET x11)
-pkg_check_modules(EPOXY QUIET epoxy)
-pkg_check_modules(QTCORE QUIET Qt5Core)
-pkg_check_modules(QTWIDGETS QUIET Qt5Widgets)
+# Find Boost for compatibility with core headers
+find_package(Boost REQUIRED)
+
+if(NOT WIN32)
+    # Unix-specific preview dependencies
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(LIBDRM QUIET libdrm)
+    pkg_check_modules(X11 QUIET x11)
+    pkg_check_modules(EPOXY QUIET epoxy)
+    pkg_check_modules(QTCORE QUIET Qt5Core)
+    pkg_check_modules(QTWIDGETS QUIET Qt5Widgets)
+else()
+    # Windows: Set empty values for Unix-specific dependencies
+    message(STATUS "Skipping Unix preview dependencies on Windows")
+    set(LIBDRM_FOUND FALSE)
+    set(X11_FOUND FALSE)
+    set(EPOXY_FOUND FALSE)
+    set(QTCORE_FOUND FALSE)
+    set(QTWIDGETS_FOUND FALSE)
+endif()
 
 set(SRC "preview.cpp")
 set(TARGET_LIBS "")
@@ -65,6 +80,13 @@ endif()
 
 add_library(preview null_preview.cpp ${SRC})
 set_target_properties(preview PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
+
+# Add include directories for finding core headers
+target_include_directories(preview PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/..
+    ${Boost_INCLUDE_DIRS}
+)
+
 target_link_libraries(preview ${TARGET_LIBS})
 
 target_compile_definitions(preview PUBLIC LIBDRM_PRESENT=${DRM_FOUND})

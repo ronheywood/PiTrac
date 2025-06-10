@@ -7,7 +7,9 @@
 
 #pragma once
 
+#ifdef __unix__
 #include <sys/mman.h>
+#endif
 
 #include <condition_variable>
 #include <iostream>

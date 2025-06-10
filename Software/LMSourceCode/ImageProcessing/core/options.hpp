@@ -14,11 +14,27 @@
 
 #include <boost/program_options.hpp>
 
+#ifdef __unix__
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/property_ids.h>
 #include <libcamera/transform.h>
+
+// Forward declaration for RPiCamApp
+class RPiCamApp;
+#else
+// Windows-compatible alternatives for libcamera types
+namespace libcamera {
+    struct Size {
+        unsigned int width, height;
+        Size(unsigned int w = 0, unsigned int h = 0) : width(w), height(h) {}
+    };
+    struct Transform {
+        int value = 0; // Dummy value for Windows compatibility
+    };
+}
+#endif
 
 #include "core/logging.hpp"
 #include "core/version.hpp"
@@ -178,8 +194,11 @@ struct Options
 
 	virtual bool Parse(int argc, char *argv[]);
 	virtual void Print() const;
-
+#ifdef __unix__
 	void SetApp(RPiCamApp *app) { app_ = app; }
+#else
+	void SetApp(void *app) { app_ = app; } // Windows stub
+#endif
 	Platform GetPlatform() const { return platform_; };
 
 protected:
@@ -194,6 +213,10 @@ private:
 	std::string timeout_;
 	std::string shutter_;
 	std::string flicker_period_;
+#ifdef __unix__
 	RPiCamApp *app_;
+#else
+	void *app_; // Windows stub
+#endif
 	Platform platform_ = Platform::UNKNOWN;
 };

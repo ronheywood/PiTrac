@@ -8,9 +8,27 @@
 #pragma once
 
 #include <memory>
+#include <map>
 
+#ifdef __unix__
 #include <libcamera/controls.h>
 #include <libcamera/request.h>
+#else
+// Windows-compatible alternatives for libcamera types
+namespace libcamera {
+    struct ControlList {
+        // Dummy implementation for Windows compatibility
+    };
+    struct Request {
+        using BufferMap = std::map<void*, void*>; // Placeholder type
+        
+        // Mock methods that are used in the code
+        BufferMap buffers() { return BufferMap(); }
+        ControlList metadata() { return ControlList(); }
+        void reuse() { }
+    };
+}
+#endif
 
 #include "core/metadata.hpp"
 

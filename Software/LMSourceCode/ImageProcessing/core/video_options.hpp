@@ -8,8 +8,12 @@
 #pragma once
 
 #include <cstdio>
-
 #include <string>
+
+#ifdef _WIN32
+#include <cstring>
+#define strcasecmp _stricmp
+#endif
 
 #include "options.hpp"
 
@@ -45,9 +49,8 @@ public:
 					continue;
 				bps_ = f * m.second;
 				break;
-			}
-		}
-		catch (std::exception const &e)
+			}		}
+		catch (std::exception const &)
 		{
 			throw std::runtime_error("Invalid bitrate string provided");
 		}

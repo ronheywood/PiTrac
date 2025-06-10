@@ -104,12 +104,15 @@ namespace golf_sim {
 
 	char* PulseStrobe::BuildPulseTrain(const unsigned long baud_rate,
 									const std::vector<float>& intervals,
-									const int number_bits_for_on_pulse,
+									int number_bits_for_on_pulse_input,
 									const unsigned int kBitsPerWord, 
 									unsigned long& result_length,
 									bool turn_off_strobes) {
 
 		// TBD - All this setup needs to be done prior to the triggering so as not to waste time
+
+		// May need to alter the on-bits
+		int number_bits_for_on_pulse = number_bits_for_on_pulse_input;
 
 		double kBaudRatePulseMultiplier = 1.0;
 		GolfSimConfiguration::SetConstant("gs_config.strobing.kBaudRatePulseMultiplier", kBaudRatePulseMultiplier);
@@ -146,6 +149,16 @@ namespace golf_sim {
 		unsigned long current_byte = 0;
 		int next_pattern_zero_bits_pad = 0;
 
+		if (GolfSimOptions::GetCommandLineOptions().camera_still_mode_ ||
+			GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate ||
+			GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2BallLocation) {
+
+			// Double the pulse length, because we are only going to send one pulse
+			number_bits_for_on_pulse *= 2;
+			number_bits_for_on_pulse = std::min(10, number_bits_for_on_pulse);
+			GS_LOG_TRACE_MSG(trace, "Due to still/calibration/locate mode, will send a pulse of length: " + std::to_string(number_bits_for_on_pulse));
+		}
+
 		// Invariant - current_byte is the index of the next unused byte in the buffer, and is
 		// equal to the length of the in-use buffer
 		for (float const& strobe_off_time_ms : intervals) {
@@ -167,7 +180,9 @@ namespace golf_sim {
 				buf[current_byte++] = second_byte_bit_pattern;
 			}
 
-			if (!GolfSimOptions::GetCommandLineOptions().camera_still_mode_) {
+			if (!GolfSimOptions::GetCommandLineOptions().camera_still_mode_ &&
+				GolfSimOptions::GetCommandLineOptions().system_mode_ != SystemMode::kCamera2AutoCalibrate &&
+				GolfSimOptions::GetCommandLineOptions().system_mode_ != SystemMode::kCamera2BallLocation) {
 
 				// Then, turn off the strobe for the specified number of milliseconds.
 
@@ -193,6 +208,9 @@ namespace golf_sim {
 				// followed by a short additional amount of shutter-on time to make sure the 
 				// shutter pulse is not too short.
 				buf[current_byte++] = 0;
+
+				GS_LOG_TRACE_MSG(trace, "Due to still/calibration/locate mode, will send only one pulse.");
+
 				break;
 			}
 

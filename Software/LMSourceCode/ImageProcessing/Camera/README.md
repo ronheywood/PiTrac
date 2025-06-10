@@ -84,3 +84,13 @@ cmake .. -G "MinGW Makefiles"
 ```
 
 The test framework is completely self-contained and doesn't require the full PiTrac build system!
+
+## Continuous Integration
+
+The Camera tests run automatically on GitHub Actions:
+- **Triggers**: Push to any branch, Pull Requests
+- **Platform**: Windows (Visual Studio 2019)
+- **Path Filter**: Only runs when Camera code changes
+- **Test Suites**: All 25 test cases across 4 test suites
+
+View test results in the [Actions tab](../../actions) of the repository.

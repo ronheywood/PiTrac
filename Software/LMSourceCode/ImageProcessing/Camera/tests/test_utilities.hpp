@@ -1,9 +1,8 @@
-/* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Test Utilities for Camera Bounded Context
  * 
- * Common utilities and fixtures for Camera unit tests following xUnit patterns.
- * Provides reusable Arrange-Act-Assert helpers and test data.
+ * Common utilities and fixtures for Camera unit tests.
+ * Provides reusable helpers and test data.
  */
 
 #pragma once

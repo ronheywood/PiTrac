@@ -1,9 +1,7 @@
-/* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Advanced Domain Tests
  * 
- * Comprehensive parametric tests for camera domain types using test utilities.
- * Demonstrates xUnit Arrange-Act-Assert pattern with data-driven testing.
+ * Parametric tests for camera domain types using test utilities.
  */
 
 #include <boost/test/unit_test.hpp>

@@ -49,13 +49,20 @@ namespace golf_sim {
 		size_t sz = 0;
 #ifndef __unix__  // _dupenv_s does not exist yet in standard unix environment
 
-		if (_dupenv_s(&buffer, &sz, varname.c_str()) == 0 && buffer != nullptr) {
+		if (_dupenv_s(&buffer, &sz, varname.c_str()) == 0) {
+			if (buffer != nullptr) {
 			std::string value(buffer);
 			free(buffer);
 			return value;
+			}
 		}
 #else
-		return getenv(varname.c_str());
+		char *value = getenv(varname.c_str());
+		if (value != nullptr) {
+			std::string result = getenv(varname.c_str());
+			return result;
+		}
+
 #endif
 		return std::string();
 	}
@@ -194,6 +201,7 @@ bool GolfSimConfiguration::ReadValues() {
     // Read any environment variables that we may need
 
     std::string slot1_env = safe_getenv("PITRAC_SLOT1_CAMERA_TYPE");
+    GS_LOG_TRACE_MSG(info, "GolfSimConfiguration - PITRAC_SLOT1_CAMERA_TYPE environment variable was not set.  Value was: " );
     if (slot1_env.empty()) {
         GS_LOG_TRACE_MSG(info, "GolfSimConfiguration - PITRAC_SLOT1_CAMERA_TYPE environment variable was not set.  Assuming default of: " + std::to_string(GolfSimCamera::kSystemSlot1CameraType));
     } else {

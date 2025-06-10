@@ -8,4 +8,4 @@
 
 #rm -f Logs/*.log
 
-$PITRAC_ROOT/ImageProcessing/build/pitrac_lm  --system_mode camera1 $PITRAC_COMMON_CMD_LINE_ARGS  --search_center_x 850 --search_center_y 500 --logging_level=trace --artifact_save_level=final_results_only
+$PITRAC_ROOT/ImageProcessing/build/pitrac_lm  --system_mode camera1 $PITRAC_COMMON_CMD_LINE_ARGS  --search_center_x 850 --search_center_y 500 --logging_level=trace --artifact_save_level=final_results_only --camera_gain 1.1

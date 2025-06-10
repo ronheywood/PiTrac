@@ -11,17 +11,9 @@
 #ifdef __unix__
 #include <libcamera/color_space.h>
 #include <libcamera/pixel_format.h>
-#else
-// Windows-compatible alternatives for libcamera types
-namespace libcamera {
-    struct PixelFormat {
-        unsigned int fourcc = 0; // Placeholder
-    };
-    struct ColorSpace {
-        int value = 0; // Placeholder
-    };
-}
 #endif
+
+#include "libcamera_platform.hpp"
 
 struct StreamInfo
 {

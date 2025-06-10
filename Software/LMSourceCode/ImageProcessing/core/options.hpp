@@ -23,18 +23,9 @@
 
 // Forward declaration for RPiCamApp
 class RPiCamApp;
-#else
-// Windows-compatible alternatives for libcamera types
-namespace libcamera {
-    struct Size {
-        unsigned int width, height;
-        Size(unsigned int w = 0, unsigned int h = 0) : width(w), height(h) {}
-    };
-    struct Transform {
-        int value = 0; // Dummy value for Windows compatibility
-    };
-}
 #endif
+
+#include "libcamera_platform.hpp"
 
 #include "core/logging.hpp"
 #include "core/version.hpp"

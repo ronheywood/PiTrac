@@ -48,3 +48,11 @@ install(FILES ${CAMERA_HEADERS}
     DESTINATION include/Camera
     COMPONENT Devel
 )
+
+# Enable testing for this bounded context
+option(BUILD_CAMERA_TESTS "Build Camera bounded context unit tests" ON)
+
+if(BUILD_CAMERA_TESTS)
+    # Include the test subdirectory
+    add_subdirectory(tests)
+endif()

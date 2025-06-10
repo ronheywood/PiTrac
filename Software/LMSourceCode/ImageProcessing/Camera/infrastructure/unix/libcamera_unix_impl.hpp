@@ -1,12 +1,11 @@
-/* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Unix/Linux infrastructure implementation for camera operations
  * 
  * This file provides the actual libcamera implementations for Unix/Linux platforms.
  * It bridges between our domain interface and the real libcamera library.
  * 
- * Step 3 of incremental refactoring: Unix infrastructure layer.
- * This allows Unix builds to continue using real libcamera while we prepare 
+ * Unix infrastructure layer.
+ * This will allow Unix builds to continue using real libcamera while we prepare 
  * for eventual migration to domain interface.
  */
 

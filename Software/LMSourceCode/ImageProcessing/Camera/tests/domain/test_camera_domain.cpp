@@ -1,8 +1,7 @@
-/* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Camera Domain Tests
  * 
- * Unit tests for the camera domain interface using xUnit Arrange-Act-Assert pattern.
+ * Unit tests for the camera domain interface.
  * Tests the domain types and their behavior without platform dependencies.
  */
 

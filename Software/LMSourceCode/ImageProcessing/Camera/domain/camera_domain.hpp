@@ -1,4 +1,3 @@
-/* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Domain interface for libcamera abstractions
  * 

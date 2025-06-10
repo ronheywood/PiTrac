@@ -1,8 +1,7 @@
-/* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Platform Selection Tests
  * 
- * Unit tests for the camera platform selection mechanism using xUnit Arrange-Act-Assert pattern.
+ * Unit tests for the camera platform selection mechanism.
  * Tests that the correct platform implementation is selected and basic integration works.
  */
 

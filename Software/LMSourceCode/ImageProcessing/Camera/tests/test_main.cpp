@@ -1,13 +1,17 @@
-/* SPDX-License-Identifier: BSD-2-Clause */
 /*
  * Camera Bounded Context - Test Main Entry Point
  * 
  * Boost Test framework main for Camera bounded context unit tests.
- * Uses xUnit Arrange-Act-Assert pattern for all test cases.
  */
 
 #define BOOST_TEST_MODULE CameraBoundedContextTests
-#include <boost/test/unit_test.hpp>
+
+// Support both header-only and linked Boost Test modes
+#ifdef BOOST_TEST_HEADER_ONLY
+    #include <boost/test/included/unit_test.hpp>
+#else
+    #include <boost/test/unit_test.hpp>
+#endif
 
 // Global test setup and teardown can be added here if needed
 struct GlobalTestFixture {

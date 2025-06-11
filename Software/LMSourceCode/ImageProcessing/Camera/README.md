@@ -64,7 +64,7 @@ Test suite "CameraBoundedContextTests" passed with:
 If CMake can't find Boost:
 ```powershell
 # Option 1: Set environment variable
-$env:BOOST_DIR = "C:\path\to\boost"
+$env:BOOST_ROOT = "C:\path\to\boost"
 .\build_tests.ps1
 
 # Option 2: Specify during configure

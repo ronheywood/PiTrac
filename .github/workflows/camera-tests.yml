@@ -59,32 +59,17 @@ jobs:
         run: |
           Write-Host "=== Running Direct Test Executable ==="
           ./build/tests/camera_tests.exe
-        shell: pwsh
-
+        shell: pwsh      
+      
       - name: Comprehensive Test Report
         run: |
           Write-Host "=== Running CTest with Detailed Reporting ==="
           cd build/tests
           
           # Run CTest with XML output (JUnit format) from the tests directory
-          ctest -C Debug --verbose --output-on-failure --output-junit test-results.xml
+          ctest -C Debug --verbose --output-on-failure --output-junit ./build/tests/test-results.xml
+          
+          # Debug: Show what files were created
+          Write-Host "=== Files in tests directory after CTest ==="
+          Get-ChildItem | Format-Table Name, Length
         shell: pwsh
-
-      - name: Verify Xml Test Results Exist
-        run: >
-          Write-Host "Current Directory: $(Get-Location)"
-
-          Get-ChildItem -Recurse | Format-Table FullName
-
-          if (!(Test-Path -Path "./build/tests/camera_tests.exe")) {
-              Write-Error "camera_tests.exe was not generated in the expected directory."
-              exit 1
-          }
-        shell: pwsh
-        
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results
-          path: ${{ github.workspace }}\Software\LMSourceCode\ImageProcessing\Camera\build\tests\test-results.xml

@@ -469,10 +469,11 @@ namespace libpisp
           3. `sudo vi jetty.xml jetty.xml`  
              1. Search for the line that has `127.0.0.1` and replace with whatever the IP address is for the Pi this is all  running on.  
              2. Search for the line that begins with “ Enable this connector if you wish to use https with web console”  
-             3. Uncomment the next section by removing the \!-- and -- at the beginning and end of the bean.  The section should then look like  <bean id="Secure blah blah blah, and then at the end, </bean>  
+             3. Uncomment the next section by removing the \!-- and -- at the beginning and end of the bean.  The section should then look like  \<bean id="Secure blah blah blah, and then at the end, \</bean\>  
           4. `cd .. && sudo ./bin/activemq start`  
           5. Log into the broker console from another machine by: http://\<Pi IP address or name\>:8161/admin  
-             1. If this works, the broker is setup correctly  
+             1.The default login is typically admin/admin
+             2. If this works, the broker is setup correctly  
        2. Setup ActiveMQ to run automatically on startup  
           1. `sudo vi /etc/systemd/system/activemq.service` and add:
             ```bash 
@@ -493,7 +494,7 @@ namespace libpisp
           2. `sudo systemctl daemon-reload`  
           3. `sudo systemctl start activemq`  
           4. `sudo systemctl enable activemq`  
-          5. `sudo reboot now`   (to test the auto-start)  
+          5. `sudo reboot now`   (to test the auto-start) (use whatewver apache directory you chose, of course) 
           6. After the system comes back, do the following to verify it’s working:  
              1. `sudo /opt/apache-activemq-6.1.4/bin/activemq status`  (should say it’s running)  
              2. And from a browser, check 

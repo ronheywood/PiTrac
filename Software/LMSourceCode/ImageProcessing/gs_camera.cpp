@@ -1752,6 +1752,11 @@ namespace golf_sim {
 
             GS_LOG_TRACE_MSG(trace, "GolfSimCamera::RemoveUnlikelyAngleLowerQualityBalls");
 
+            if (initial_balls.size() < 1) {
+                GS_LOG_TRACE_MSG(warning, "initial_balls vector was empty.");
+                return;
+            }
+
             size_t number_exposures_to_analyze = kNumberAngleCheckExposures;
             // Make sure we're not trying to check more exposures than we have
             if (number_exposures_to_analyze >= initial_balls.size() - 1) {

@@ -544,9 +544,9 @@ KillSignal=SIGCONT
 [Install]  
 WantedBy=multi-user.target
 ```
-11. Update /opt/tomee/webapps/manager/META-INF/context.xml to allow “.\*” instead of just 127.0….  Replace the whole regex string
+11. `sudo cp context.xml context.xml.ORIGINAL` [just in case]  
 
-12. The result should simply be allow=".\*" on that line  
+12. Update /opt/tomee/webapps/manager/META-INF/context.xml to allow “.\*” instead of just 127.0….  Replace the whole regex string.  The result should simply be allow=".\*" on that line  
 ```xml
 <Context antiResourceLocking="false" privileged="true" >
   <CookieProcessor className="org.apache.tomcat.util.http.Rfc6265CookieProcessor"
@@ -556,9 +556,11 @@ WantedBy=multi-user.target
   <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.filters\.CsrfPreventionFilter\$LruCache(?:\$1)?|java\.util\.(?:Linked)?HashMap"/>
 </Context>
 ```
-   13. `sudo cp context.xml context.xml.ORIGINAL` [just in case]  
-
-   14. Add a new document base/root to allow access to the shared mounted drive:  
+   13. Disable local host access logging.  Otherwise, it will fill up that log quickly.  To do so, comment out the following section.
+    ```<Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs" prefix="localhost_access_log" suffix=".txt" pattern="%h %l %u %t &quot;%r&quot; %s %b" />```
+   14. Comment out this section by adding <!-- to the beginning of the section and --> to the end of the section.
+   15. For more details, see  https://help.harmanpro.com/disabling-local-host-access-logs-in-tomcat.
+   16. Add a new document base/root to allow access to the shared mounted drive:  
        1. Edit `/opt/tomee/conf/server.xml` and just before the `</Host>` near the end of the file, put:  
        2. \<Context docBase="/home/\<PiTracUserName\>/LM\_Shares/WebShare" path="/golfsim/WebShare" /\>  
        3. This will allow the Tomee system to access a directory that is outside of the main Tomee installation tree.  This directory will be used to get debugging images from the other Pi into the web-based GUI that this Pi will be serving up.  

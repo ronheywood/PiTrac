@@ -821,7 +821,7 @@ bool ConfigureLibCameraOptions(RPiCamEncoder& app, const cv::Vec2i& cropping_win
     options->post_process_file = LibCameraInterface::kCameraMotionDetectSettings;
 
     if (!GolfSimClubData::kGatherClubData) {
-    	GS_LOG_TRACE_MSG(trace, "ball_watcher_event_loop will use post-process file: " + options->post_process_file);
+    	GS_LOG_TRACE_MSG(trace, "ball_watcher_event_loop will use post-process file (unless overridden in golf_sim_config.json): " + options->post_process_file);
     }
 
     if (cropping_window_size[0] > 0 && cropping_window_size[1] > 0) {

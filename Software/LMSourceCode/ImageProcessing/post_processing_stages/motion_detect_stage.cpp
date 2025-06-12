@@ -92,7 +92,7 @@ void MotionDetectStage::Read(boost::property_tree::ptree const &params)
 	GS_LOG_MSG(trace, "    config_.difference_m: " + std::to_string(config_.difference_m));
 	GS_LOG_MSG(trace, "    config_.difference_c: " + std::to_string(config_.difference_c));
 	GS_LOG_MSG(trace, "    config_.region_threshold: " + std::to_string(config_.region_threshold));
-	GS_LOG_MSG(trace, "    config_.ax_region_threshold " + std::to_string(config_.max_region_threshold));
+	GS_LOG_MSG(trace, "    config_.max_region_threshold " + std::to_string(config_.max_region_threshold));
 	GS_LOG_MSG(trace, "    config_.frame_period: " + std::to_string(config_.frame_period));
 	GS_LOG_MSG(trace, "    config_.verbose: " + std::to_string(config_.verbose));
 	GS_LOG_MSG(trace, "    config_.showroi: " + std::to_string(config_.showroi));
@@ -139,8 +139,8 @@ void MotionDetectStage::Configure()
 	// config_.region_threshold is a % of pixels that have changed
 	// scale it down based on the fraction the ROI is of the whole
 	// TBD - does it make sense to just leave it alone instead?
-	region_threshold_ = config_.region_threshold * roi_width_ * roi_height_;
-	max_region_threshold_ = config_.max_region_threshold * roi_width_ * roi_height_;
+	region_threshold_ = config_.region_threshold * (float)roi_width_ * (float)roi_height_;
+	max_region_threshold_ = config_.max_region_threshold * (float)roi_width_ * (float)roi_height_;
 
 	// Ensure all values are valid
 	roi_x_ = std::clamp(roi_x_, 0u, info.width);
@@ -152,6 +152,13 @@ void MotionDetectStage::Configure()
 	if (config_.verbose)
 		LOG(1, "Sampled (vskip/hskip) Image x,y (smaller): " << info.width << "x" << info.height << " roi: (" << roi_x_ << "," << roi_y_ << ") ROI Width/height: "
 						 << roi_width_ << "x" << roi_height_ << " threshold: " << region_threshold_);
+
+	GS_LOG_MSG(trace, "    roi_width_: " + std::to_string(roi_width_));
+	GS_LOG_MSG(trace, "    roi_height_: " + std::to_string(roi_height_));
+	GS_LOG_MSG(trace, "    roi_x_: " + std::to_string(roi_x_));
+	GS_LOG_MSG(trace, "    roi_y_: " + std::to_string(roi_y_));
+	GS_LOG_MSG(trace, "    region_threshold_: " + std::to_string(region_threshold_));
+	GS_LOG_MSG(trace, "    max_region_threshold_ " + std::to_string(max_region_threshold_));
 
 	previous_frame_.resize(roi_width_ * roi_height_);
 
@@ -228,7 +235,7 @@ bool MotionDetectStage::Process(CompletedRequestPtr &completed_request)
 	// If we're in a post-motion world, assume motion has already been detected
 	// TBD - we need to clean this up.  Too confusing.
 	if (detectionPaused_ || postMotionFramesToCapture_ > 0) {
-		GS_LOG_MSG(trace, "In post-motion mode, setting local_motion_detected to true.");
+		// GS_LOG_MSG(trace, "In post-motion mode, setting local_motion_detected to true.");
 		local_motion_detected = true;
 	}
 
@@ -250,7 +257,9 @@ bool MotionDetectStage::Process(CompletedRequestPtr &completed_request)
 
 
 			*(old_value_ptr++) = new_value;
-			regions += std::abs(new_value - old_value) > config_.difference_m * old_value + config_.difference_c;
+			if (std::abs(new_value - old_value) > (config_.difference_m * (float)old_value + config_.difference_c)) {
+				regions++;
+			}
 		}
 
 		local_motion_detected = (regions >= region_threshold_);
@@ -265,10 +274,6 @@ bool MotionDetectStage::Process(CompletedRequestPtr &completed_request)
 	// TBD - Only for testing - REMOVE
 	// std::cout << regions << std::endl;
 
- 	if (config_.verbose && local_motion_detected) {
-		// TBD - Avoid output here to reduce latencyLOG(1, "*************  Motion " << (local_motion_detected? "detected" : "stopped"));
-	}
-
 	if (local_motion_detected && !detectionPaused_) {
 
 		// We just now detected movement (this time through this code)
@@ -277,7 +282,7 @@ bool MotionDetectStage::Process(CompletedRequestPtr &completed_request)
 		// as possible, because otherwise the ball will fly past the camera 2 FoV
 		if (gs::GolfSimOptions::GetCommandLineOptions().system_mode_ != gs::kCamera1TestStandalone) {
 			gs::PulseStrobe::SendExternalTrigger();
-			GS_LOG_MSG(trace, "---> SendExternalTrigger");
+			// GS_LOG_MSG(trace, "---> SendExternalTrigger");
 		}
 		else {
 			// simulate the other system sending an image back

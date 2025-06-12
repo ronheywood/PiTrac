@@ -158,19 +158,19 @@ namespace golf_sim {
         // Make sure we're not drawing outside the image
         if (expected_ball_X + mask_radius > resolution_x_) {
             mask_radius = resolution_x_ - expected_ball_X;
-            LoggingTools::Warning("Attempted to draw mask area outside image (1).");
+            // LoggingTools::Warning("Attempted to draw mask area outside image (1).");
         }
         if (expected_ball_X - mask_radius < 0) {
             mask_radius = expected_ball_X;
-            LoggingTools::Warning("Attempted to draw mask area outside image (2).");
+            // LoggingTools::Warning("Attempted to draw mask area outside image (2).");
         }
         if (expected_ball_Y + mask_radius > resolution_y_) {
             mask_radius = resolution_y_ - expected_ball_Y;
-            LoggingTools::Warning("Attempted to draw mask area outside image (3).");
+            // LoggingTools::Warning("Attempted to draw mask area outside image (3).");
         }
         if (expected_ball_Y - mask_radius < 0) {
             mask_radius = expected_ball_Y;
-            LoggingTools::Warning("Attempted to draw mask area outside image (4).");
+            // LoggingTools::Warning("Attempted to draw mask area outside image (4).");
         }
 
         if (!use_square)

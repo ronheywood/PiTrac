@@ -579,7 +579,7 @@ public class MonitorServlet extends HttpServlet {
     private static String kGolfSimTopic = "Golf.Sim";
     // Set from environment variable or default. This can be overidden from config file later
     private static String kWebActiveMQHostAddress = System.getenv("PITRAC_MSG_BROKER_FULL_ADDRESS") != null ?
-            System.getenv("PITRAC_MSG_BROKER_FULL_ADDRESS") : "tcp://10.0.0.41:61616";
+            System.getenv("PITRAC_MSG_BROKER_FULL_ADDRESS") : "";
     private static String kWebServerTomcatShareDirectory;
     private static String kWebServerResultBallExposureCandidates;
     private static String kWebServerResultSpinBall1Image;

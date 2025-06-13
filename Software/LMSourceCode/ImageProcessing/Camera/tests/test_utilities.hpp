@@ -57,30 +57,30 @@ namespace camera_test_utils {
             BOOST_TEST_MESSAGE("Setting up domain type test fixture");
         }
         
-        ~DomainTypeFixture() {
+        ~DomainTypeFixture() {        
             BOOST_TEST_MESSAGE("Tearing down domain type test fixture");
         }
         
         // Helper methods for common assertions
-        void assertSizeEquals(const libcamera_domain::Size& actual, 
-                             unsigned int expected_width, 
-                             unsigned int expected_height) {
+        void assertSizeEquals(const golf_sim::camera::domain::Size& actual, 
+                              unsigned int expected_width, 
+                              unsigned int expected_height) {
             BOOST_CHECK_EQUAL(actual.width, expected_width);
             BOOST_CHECK_EQUAL(actual.height, expected_height);
         }
         
-        void assertTransformEquals(const libcamera_domain::Transform& actual, 
-                                 int expected_value) {
+        void assertTransformEquals(const golf_sim::camera::domain::Transform& actual, 
+                                   int expected_value) {
             BOOST_CHECK_EQUAL(actual.value, expected_value);
         }
         
-        void assertPixelFormatEquals(const libcamera_domain::PixelFormat& actual, 
-                                   unsigned int expected_fourcc) {
+        void assertPixelFormatEquals(const golf_sim::camera::domain::PixelFormat& actual, 
+                                     unsigned int expected_fourcc) {
             BOOST_CHECK_EQUAL(actual.fourcc, expected_fourcc);
         }
         
-        void assertColorSpaceEquals(const libcamera_domain::ColorSpace& actual, 
-                                  int expected_value) {
+        void assertColorSpaceEquals(const golf_sim::camera::domain::ColorSpace& actual, 
+                                    int expected_value) {
             BOOST_CHECK_EQUAL(actual.value, expected_value);
         }
     };

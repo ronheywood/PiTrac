@@ -16,10 +16,10 @@ BOOST_AUTO_TEST_CASE(platform_header_includes_domain) {
     // (Testing that including camera_platform.hpp provides domain types)
     
     // Act
-    libcamera_domain::Size size(640, 480);
-    libcamera_domain::Transform transform(90);
-    libcamera_domain::PixelFormat format(0x32315659);
-    libcamera_domain::ColorSpace colorSpace(1);
+    golf_sim::camera::domain::Size size(640, 480);
+    golf_sim::camera::domain::Transform transform(90);
+    golf_sim::camera::domain::PixelFormat format(0x32315659);
+    golf_sim::camera::domain::ColorSpace colorSpace(1);
     
     // Assert
     BOOST_CHECK_EQUAL(size.width, 640);
@@ -34,16 +34,16 @@ BOOST_AUTO_TEST_CASE(single_include_provides_complete_interface) {
     // (Testing that single include provides all necessary types)
     
     // Act - Create instances of all domain types
-    libcamera_domain::Size test_size;
-    libcamera_domain::Transform test_transform;
-    libcamera_domain::PixelFormat test_format;
-    libcamera_domain::ColorSpace test_colorspace;
+    golf_sim::camera::domain::Size test_size;
+    golf_sim::camera::domain::Transform test_transform;
+    golf_sim::camera::domain::PixelFormat test_format;
+    golf_sim::camera::domain::ColorSpace test_colorspace;
     
     // Assert - Verify types are available and constructible
-    BOOST_CHECK_NO_THROW(test_size = libcamera_domain::Size(1280, 720));
-    BOOST_CHECK_NO_THROW(test_transform = libcamera_domain::Transform(180));
-    BOOST_CHECK_NO_THROW(test_format = libcamera_domain::PixelFormat(0x56595559));
-    BOOST_CHECK_NO_THROW(test_colorspace = libcamera_domain::ColorSpace(2));
+    BOOST_CHECK_NO_THROW(test_size = golf_sim::camera::domain::Size(1280, 720));
+    BOOST_CHECK_NO_THROW(test_transform = golf_sim::camera::domain::Transform(180));
+    BOOST_CHECK_NO_THROW(test_format = golf_sim::camera::domain::PixelFormat(0x56595559));
+    BOOST_CHECK_NO_THROW(test_colorspace = golf_sim::camera::domain::ColorSpace(2));
     
     // Verify the values were set correctly
     BOOST_CHECK_EQUAL(test_size.width, 1280);
@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(unix_platform_implementation_available) {
     
     // Act & Assert
     // On Unix, we should have access to both domain and infrastructure types
-    libcamera_domain::Size domain_size(1920, 1080);
+    golf_sim::camera::domain::Size domain_size(1920, 1080);
     BOOST_CHECK_EQUAL(domain_size.width, 1920);
     BOOST_CHECK_EQUAL(domain_size.height, 1080);
     
@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(windows_platform_implementation_available) {
     
     // Act & Assert
     // On Windows, we should have access to domain types
-    libcamera_domain::Size domain_size(1920, 1080);
+    golf_sim::camera::domain::Size domain_size(1920, 1080);
     BOOST_CHECK_EQUAL(domain_size.width, 1920);
     BOOST_CHECK_EQUAL(domain_size.height, 1080);
     
@@ -108,10 +108,10 @@ BOOST_AUTO_TEST_CASE(platform_abstraction_provides_consistent_interface) {
     const int test_colorspace = 3;
     
     // Act
-    libcamera_domain::Size size(test_width, test_height);
-    libcamera_domain::Transform transform(test_transform);
-    libcamera_domain::PixelFormat format(test_fourcc);
-    libcamera_domain::ColorSpace colorSpace(test_colorspace);
+    golf_sim::camera::domain::Size size(test_width, test_height);
+    golf_sim::camera::domain::Transform transform(test_transform);
+    golf_sim::camera::domain::PixelFormat format(test_fourcc);
+    golf_sim::camera::domain::ColorSpace colorSpace(test_colorspace);
     
     // Assert - Same interface works regardless of platform
     BOOST_CHECK_EQUAL(size.width, test_width);
@@ -123,18 +123,18 @@ BOOST_AUTO_TEST_CASE(platform_abstraction_provides_consistent_interface) {
 
 BOOST_AUTO_TEST_CASE(domain_types_work_in_collections) {
     // Arrange
-    std::vector<libcamera_domain::Size> sizes;
-    std::vector<libcamera_domain::Transform> transforms;
+    std::vector<golf_sim::camera::domain::Size> sizes;
+    std::vector<golf_sim::camera::domain::Transform> transforms;
     
     // Act
-    sizes.push_back(libcamera_domain::Size(640, 480));
-    sizes.push_back(libcamera_domain::Size(1280, 720));
-    sizes.push_back(libcamera_domain::Size(1920, 1080));
+    sizes.push_back(golf_sim::camera::domain::Size(640, 480));
+    sizes.push_back(golf_sim::camera::domain::Size(1280, 720));
+    sizes.push_back(golf_sim::camera::domain::Size(1920, 1080));
     
-    transforms.push_back(libcamera_domain::Transform(0));
-    transforms.push_back(libcamera_domain::Transform(90));
-    transforms.push_back(libcamera_domain::Transform(180));
-    transforms.push_back(libcamera_domain::Transform(270));
+    transforms.push_back(golf_sim::camera::domain::Transform(0));
+    transforms.push_back(golf_sim::camera::domain::Transform(90));
+    transforms.push_back(golf_sim::camera::domain::Transform(180));
+    transforms.push_back(golf_sim::camera::domain::Transform(270));
     
     // Assert
     BOOST_CHECK_EQUAL(sizes.size(), 3);

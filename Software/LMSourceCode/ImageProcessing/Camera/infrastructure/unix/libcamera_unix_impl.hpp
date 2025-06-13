@@ -24,7 +24,7 @@
 // Include our domain interface
 #include "../../domain/camera_domain.hpp"
 
-namespace libcamera_infrastructure {
+namespace golf_sim::camera::infrastructure {
     
     // Unix implementation uses actual libcamera types directly
     // This namespace provides the bridge between domain and infrastructure
@@ -35,9 +35,8 @@ namespace libcamera_infrastructure {
     using CameraTransform = libcamera::Transform;
     using CameraPixelFormat = libcamera::PixelFormat;
     using CameraColorSpace = libcamera::ColorSpace;
-    using CameraControlList = libcamera::ControlList;
-    using CameraRequest = libcamera::Request;
+    using CameraControlList = libcamera::ControlList;    using CameraRequest = libcamera::Request;
     
-} // namespace libcamera_infrastructure
+} // namespace golf_sim::camera::infrastructure
 
 #endif // __unix__

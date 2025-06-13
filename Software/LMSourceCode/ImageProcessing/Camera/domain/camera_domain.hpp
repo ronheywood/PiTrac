@@ -1,5 +1,5 @@
 /*
- * Domain interface for libcamera abstractions
+ * Domain interface for Camera bounded context
  * 
  * This file defines the common interface for camera operations,
  * independent of platform implementation.
@@ -10,7 +10,7 @@
 
 #pragma once
 
-namespace libcamera_domain {
+namespace golf_sim::camera::domain {
     
     // Domain types that abstract platform-specific implementations
     // These provide a clean interface for the application layer
@@ -35,4 +35,4 @@ namespace libcamera_domain {
         ColorSpace(int v = 0) : value(v) {}
     };
 
-} // namespace libcamera_domain
+} // namespace golf_sim::camera::domain

@@ -4,10 +4,9 @@
  * This header automatically includes the appropriate camera implementation
  * based on the target platform. Use this single include throughout the
  * codebase instead of platform-specific headers.
- * 
- * Example usage:
+ *  * Example usage:
  *   #include "Camera/camera_platform.hpp"
- *   // Now you can use libcamera_domain types and platform-specific implementations
+ *   // Now you can use golf_sim::camera::domain types and platform-specific implementations
  */
 
 #pragma once

@@ -20,7 +20,7 @@ BOOST_FIXTURE_TEST_CASE(size_parametric_construction_test, camera_test_utils::Do
         unsigned int height = size_pair.second;
         
         // Act
-        libcamera_domain::Size size(width, height);
+        golf_sim::camera::domain::Size size(width, height);
         
         // Assert
         assertSizeEquals(size, width, height);
@@ -37,7 +37,7 @@ BOOST_FIXTURE_TEST_CASE(transform_parametric_construction_test, camera_test_util
         // (transform_value provided by parametric test)
         
         // Act
-        libcamera_domain::Transform transform(transform_value);
+        golf_sim::camera::domain::Transform transform(transform_value);
         
         // Assert
         assertTransformEquals(transform, transform_value);
@@ -54,7 +54,7 @@ BOOST_FIXTURE_TEST_CASE(pixel_format_parametric_construction_test, camera_test_u
         // (fourcc_value provided by parametric test)
         
         // Act
-        libcamera_domain::PixelFormat format(fourcc_value);
+        golf_sim::camera::domain::PixelFormat format(fourcc_value);
         
         // Assert
         assertPixelFormatEquals(format, fourcc_value);
@@ -71,7 +71,7 @@ BOOST_FIXTURE_TEST_CASE(color_space_parametric_construction_test, camera_test_ut
         // (colorspace_value provided by parametric test)
         
         // Act
-        libcamera_domain::ColorSpace colorspace(colorspace_value);
+        golf_sim::camera::domain::ColorSpace colorspace(colorspace_value);
         
         // Assert
         assertColorSpaceEquals(colorspace, colorspace_value);
@@ -81,8 +81,8 @@ BOOST_FIXTURE_TEST_CASE(color_space_parametric_construction_test, camera_test_ut
 BOOST_FIXTURE_TEST_CASE(domain_types_performance_test, camera_test_utils::PerformanceFixture) {
     // Arrange
     const size_t iteration_count = 100000;
-    std::vector<libcamera_domain::Size> sizes;
-    std::vector<libcamera_domain::Transform> transforms;
+    std::vector<golf_sim::camera::domain::Size> sizes;
+    std::vector<golf_sim::camera::domain::Transform> transforms;
     sizes.reserve(iteration_count);
     transforms.reserve(iteration_count);
     
@@ -109,24 +109,24 @@ BOOST_AUTO_TEST_CASE(domain_types_memory_layout_test) {
     
     // Act & Assert
     // Verify that domain types have expected memory characteristics
-    BOOST_CHECK(sizeof(libcamera_domain::Size) >= sizeof(unsigned int) * 2);
-    BOOST_CHECK(sizeof(libcamera_domain::Transform) >= sizeof(int));
-    BOOST_CHECK(sizeof(libcamera_domain::PixelFormat) >= sizeof(unsigned int));
-    BOOST_CHECK(sizeof(libcamera_domain::ColorSpace) >= sizeof(int));
+    BOOST_CHECK(sizeof(golf_sim::camera::domain::Size) >= sizeof(unsigned int) * 2);
+    BOOST_CHECK(sizeof(golf_sim::camera::domain::Transform) >= sizeof(int));
+    BOOST_CHECK(sizeof(golf_sim::camera::domain::PixelFormat) >= sizeof(unsigned int));
+    BOOST_CHECK(sizeof(golf_sim::camera::domain::ColorSpace) >= sizeof(int));
     
     // Verify types are not excessively large (should be simple value types)
-    BOOST_CHECK(sizeof(libcamera_domain::Size) <= 16);  // Allow some padding
-    BOOST_CHECK(sizeof(libcamera_domain::Transform) <= 8);
-    BOOST_CHECK(sizeof(libcamera_domain::PixelFormat) <= 8);
-    BOOST_CHECK(sizeof(libcamera_domain::ColorSpace) <= 8);
+    BOOST_CHECK(sizeof(golf_sim::camera::domain::Size) <= 16);  // Allow some padding
+    BOOST_CHECK(sizeof(golf_sim::camera::domain::Transform) <= 8);
+    BOOST_CHECK(sizeof(golf_sim::camera::domain::PixelFormat) <= 8);
+    BOOST_CHECK(sizeof(golf_sim::camera::domain::ColorSpace) <= 8);
 }
 
 BOOST_AUTO_TEST_CASE(domain_types_assignment_test) {
     // Arrange
-    libcamera_domain::Size size1(640, 480);
-    libcamera_domain::Size size2(1920, 1080);
-    libcamera_domain::Transform transform1(0);
-    libcamera_domain::Transform transform2(90);
+    golf_sim::camera::domain::Size size1(640, 480);
+    golf_sim::camera::domain::Size size2(1920, 1080);
+    golf_sim::camera::domain::Transform transform1(0);
+    golf_sim::camera::domain::Transform transform2(90);
     
     // Act
     size1 = size2;
@@ -141,14 +141,14 @@ BOOST_AUTO_TEST_CASE(domain_types_assignment_test) {
 BOOST_AUTO_TEST_CASE(domain_types_in_arrays_test) {
     // Arrange
     const size_t array_size = 5;
-    libcamera_domain::Size sizes[array_size];
-    libcamera_domain::Transform transforms[array_size];
+    golf_sim::camera::domain::Size sizes[array_size];
+    golf_sim::camera::domain::Transform transforms[array_size];
     
     // Act
     for (size_t i = 0; i < array_size; ++i) {
-        sizes[i] = libcamera_domain::Size(static_cast<unsigned int>(i * 100), 
+        sizes[i] = golf_sim::camera::domain::Size(static_cast<unsigned int>(i * 100), 
                                         static_cast<unsigned int>(i * 100));
-        transforms[i] = libcamera_domain::Transform(static_cast<int>(i * 90));
+        transforms[i] = golf_sim::camera::domain::Transform(static_cast<int>(i * 90));
     }
     
     // Assert

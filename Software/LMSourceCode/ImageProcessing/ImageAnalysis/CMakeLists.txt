@@ -9,9 +9,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find required packages
+#set(OpenCV_DIR "C:/opencv/build")
 find_package(OpenCV REQUIRED)
 
-# Configure Boost detection (following Camera BC pattern)
+# Configure Boost detection
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)

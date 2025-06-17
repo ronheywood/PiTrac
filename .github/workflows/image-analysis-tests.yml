@@ -17,21 +17,39 @@ jobs:
     defaults:
       run:
         working-directory: Software/LMSourceCode/ImageProcessing/ImageAnalysis
-    steps:
-    
+    steps:      
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4   
+
+      - name: Cache OpenCV
+        uses: actions/cache@v3
+        with:
+          path: C:\opencv
+          key: ${{ runner.os }}-opencv-4.10.0-binaries
+          restore-keys: |
+            ${{ runner.os }}-opencv-4.10.0-
 
       - name: Install CMake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version: "3.20"
-      
+          cmake-version: "3.20"          
+
       - name: Install OpenCV
         run: |
-          Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
-          choco install opencv
-          refreshenv
+          if (-not (Test-Path "C:\opencv")) {
+            Write-Host "Installing OpenCV 4.10.0..."
+            $url = "https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-windows.exe"
+            $output = "$env:TEMP\opencv-4.10.0-windows.exe"
+            
+            Invoke-WebRequest -Uri $url -OutFile $output
+            Move-Item -Path $output -Destination "C:\opencv.exe" -Force
+            Start-Process -FilePath "C:\opencv.exe" -ArgumentList "-o", "C:\opencv", "-y" -Wait
+            Remove-Item "C:\opencv.exe"
+            
+            Write-Host "✓ OpenCV installation complete"
+          } else {
+            Write-Host "✓ OpenCV found in cache"
+          }
         shell: pwsh
 
       - name: Install boost
@@ -40,26 +58,44 @@ jobs:
         with:
           boost_version: ${{ env.BOOST_VERSION }}
           boost_install_dir: C:\Dev_Env\
-          platform_version: 2019
+          platform_version: 2022
           toolset: msvc
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: x64
-
+          arch: x64      
+          
       - name: Configure CMake
-        run: >
+        run: |
+          # Clean build directory
+          if (Test-Path build) { Remove-Item build -Recurse -Force }
+          if (Test-Path CMakeCache.txt) { Remove-Item CMakeCache.txt -Force }
           mkdir build
-
-          cmake . -DCMAKE_BUILD_TYPE=$BUILD_TYPE -B build -DBoost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include -DBoost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib
-        env:
-          BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
-
+          # Verify required paths exist (CMakeLists.txt hardcodes these)
+          Write-Host "Verifying hardcoded paths:"
+          Write-Host "  OpenCV: $(Test-Path 'C:\opencv\build\OpenCVConfig.cmake')"
+          Write-Host "  Boost: $(Test-Path 'C:\Dev_Env\boost\boost\include\boost-1_84')"
+          
+          # Simple CMake call - all paths hardcoded in CMakeLists.txt
+          Write-Host "Running CMake..."
+          cmake . -DCMAKE_BUILD_TYPE=Release -B build
+          
+          # Check if CMake found our hardcoded Boost setup
+          if (Test-Path "build/CMakeCache.txt") {
+            $boostCheck = Select-String -Path "build/CMakeCache.txt" -Pattern "Boost.*LIBRARY" -Quiet
+            if ($boostCheck) {
+              Write-Host "⚠ Warning: CMake still found Boost libraries despite header-only setup"
+            } else {
+              Write-Host "✓ CMake using header-only Boost (no library references found)"
+            }
+          }
+        shell: pwsh
+        
       - name: Build tests
         run: |
           pushd build
-          cmake --build . --config Debug
+          cmake --build . --config Release
           popd
         shell: pwsh
 

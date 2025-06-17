@@ -367,3 +367,15 @@ FodyWeavers.xsd
 
 # Approval test received files
 **/.received.*
+
+# CMake build artifacts
+**/build/
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/CTestTestfile.cmake
+**/*.cmake
+!**/CMakeLists.txt
+!**/cmake/*.cmake
+
+rec

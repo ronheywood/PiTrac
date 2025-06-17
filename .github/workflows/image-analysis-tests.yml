@@ -1,5 +1,5 @@
 ---
-name: Camera Tests
+name: Image Analysis Tests
 on:
   push:
     branches:
@@ -26,6 +26,13 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: "3.20"
+      
+      - name: Install OpenCV
+        run: |
+          Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
+          choco install opencv
+          refreshenv
+        shell: pwsh
 
       - name: Install boost
         uses: MarkusJx/install-boost@v2

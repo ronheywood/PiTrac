@@ -9,32 +9,20 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find required packages
+# Hardcoded paths for GitHub CI - no variables needed
+set(OpenCV_DIR "C:/opencv/build")
 find_package(OpenCV REQUIRED)
 
-# Configure Boost detection (following Camera BC pattern)
-set(Boost_USE_STATIC_LIBS OFF)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
+# Hardcoded Boost setup for GitHub CI - header-only mode
+set(Boost_FOUND TRUE)
+set(Boost_INCLUDE_DIRS "C:/Dev_Env/boost/boost/include/boost-1_84")
+set(Boost_LIBRARIES "")  # Empty = no library linking
+set(BOOST_TEST_HEADER_ONLY TRUE)
 
-message(STATUS "Looking for Boost Test framework...")
-if(WIN32)
-    # On Windows, try different naming conventions
-    find_package(Boost QUIET COMPONENTS unit_test_framework)
-    if(NOT Boost_unit_test_framework_FOUND)
-        find_package(Boost QUIET COMPONENTS test)
-        if(NOT Boost_test_FOUND)
-            find_package(Boost QUIET COMPONENTS test_exec_monitor)
-            if(NOT Boost_test_exec_monitor_FOUND)
-                # Try header-only approach as fallback
-                find_package(Boost REQUIRED)
-                set(BOOST_TEST_HEADER_ONLY TRUE)
-            endif()
-        endif()
-    endif()
-else()
-    # On Unix systems, standard naming should work
-    find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-endif()
+message(STATUS "Using hardcoded GitHub CI paths:")
+message(STATUS "  OpenCV: ${OpenCV_DIR}")
+message(STATUS "  Boost: ${Boost_INCLUDE_DIRS}")
+message(STATUS "  Header-only mode: TRUE")
 
 # Include directories
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -91,30 +79,16 @@ if(Boost_FOUND)
         tests/test_image_analysis_domain.cpp
     )
     
-    # Configure Boost linking
-    if(BOOST_TEST_HEADER_ONLY)
-        target_compile_definitions(test_image_analysis_domain 
-            PRIVATE 
-            BOOST_TEST_HEADER_ONLY=1
-        )
-        target_include_directories(test_image_analysis_domain 
-            PRIVATE 
-            ${Boost_INCLUDE_DIRS}
-        )
-    else()
-        if(TARGET Boost::unit_test_framework)
-            target_link_libraries(test_image_analysis_domain PRIVATE Boost::unit_test_framework)
-            target_compile_definitions(test_image_analysis_domain PRIVATE BOOST_TEST_DYN_LINK)
-        elseif(TARGET Boost::test)
-            target_link_libraries(test_image_analysis_domain PRIVATE Boost::test)
-            target_compile_definitions(test_image_analysis_domain PRIVATE BOOST_TEST_DYN_LINK)
-        else()
-            target_link_libraries(test_image_analysis_domain PRIVATE ${Boost_LIBRARIES})
-            target_include_directories(test_image_analysis_domain PRIVATE ${Boost_INCLUDE_DIRS})
-            target_compile_definitions(test_image_analysis_domain PRIVATE BOOST_TEST_DYN_LINK)
-        endif()
-    endif()
-      target_link_libraries(test_image_analysis_domain
+    # Always use header-only mode for simplicity
+    target_compile_definitions(test_image_analysis_domain 
+        PRIVATE 
+        BOOST_TEST_HEADER_ONLY=1
+    )
+    target_include_directories(test_image_analysis_domain 
+        PRIVATE 
+        ${Boost_INCLUDE_DIRS}
+    )
+    target_link_libraries(test_image_analysis_domain
         PRIVATE
         image_analysis
         ${OpenCV_LIBS}
@@ -126,30 +100,14 @@ if(Boost_FOUND)
         tests/test_opencv_analyzer.cpp
     )
     
-    # Configure Boost linking for OpenCV tests
-    if(BOOST_TEST_HEADER_ONLY)
-        target_compile_definitions(test_opencv_analyzer 
-            PRIVATE 
-            BOOST_TEST_HEADER_ONLY=1
-        )
-        target_include_directories(test_opencv_analyzer 
-            PRIVATE 
-            ${Boost_INCLUDE_DIRS}
-        )
-    else()
-        if(TARGET Boost::unit_test_framework)
-            target_link_libraries(test_opencv_analyzer PRIVATE Boost::unit_test_framework)
-            target_compile_definitions(test_opencv_analyzer PRIVATE BOOST_TEST_DYN_LINK)
-        elseif(TARGET Boost::test)
-            target_link_libraries(test_opencv_analyzer PRIVATE Boost::test)
-            target_compile_definitions(test_opencv_analyzer PRIVATE BOOST_TEST_DYN_LINK)
-        else()
-            target_link_libraries(test_opencv_analyzer PRIVATE ${Boost_LIBRARIES})
-            target_include_directories(test_opencv_analyzer PRIVATE ${Boost_INCLUDE_DIRS})
-            target_compile_definitions(test_opencv_analyzer PRIVATE BOOST_TEST_DYN_LINK)
-        endif()
-    endif()
-    
+    target_compile_definitions(test_opencv_analyzer 
+        PRIVATE 
+        BOOST_TEST_HEADER_ONLY=1
+    )
+    target_include_directories(test_opencv_analyzer 
+        PRIVATE 
+        ${Boost_INCLUDE_DIRS}
+    )
     target_link_libraries(test_opencv_analyzer
         PRIVATE
         image_analysis
@@ -162,30 +120,14 @@ if(Boost_FOUND)
         tests/test_approval_with_pitrac_images.cpp
     )
     
-    # Configure Boost linking for approval tests
-    if(BOOST_TEST_HEADER_ONLY)
-        target_compile_definitions(test_approval_with_pitrac_images 
-            PRIVATE 
-            BOOST_TEST_HEADER_ONLY=1
-        )
-        target_include_directories(test_approval_with_pitrac_images 
-            PRIVATE 
-            ${Boost_INCLUDE_DIRS}
-        )
-    else()
-        if(TARGET Boost::unit_test_framework)
-            target_link_libraries(test_approval_with_pitrac_images PRIVATE Boost::unit_test_framework)
-            target_compile_definitions(test_approval_with_pitrac_images PRIVATE BOOST_TEST_DYN_LINK)
-        elseif(TARGET Boost::test)
-            target_link_libraries(test_approval_with_pitrac_images PRIVATE Boost::test)
-            target_compile_definitions(test_approval_with_pitrac_images PRIVATE BOOST_TEST_DYN_LINK)
-        else()
-            target_link_libraries(test_approval_with_pitrac_images PRIVATE ${Boost_LIBRARIES})
-            target_include_directories(test_approval_with_pitrac_images PRIVATE ${Boost_INCLUDE_DIRS})
-            target_compile_definitions(test_approval_with_pitrac_images PRIVATE BOOST_TEST_DYN_LINK)
-        endif()
-    endif()
-    
+    target_compile_definitions(test_approval_with_pitrac_images 
+        PRIVATE 
+        BOOST_TEST_HEADER_ONLY=1
+    )
+    target_include_directories(test_approval_with_pitrac_images 
+        PRIVATE 
+        ${Boost_INCLUDE_DIRS}
+    )
     target_link_libraries(test_approval_with_pitrac_images
         PRIVATE
         image_analysis
@@ -208,7 +150,7 @@ if(Boost_FOUND)
         TIMEOUT 120
         LABELS "approval;pitrac;images"
     )
-    
+
 else()
     message(WARNING "Boost not found. Tests will not be built.")
 endif()

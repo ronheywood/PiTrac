@@ -1,0 +1,72 @@
+---
+name: Camera Tests
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
+env:
+  BOOST_VERSION: 1.84.0
+  BOOST_MSVC_VERSION: "14.3"
+jobs:
+  camera-tests:
+    name: Image Analysis Tests
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: Software/LMSourceCode/ImageProcessing/ImageAnalysis
+    steps:
+    
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: "3.20"
+
+      - name: Install boost
+        uses: MarkusJx/install-boost@v2
+        id: install-boost
+        with:
+          boost_version: ${{ env.BOOST_VERSION }}
+          boost_install_dir: C:\Dev_Env\
+          platform_version: 2019
+          toolset: msvc
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Configure CMake
+        run: >
+          mkdir build
+
+          cmake . -DCMAKE_BUILD_TYPE=$BUILD_TYPE -B build -DBoost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include -DBoost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib
+        env:
+          BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+
+      - name: Build tests
+        run: |
+          pushd build
+          cmake --build . --config Debug
+          popd
+        shell: pwsh
+
+      - name: Approval Tests
+        run: |
+          ./build/Release/test_approval_with_pitrac_images.exe
+        shell: pwsh      
+      
+      - name: Domain Tests
+        run: |
+          ./build/Release/test_image_analysis_domain.exe
+        shell: pwsh
+      
+      - name: OpenCV Tests
+        run: |
+          ./build/Release/test_opencv_analyzer.exe
+        shell: pwsh

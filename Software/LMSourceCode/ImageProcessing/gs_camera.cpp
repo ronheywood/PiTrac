@@ -4026,11 +4026,11 @@ namespace golf_sim {
             
             GS_LOG_TRACE_MSG(trace, "Expected distance_direct_to_ball is: " + std::to_string(distance_direct_to_ball));
 
-            // TBD - would a smaller radius range help with more accurately ID'ing the balls and 
-            // determining the focal length?
+            // Because we know the exact distance to the ball, the expected radius ranges
+            // should be pretty tight
             double expectedRadius = getExpectedBallRadiusPixels(camera.camera_hardware_, camera.camera_hardware_.resolution_x_, distance_direct_to_ball);
-            ip->min_ball_radius_ = int(0.8 * expectedRadius * kMinRadiusRatio);
-            ip->max_ball_radius_ = int(1.2 * expectedRadius * kMaxRadiusRatio);
+            ip->min_ball_radius_ = int(expectedRadius * 0.9);
+            ip->max_ball_radius_ = int(expectedRadius * 1.1);
 
             GS_LOG_TRACE_MSG(trace, "Min/Max expected ball radii are: " + std::to_string(ip->min_ball_radius_) + " / " + std::to_string(ip->max_ball_radius_));
 
@@ -4080,8 +4080,8 @@ namespace golf_sim {
 
             // Also reset the expected radius numbers based on the (hopefully improved) focal length
             expectedRadius = getExpectedBallRadiusPixels(camera.camera_hardware_, color_image.cols, distance_direct_to_ball);
-            ip->min_ball_radius_ = int(expectedRadius * kMinRadiusRatio);
-            ip->max_ball_radius_ = int(expectedRadius * kMaxRadiusRatio);
+            ip->min_ball_radius_ = int(expectedRadius * 0.9);
+            ip->max_ball_radius_ = int(expectedRadius * 1.1);
 
             cv::Vec2d camera_angles;
             

@@ -2847,7 +2847,7 @@ namespace golf_sim {
             return rotationResult;
         }
 
-        bool write_spin_analysis_CSV_files = true;
+        bool write_spin_analysis_CSV_files = false;
 
         GolfSimConfiguration::SetConstant("gs_config.spin_analysis.kWriteSpinAnalysisCsvFiles", write_spin_analysis_CSV_files);
         

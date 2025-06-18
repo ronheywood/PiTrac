@@ -201,7 +201,7 @@ bool GolfSimConfiguration::ReadValues() {
     // Read any environment variables that we may need
 
     std::string slot1_env = safe_getenv("PITRAC_SLOT1_CAMERA_TYPE");
-    GS_LOG_TRACE_MSG(info, "GolfSimConfiguration - PITRAC_SLOT1_CAMERA_TYPE environment variable was not set.  Value was: " );
+    GS_LOG_TRACE_MSG(info, "GolfSimConfiguration - PITRAC_SLOT1_CAMERA_TYPE environment variable was: " + slot1_env );
     if (slot1_env.empty()) {
         GS_LOG_TRACE_MSG(info, "GolfSimConfiguration - PITRAC_SLOT1_CAMERA_TYPE environment variable was not set.  Assuming default of: " + std::to_string(GolfSimCamera::kSystemSlot1CameraType));
     } else {
@@ -506,6 +506,10 @@ bool GolfSimConfiguration::ReadValues() {
 
 		 bool single_pi_mode = GolfSimOptions::GetCommandLineOptions().run_single_pi_;
 
+		 GS_LOG_MSG(trace, "GolfSimConfiguration::GetSystemID - run_single_pi = " + std::to_string(single_pi_mode) +
+				", cameraNumber = " + std::to_string(GolfSimOptions::GetCommandLineOptions().GetCameraNumber()) + 
+				", system_mode_ = " + std::to_string(GolfSimOptions::GetCommandLineOptions().system_mode_) + ".");
+
 		 // Ensure we identify who we are so that we can avoid getting our own
 		 // messages reflected back to su (and chewing up time + bandwidth)
 		 // Note that if the system is in still or auto-calibrate modes, this is system 1, regardless of which
@@ -515,9 +519,12 @@ bool GolfSimConfiguration::ReadValues() {
 		 // monitor mode.
 		 if ((GolfSimOptions::GetCommandLineOptions().GetCameraNumber() == GsCameraNumber::kGsCamera1 && 
 					(GolfSimOptions::GetCommandLineOptions().system_mode_ != SystemMode::kRunCam2ProcessForPi1Processing)) ||
-			 (GolfSimOptions::GetCommandLineOptions().camera_still_mode_ && GolfSimOptions::GetCommandLineOptions().GetCameraNumber() == GsCameraNumber::kGsCamera2) ||
+			 (GolfSimOptions::GetCommandLineOptions().camera_still_mode_ && 
+					GolfSimOptions::GetCommandLineOptions().GetCameraNumber() == GsCameraNumber::kGsCamera2) ||
 			 GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1AutoCalibrate ||
-			 GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate) {
+			 GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate ||
+			 GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1BallLocation ||
+			 GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2BallLocation) {
 
 			 system_id = "LM_1";
 		 }

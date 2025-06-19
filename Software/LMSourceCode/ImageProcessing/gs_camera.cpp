@@ -1211,6 +1211,11 @@ namespace golf_sim {
 
         int GolfSimCamera::GetMostCenteredBallIndex(const std::vector<GolfBall>& balls, const int ball_to_ignore_index) {
 
+            if (balls.size() < 1) {
+                GS_LOG_TRACE_MSG(warning, "GetMostCenteredBallIndex - initial_balls vector was empty.  Exiting function.");
+                return -1; 
+            }
+
             // Randomly pick one ball as the current, initial candidate
             int most_centered_ball_index = -1;
             int smallest_distance_from_center = 10 * camera_hardware_.resolution_x_;   // Ensure first ball will be closer to the center
@@ -1246,6 +1251,11 @@ namespace golf_sim {
         bool GolfSimCamera::GetBallDistancesAndRatios(const std::vector<GolfBall>& balls,
                                                             std::vector<double>& distances,
                                                             std::vector<double>& distance_ratios) {
+
+            if (balls.size() < 1) {
+                GS_LOG_TRACE_MSG(warning, "GetBallDistancesAndRatios - balls vector was empty.  Exiting function.");
+                return false;
+            }
 
             // First get the inter-ball distances.  There will be one less distance element
             // than the number of balls.
@@ -1505,6 +1515,11 @@ namespace golf_sim {
                                                      const GolfBall& best_ball,
                                                      const GolfBall& second_best_ball ) {
 
+            if (initial_balls.size() < 1) {
+                GS_LOG_TRACE_MSG(warning, "RemoveOffTrajectoryBalls - balls vector was empty.  Exiting function.");
+                return;
+            }
+
             // Identify any balls that are far from the projected trajectory
             for (int i = (int)initial_balls.size() - 1; i >= 0; i--) {
                 GolfBall& b = initial_balls[i];
@@ -1528,6 +1543,11 @@ namespace golf_sim {
         void GolfSimCamera::RemoveNearbyPoorQualityBalls(std::vector<GolfBall>& initial_balls,
                                                          const double max_ball_proximity,
                                                          const int max_quality_difference) {
+
+            if (initial_balls.size() < 1) {
+                GS_LOG_TRACE_MSG(warning, "RemoveNearbyPoorQualityBalls - balls vector was empty.  Exiting function.");
+                return;
+            }
 
             // Examine each of the search balls and remove any other balls that are both
             // much worse in quality and nearby the search ball
@@ -1560,6 +1580,11 @@ namespace golf_sim {
                                                    const GolfBall& best_ball, 
                                                    const GolfBall& second_best_ball,
                                                    const bool preserve_high_quality_balls) {
+
+            if (initial_balls.size() < 1) {
+                GS_LOG_TRACE_MSG(warning, "RemoveOverlappingBalls - balls vector was empty.  Exiting function.");
+                return -1;
+            }
 
             uint number_removed = 0;
 
@@ -1707,6 +1732,11 @@ namespace golf_sim {
         void GolfSimCamera::RemoveTooSmallOrBigBalls(std::vector<GolfBall>& initial_balls,
                                                      const GolfBall &expected_best_ball) {
 
+            if (initial_balls.size() < 1) {
+                GS_LOG_TRACE_MSG(warning, "RemoveTooSmallOrBigBalls - balls vector was empty.  Exiting function.");
+                return;
+            }
+
             // Other, valid, strobed balls should have similar radii
             // TBD - What about very hooked/sliced shots?  Would their radii change more?
             const double kMinStrobedBallRadiusRation = 0.80;
@@ -1753,7 +1783,7 @@ namespace golf_sim {
             GS_LOG_TRACE_MSG(trace, "GolfSimCamera::RemoveUnlikelyAngleLowerQualityBalls");
 
             if (initial_balls.size() < 1) {
-                GS_LOG_TRACE_MSG(warning, "initial_balls vector was empty.");
+                GS_LOG_TRACE_MSG(warning, "initial_balls vector was empty.  Exiting function.");
                 return;
             }
 
@@ -1850,6 +1880,11 @@ namespace golf_sim {
                                                     const double max_strobed_ball_color_difference) {
 
             GS_LOG_TRACE_MSG(trace, "GolfSimCamera::RemoveWrongColorBalls");
+
+            if (initial_balls.size() < 1) {
+                GS_LOG_TRACE_MSG(warning, "RemoveWrongColorBalls - balls vector was empty.  Exiting function.");
+                return;
+            }
 
             // Get the color and std of the ball that is the most likely to be a real ball
             std::vector<GsColorTriplet> statistics = CvUtils::GetBallColorRgb(rgbImg, expected_best_ball.ball_circle_);
@@ -2201,6 +2236,11 @@ namespace golf_sim {
             std::vector<GolfBall> first_pass_balls;
             int number_overlapping_balls_removed = RemoveOverlappingBalls(initial_balls, kBallProximityMarginPercentRelaxed, true, 
                                                             first_pass_balls, best_ball, second_best_ball);
+            if (number_overlapping_balls_removed < 0) {
+                GS_LOG_MSG(error, "RemoveOverlappingBalls Failed.");
+                return false;
+            }
+
             SortBallsByXPosition(first_pass_balls);
 
             ShowAndLogBalls("AnalyzeStrobedBall_After_1stRemoveOverlappingBalls", strobed_balls_color_image, first_pass_balls, kLogIntermediateExposureImagesToFile);

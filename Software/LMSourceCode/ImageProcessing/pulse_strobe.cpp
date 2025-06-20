@@ -20,7 +20,6 @@
 #include <sys/time.h>
 #include <signal.h>
 #include <sys/signalfd.h>
-#include <utility.h>
 
 #else
 #define NOMINMAX  // Get rid of a std::min/max compile issue

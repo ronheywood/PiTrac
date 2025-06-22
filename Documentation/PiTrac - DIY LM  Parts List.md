@@ -41,7 +41,7 @@ Geekworm M901 PCIe to M.2 HAT Key-M NVMe SSD PIP PCIe Peripheral Board for Raspb
 
 **Camera and Lighting Hardware:**
 
-| 2  | [Raspberry Pi Global Shutter Camera – CS Lens Mount](https://www.adafruit.com/product/5702) | The cameras currently used by the LM.  They do not come with lenses (see below) |
+| 2  | [Raspberry Pi Global Shutter Camera – CS Lens Mount](https://www.adafruit.com/product/5702) Alternatively, the following camera also appears to work with PiTrac.  This camera should be much easier to work with than the 'official' Raspberry Pi camera, but we haven't had a chance to test it much.  Consider trying it out!  [innomaker GS Camera Module with IMX296 Mono Sensor ](https://www.amazon.com/gp/product/B093BY2TK2/ref=ewc_pr_img_1?th=1)| The cameras currently used by the LM.  The Pi cameras do not come with lenses (see below) |
 | :---- | :---- | :---- |
 | 1 | [Raspberry Pi 5 FPC Camera Cable \- 22-pin 0.5mm to 15-pin 1mm \- 300mm long](https://www.adafruit.com/product/5819) | The current Pi Cameras have a CSI cable that needs a conversion to fit into the smaller CSI ports on the Pi 5\.  The 200mm should probably work as well. |
 |  | [200 mm Flex Cable for Pi 4](https://www.adafruit.com/product/2087) | This likely comes with most Pi Cameras, so may not be necessary |

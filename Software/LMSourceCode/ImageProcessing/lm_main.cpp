@@ -758,21 +758,22 @@ bool TestExternalSimMessage() {
         sleep(5);
     }
 #endif
-    int shot_number = 1;
+    GsSimInterface::IncrementShotCounter();
+
     WaitForSimArmed();
 
-    if (!WaitAndSendShotToSim(shot_number, test_result)) {
+    if (!WaitAndSendShotToSim(GsSimInterface::GetShotCounter(), test_result)) {
         GS_LOG_MSG(error, "Failed to WaitAndSendShotToSim (the Golf Simulator Interface).");
     }
 
     test_result.speed_mph_ = 55;
     test_result.vla_deg_ = 12.3F;
 
-    shot_number++;
+    GsSimInterface::IncrementShotCounter();
 
     WaitForSimArmed();
 
-    if (!WaitAndSendShotToSim(shot_number, test_result)) {
+    if (!WaitAndSendShotToSim(GsSimInterface::GetShotCounter(), test_result)) {
         GS_LOG_MSG(error, "Failed to WaitAndSendShotToSim (the Golf Simulator Interface).");
 
     }
@@ -971,6 +972,9 @@ void run_main(int argc, char* argv[])
                 sleep(2);
                 GS_LOG_MSG(info, "            Waiting for Simulator to Arm.");
             }
+
+            GsSimInterface::IncrementShotCounter();
+
             // Get the result to the golf simulator ASAP
             if (!GsSimInterface::SendResultsToGolfSims(result)) {
                 GS_LOG_MSG(error, "Could not SendResultsToGolfSim. Continuing");

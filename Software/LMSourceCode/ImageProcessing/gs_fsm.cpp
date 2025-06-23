@@ -276,7 +276,10 @@ namespace golf_sim {
         }
 
         // The ball has stabilized.  Now we just have to wait for the ball to be hit
-        GS_LOG_MSG(info, "=============== Ball Stabilized - Let's Play Golf!  (Waiting for hit)\n\n\n");
+        GS_LOG_MSG(info, "=============== Ball Stabilized - Let's Play Golf!  (Waiting for hit)\n\n");
+
+        // Whatever happens, this is a new shot with a new shot number
+        GsSimInterface::IncrementShotCounter();
 
         // Let the second camera know to be ready for a ball hit
         GolfSimIPCMessage ipc_message(GolfSimIPCMessage::IPCMessageType::kRequestForCamera2Image);
@@ -465,9 +468,6 @@ namespace golf_sim {
 #endif
 
             GsUISystem::SendIPCErrorStatusMessage("GolfSim FSM could not ProcessReceivedCam2Image.");
-
-            // Store an error into the CSV logs lines so that it's easier to track what happened when
-            GsSimInterface::IncrementShotCounter();
 
             GS_LOG_MSG(info, "BALL_HIT_CSV, " + std::to_string(GsSimInterface::GetShotCounter()) + ", (carry - Error), (Total - Error), (Side Dest - Error), (Smash Factor - Error), (Club Speed - Error), "
                 + std::to_string(0) + ", "

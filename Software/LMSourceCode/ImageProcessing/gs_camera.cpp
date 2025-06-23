@@ -742,6 +742,10 @@ namespace golf_sim {
                 return true;
             }
 
+            // The ball's position is useful for later analysis
+            GS_LOG_MSG(info, "Teed-up Ball:" + ball1.Format() + "\n");
+
+
             // Using the first ball for reference, determine where the second one is in relation to the first
             success = GetCurrentBallLocation(camera, rgbImg2, ball1, result_ball);
 
@@ -2002,7 +2006,7 @@ namespace golf_sim {
                 root_cause_str = "Unable to find at least two ball exposures after ball hit.  It's possible the ball was hit faster or slower than the system can handle.";
             }
             else {
-                root_cause_str = "An error occured while processing the post-hit ball image.  Please check logs.";
+                root_cause_str = "An error occurred while processing the post-hit ball image.  Please check logs.";
             }
 
             LoggingTools::current_error_root_cause_ = root_cause_str;
@@ -3867,9 +3871,8 @@ namespace golf_sim {
 
             // The search mode depends on the camera we are calibrating.  The camera2 pictures will be more like that
             // of typical strobed (ball in flight) pictures.  
-            // TBD - Still not sure this is the best mode?
+            // TBD - Still not sure this is the best mode?  Seems like kStrobed is best for camera 2 calibration
             BallImageProc::BallSearchMode search_mode = (camera.camera_hardware_.camera_number_ == 1) ? BallImageProc::BallSearchMode::kFindPlacedBall : BallImageProc::BallSearchMode::kStrobed;
-            search_mode = BallImageProc::BallSearchMode::kFindPlacedBall;  // TBD - This seems to be working better than the Strobed version for now?
 
             bool result = ip->GetBall(color_image, ball, return_balls, nullROI, search_mode);
 
@@ -3922,7 +3925,6 @@ namespace golf_sim {
             // of typical strobed (ball in flight) pictures.  
             // TBD - Still not sure this is the best mode?
             BallImageProc::BallSearchMode search_mode = (camera.camera_hardware_.camera_number_ == 1) ? BallImageProc::BallSearchMode::kFindPlacedBall : BallImageProc::BallSearchMode::kStrobed;
-            search_mode = BallImageProc::BallSearchMode::kFindPlacedBall;  // TBD - This seems to be working better than the Strobed version for now?
 
             bool result = ip->GetBall(color_image, ball, return_balls, nullROI, search_mode);
 
@@ -4070,7 +4072,7 @@ namespace golf_sim {
             // should be pretty tight
             double expectedRadius = getExpectedBallRadiusPixels(camera.camera_hardware_, camera.camera_hardware_.resolution_x_, distance_direct_to_ball);
             ip->min_ball_radius_ = int(expectedRadius * 0.9);
-            ip->max_ball_radius_ = int(expectedRadius * 1.1);
+            ip->max_ball_radius_ = int(expectedRadius * 1.2);
 
             GS_LOG_TRACE_MSG(trace, "Min/Max expected ball radii are: " + std::to_string(ip->min_ball_radius_) + " / " + std::to_string(ip->max_ball_radius_));
 

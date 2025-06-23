@@ -166,6 +166,8 @@ namespace golf_sim {
 
     bool GsSimInterface::SendResultsToGolfSims(const GsResults& input_results) {
 
+        // The shot number should already have been set when the ball was teed up
+
         // Make a local copy of the results so that we can set the shot_counter
         GsResults results = input_results;
         results.shot_number_ = shot_counter_;
@@ -190,9 +192,6 @@ namespace golf_sim {
         }
 
 #endif
-        // Increment the shot counter even if there was a failure
-        IncrementShotCounter();
-
         return status;
     }
 

@@ -26,20 +26,20 @@
             "kStrobedBallsPreCannyBlurSize": "3",
             "kStrobedBallsPreHoughBlurSize": "13",
             "kStrobedBallsUseAltHoughAlgorithm": "1",
-            "kStrobedBallsAltCannyLower": "35",
-            "kStrobedBallsAltCannyUpper": "80",
-            "kStrobedBallsAltPreCannyBlurSize": "7",
+            "kStrobedBallsAltCannyLower": "20",
+            "kStrobedBallsAltCannyUpper": "90",
+            "kStrobedBallsAltPreCannyBlurSize": "11",
             "kStrobedBallsAltPreHoughBlurSize HAS TO BE ODD": "0",
             "kStrobedBallsAltPreHoughBlurSize": "13",
             "kStrobedBallsAltMinParam2": "0.5",
             "kStrobedBallsAltMaxParam2": "1.0",
-            "kStrobedBallsAltStartingParam2": "0.65",
+            "kStrobedBallsAltStartingParam2": "0.75",
             "kStrobedBallsAltParam2Increment": "0.05",
             "kStrobedBallsAltCurrentParam1": "130.0",
             "kStrobedBallsAltHoughDpParam1": "0.8",
             "kUseCLAHEProcessing": "1",
-            "kCLAHEClipLimit": "4",
-            "kCLAHETilesGridSize": "1",
+            "kCLAHEClipLimit": "8",
+            "kCLAHETilesGridSize": "6",
             "kPuttingBallMinParam2": "0.8",
             "kPuttingBallMaxParam2": "1.0",
             "kPuttingBallStartingParam2": "0.9",
@@ -56,8 +56,8 @@
             "kPlacedBallStartingParam2": "0.9",
             "kPlacedBallParam2Increment": "0.03",
             "kPlacedBallCurrentParam1": "300.0",
-            "kPlacedPreCannyBlurSize": "5",
-            "kPlacedPreHoughBlurSize": "13",
+            "kPlacedPreCannyBlurSize": "11",
+            "kPlacedPreHoughBlurSize": "7",
             "kPlacedMinHoughReturnCircles": "1",
             "kPlacedMaxHoughReturnCircles": "4",
             "kPlacedBallHoughDpParam1": "1.5",
@@ -161,7 +161,7 @@
             "kBallRadiusMeters": "0.021335"
         },
         "strobing": {
-            "number_bits_for_fast_on_pulse_": "2",
+            "number_bits_for_fast_on_pulse_": "3",
             "number_bits_for_slow_on_pulse_": "8",
             "kBaudRateForFastPulses": "115200",
             "kBaudRateForSlowPulses": "115200",
@@ -266,8 +266,8 @@
         },
         "cameras": {
             "kCameraMotionDetectSettings": ".\/assets\/motion_detect.json",
-            "kCamera1FocalLength": "6.2998224063268724",
-            "kCamera2FocalLength": "6.0263219033809143",
+            "kCamera1FocalLength": "6.2911112123748891",
+            "kCamera2FocalLength": "5.7377845598953288",
             "comment - kCamera1Gain = 6 and kCamera1Contrast=1.3 is good for practice ball. For regular ball, 3 and 1.5": "0",
             "kCamera1Gain": "1.0",
             "kCamera1HighFPSGain": "15.0",
@@ -296,17 +296,20 @@
                 "0.0"
             ],
             "kCamera1Angles": [
-                "23.596539669819158",
-                "-28.751986480989991"
+                "23.577670713119446",
+                "-30.366411122474052"
             ],
             "kCamera2Angles": [
-                "1.491632142403557",
-                "4.7807844460422197"
+                "2.714095005633125",
+                "6.944940696332405"
             ],
             "kCamera1XOffsetForTilt": "0",
             "kCamera1YOffsetForTilt": "0",
             "kCamera2XOffsetForTilt": "0",
             "kCamera2YOffsetForTilt": "0",
+            "kCamera1DistortionVector": [
+-4.797021803681398300e-01,7.769914011402246912e-01,7.304583064004496924e-03,7.895441099139611021e-03,-1.244209478500646116e+00
+            ],
             "kCamera1CalibrationMatrix": [
                 [
                     "1.825268110451985876e+03",
@@ -324,36 +327,29 @@
                     "1.000000000000000000e+00"
                 ]
             ],
-            "kCamera1DistortionVector": [
-                "-4.797021803681398300e-01",
-                "7.769914011402246912e-01",
-                "7.304583064004496924e-03",
-                "7.895441099139611021e-03",
-                "-1.244209478500646116e+00"
-            ],
             "kCamera2CalibrationMatrix": [
-                [
-                    "4.785756483353328804e+04",
-                    "0.000000000000000000e+00",
-                    "7.303421986523065925e+02"
-                ],
-                [
-                    "0.000000000000000000e+00",
-                    "1.000361033231211513e+04",
-                    "8.257607763624254176e+02"
-                ],
-                [
-                    "0.000000000000000000e+00",
-                    "0.000000000000000000e+00",
-                    "1.000000000000000000e+00"
+		[
+"2.511465101195170064e+03",
+"0.000000000000000000e+00",
+"6.911494577906930772e+02"
+		],
+		[
+"0.000000000000000000e+00",
+"2.542617537137948602e+03",
+"5.453574259074516704e+02"
+		],
+		[
+"0.000000000000000000e+00",
+"0.000000000000000000e+00",
+"1.000000000000000000e+00"
                 ]
             ],
             "kCamera2DistortionVector": [
-                "-18.389529",
-                "1362.168248",
-                "-0.117867",
-                "-0.006947",
-                "-2.696718"
+		"-0.867817",   
+		"0.513270",  
+		"-0.007123",   
+		"0.007652",   
+		"4.371383"
             ],
             "kNumInitialCamera2PrimingPulses": "12",
             "kPauseBeforeCamera2PrimingPulsesMs": "2000",
@@ -440,90 +436,90 @@
             "kHSkip": "2",
             "kVSkip": "2"
         },
-      "testing": {
-        "kBaseTestImageDir": "M:\/GolfSim\/TestImages\/First_Enclosure_2_Images\/",
-        "kTwoImageTestTeedBallImage": "gs_log_img__log_ball_final_found_ball_img_Shot_2_2025-Jun-17_15.22.47.png",
-        "kTwoImageTestStrobedImage": "gs_log_img__log_cam2_last_strobed_img_Shot_5_2025-Jun-17_15.24.29.png",
-        "kAutomatedTestSuiteDirectory": "\/home\/mleary\/Dev\/PiTrac\/Software\/LMSourceCode\/Testing\/TestSuite_2025_02_07\/",
-        "OLDkAutomatedTestSuiteDirectory": "M:\/Dev\/PiTrac\/Software\/LMSourceCode\/Testing\/TestSuite_2025_02_07\/",
-        "kAutomatedTestExpectedResultsCSV": "Uneekor Comparison 2025-02-07_Small_Test.csv",
-        "kAutomatedTestResultsCSV": "PiTrac_Test_Results.csv",
-        "kAutomatedTestToleranceBallSpeedMPH": "4",
-        "kAutomatedTestToleranceHLA": "3",
-        "kAutomatedTestToleranceVLA": "2",
-        "kAutomatedTestToleranceBackSpin": "250",
-        "kAutomatedTestToleranceSideSpin": "300",
-        "Externally strobed means there is another strobing source (another LM) that is being used along with PiTrac": "1",
-        "kExternallyStrobedEnvNumber_bits_for_fast_on_pulse_": "5",
-        "kExternallyStrobedEnvFilterImage": "0",
-        "kExternallyStrobedEnvBottomIgnoreHeight": "110",
-        "kExternallyStrobedEnvFilterHsvLowerH": "14",
-        "kExternallyStrobedEnvFilterHsvUpperH": "48",
-        "kExternallyStrobedEnvFilterHsvLowerS": "26",
-        "kExternallyStrobedEnvFilterHsvUpperS": "255",
-        "kExternallyStrobedEnvFilterHsvLowerV": "114",
-        "kExternallyStrobedEnvFilterHsvUpperV": "255",
-        "kExternallyStrobedEnvHoughLineIntersections": "58",
-        "kExternallyStrobedEnvLinesAngleLower": "190",
-        "kExternallyStrobedEnvLinesAngleUpper": "290",
-        "kExternallyStrobedEnvMaximumHoughLineGap": "7",
-        "kExternallyStrobedEnvMinimumHoughLineLength": "23",
-        "kExternallyStrobedEnvCannyLower": "35",
-        "kExternallyStrobedEnvCannyUpper": "80",
-        "kExternallyStrobedEnvCurrentParam1": "130.0",
-        "kExternallyStrobedEnvMinParam2": "40",
-        "kExternallyStrobedEnvMaxParam2": "120",
-        "kExternallyStrobedEnvStartingParam2": "0.65",
-        "kExternallyStrobedEnvParam2Increment": "5",
-        "kExternallyStrobedEnvNarrowingParam2": "0.7",
-        "kExternallyStrobedEnvNarrowingDpParam": "0.9",
-        "kExternallyStrobedEnvNarrowingPreCannyBlurSize": "1",
-        "kExternallyStrobedEnvNarrowingPreHoughBlurSize": "9",
-        "kExternallyStrobedEnvMinHoughReturnCircles": "6",
-        "kExternallyStrobedEnvMaxHoughReturnCircles": "20",
-        "kExternallyStrobedEnvPreCannyBlurSize": "7",
-        "ORIGINALkExternallyStrobedEnvPreCannyBlurSize": "9",
-        "kExternallyStrobedEnvPreHoughBlurSize": "9",
-        "kExternallyStrobedEnvHoughDpParam1": "0.8",
-        "kExternallyStrobedEnvMinimumSearchRadius": "55",
-        "kExternallyStrobedEnvMaximumSearchRadius": "95",
-        "kExternallyStrobedBestCircleCannyLower": "35",
-        "kExternallyStrobedBestCircleCannyUpper": "70",
-        "kExternallyStrobedBestCirclePreCannyBlurSize": "1",
-        "kExternallyStrobedBestCirclePreHoughBlurSize": "9",
-        "kExternallyStrobedBestCircleParam1": "130",
-        "kExternallyStrobedBestCircleParam2": "0.7",
-        "kExternallyStrobedBestCircleHoughDpParam1": "0.8",
-        "The following controls the BestCircle algorithm when used with the ALT_GRADIENT mode": "55",
-        "kExternallyStrobedALTBestCircleCannyLower": "5",
-        "kExternallyStrobedALTBestCircleCannyUpper": "80",
-        "kExternallyStrobedALTBestCirclePreCannyBlurSize": "7",
-        "kExternallyStrobedALTBestCirclePreHoughBlurSize": "9",
-        "kExternallyStrobedALTBestCircleParam1": "130",
-        "kExternallyStrobedALTBestCircleParam2": "0.8",
-        "kExternallyStrobedALTBestCircleHoughDpParam1": "1.3",
-        "kExternallyStrobedUseCLAHEProcessing": "1",
-        "kExternallyStrobedCLAHEClipLimit": "9",
-        "kExternallyStrobedCLAHETilesGridSize": "3",
-        "kInterShotInjectionPauseSeconds": "30",
-        "test_shots_to_inject": {
-          "1": {
-            "SHOT - PiTrac - 11:05:43 -- 7": "0",
-            "Speed": "70.2",
-            "BackSpin": "4097",
-            "SideSpin": "-379.0",
-            "HLA": "-1.9",
-            "VLA": "19.6"
-          },
-          "2": {
-            "SHOT - UNeekor XO - 11:05:43 -- 7": "0",
-            "Speed": "75.3",
-            "BackSpin": "4880",
-            "SideSpin": "-85",
-            "HLA": "-1.8",
-            "VLA": "18.5"
-          }
+        "testing": {
+            "kBaseTestImageDir": "M:\/GolfSim\/TestImages\/First_Enclosure_2_Images\/",
+            "kTwoImageTestTeedBallImage": "Cam1_Focal_Length_Autocalibration_Input_Image_0.png",
+            "kTwoImageTestStrobedImage": "gs_log_img__log_cam2_last_strobed_img_Shot_2_2025-Jun-17_15.21.52.png",
+            "kAutomatedTestSuiteDirectory": "\/home\/mleary\/Dev\/PiTrac\/Software\/LMSourceCode\/Testing\/TestSuite_2025_02_07\/",
+            "OLDkAutomatedTestSuiteDirectory": "M:\/Dev\/PiTrac\/Software\/LMSourceCode\/Testing\/TestSuite_2025_02_07\/",
+            "kAutomatedTestExpectedResultsCSV": "Uneekor Comparison 2025-02-07_Small_Test.csv",
+            "kAutomatedTestResultsCSV": "PiTrac_Test_Results.csv",
+            "kAutomatedTestToleranceBallSpeedMPH": "4",
+            "kAutomatedTestToleranceHLA": "3",
+            "kAutomatedTestToleranceVLA": "2",
+            "kAutomatedTestToleranceBackSpin": "250",
+            "kAutomatedTestToleranceSideSpin": "300",
+            "Externally strobed means there is another strobing source (another LM) that is being used along with PiTrac": "1",
+            "kExternallyStrobedEnvNumber_bits_for_fast_on_pulse_": "5",
+            "kExternallyStrobedEnvFilterImage": "0",
+            "kExternallyStrobedEnvBottomIgnoreHeight": "110",
+            "kExternallyStrobedEnvFilterHsvLowerH": "14",
+            "kExternallyStrobedEnvFilterHsvUpperH": "48",
+            "kExternallyStrobedEnvFilterHsvLowerS": "26",
+            "kExternallyStrobedEnvFilterHsvUpperS": "255",
+            "kExternallyStrobedEnvFilterHsvLowerV": "114",
+            "kExternallyStrobedEnvFilterHsvUpperV": "255",
+            "kExternallyStrobedEnvHoughLineIntersections": "58",
+            "kExternallyStrobedEnvLinesAngleLower": "190",
+            "kExternallyStrobedEnvLinesAngleUpper": "290",
+            "kExternallyStrobedEnvMaximumHoughLineGap": "7",
+            "kExternallyStrobedEnvMinimumHoughLineLength": "23",
+            "kExternallyStrobedEnvCannyLower": "35",
+            "kExternallyStrobedEnvCannyUpper": "80",
+            "kExternallyStrobedEnvCurrentParam1": "130.0",
+            "kExternallyStrobedEnvMinParam2": "40",
+            "kExternallyStrobedEnvMaxParam2": "120",
+            "kExternallyStrobedEnvStartingParam2": "0.65",
+            "kExternallyStrobedEnvParam2Increment": "5",
+            "kExternallyStrobedEnvNarrowingParam2": "0.7",
+            "kExternallyStrobedEnvNarrowingDpParam": "0.9",
+            "kExternallyStrobedEnvNarrowingPreCannyBlurSize": "1",
+            "kExternallyStrobedEnvNarrowingPreHoughBlurSize": "9",
+            "kExternallyStrobedEnvMinHoughReturnCircles": "6",
+            "kExternallyStrobedEnvMaxHoughReturnCircles": "20",
+            "kExternallyStrobedEnvPreCannyBlurSize": "7",
+            "ORIGINALkExternallyStrobedEnvPreCannyBlurSize": "9",
+            "kExternallyStrobedEnvPreHoughBlurSize": "9",
+            "kExternallyStrobedEnvHoughDpParam1": "0.8",
+            "kExternallyStrobedEnvMinimumSearchRadius": "55",
+            "kExternallyStrobedEnvMaximumSearchRadius": "95",
+            "kExternallyStrobedBestCircleCannyLower": "35",
+            "kExternallyStrobedBestCircleCannyUpper": "70",
+            "kExternallyStrobedBestCirclePreCannyBlurSize": "1",
+            "kExternallyStrobedBestCirclePreHoughBlurSize": "9",
+            "kExternallyStrobedBestCircleParam1": "130",
+            "kExternallyStrobedBestCircleParam2": "0.7",
+            "kExternallyStrobedBestCircleHoughDpParam1": "0.8",
+            "The following controls the BestCircle algorithm when used with the ALT_GRADIENT mode": "55",
+            "kExternallyStrobedALTBestCircleCannyLower": "5",
+            "kExternallyStrobedALTBestCircleCannyUpper": "80",
+            "kExternallyStrobedALTBestCirclePreCannyBlurSize": "7",
+            "kExternallyStrobedALTBestCirclePreHoughBlurSize": "9",
+            "kExternallyStrobedALTBestCircleParam1": "130",
+            "kExternallyStrobedALTBestCircleParam2": "0.8",
+            "kExternallyStrobedALTBestCircleHoughDpParam1": "1.3",
+            "kExternallyStrobedUseCLAHEProcessing": "1",
+            "kExternallyStrobedCLAHEClipLimit": "9",
+            "kExternallyStrobedCLAHETilesGridSize": "3",
+            "kInterShotInjectionPauseSeconds": "30",
+            "test_shots_to_inject": {
+                "1": {
+                    "SHOT - PiTrac - 11:05:43 -- 7": "0",
+                    "Speed": "70.2",
+                    "BackSpin": "4097",
+                    "SideSpin": "-379.0",
+                    "HLA": "-1.9",
+                    "VLA": "19.6"
+                },
+                "2": {
+                    "SHOT - UNeekor XO - 11:05:43 -- 7": "0",
+                    "Speed": "75.3",
+                    "BackSpin": "4880",
+                    "SideSpin": "-85",
+                    "HLA": "-1.8",
+                    "VLA": "18.5"
+                }
+            }
         }
-      }
     }
 }

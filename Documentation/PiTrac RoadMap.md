@@ -15,23 +15,28 @@ The Compute Board system will have a single power connection instead of what cur
 At the same time, some folks will always enjoy putting things together themselves with parts that they can configure, re-use and re-purpose and without most of the hardware being pretty much completed already.  This is still the only option that is currently available.  The only “custom” hardware for this option is a small “Connect Board” that folks can have manufactured (or purchased from other builders) for a few dollars.  We’d like to always continue to support both of the above two options.
 
 The **second crossroad** is related to the 3D-printed enclosure that houses all the cameras, computers, etc.  Of course, we didn’t even have a printed enclosure at first.  This was the first PiTrac:  
-![][image1]  
+![image](https://github.com/user-attachments/assets/1aed70a7-c2f3-4246-b187-45b76ab97ffa)
+
 For makers who are interested in experimenting, of course, a custom-built enclosure may be a lot of fun.  And perhaps variants like overhead PiTracs will spring from such work.
 
 The first ‘real’ enclosure was bulky and didn’t really even work for folks in countries with larger power adapter bricks like the U.K.  It did, however, allow for most all of the power adapters and other parts to be set together in a single unit.  It is also setup by default to use all OTS parts and separate Pi SBCs.  
-![][image2]  
+![image](https://github.com/user-attachments/assets/c7b1e9d0-f601-43c8-9089-259e23390879)
+
 The newest enclosure (cleverly referred to as “Version 2”) is much more streamlined:  
-![][image3]  
+![image](https://github.com/user-attachments/assets/24271598-5d8e-49e1-bd36-f2859efe7523)
+
 Regarding the enclosure, we expect most folks will migrate to Version 2 regardless of whether they ultimately wait to use the future Compute Board and Pi compute modules or if they build the system from individual Pi 5 single board computers (SBCs), an LED driver, and the Connector Board. 
 
 But here too, there’s a decision to make.  The Version 2 enclosure will someday house the self-contained Compute Board with a single power supply for that board that will fit in the base box, and the default Version 2 model is setup to receive the screws that the (unreleased) Compute Board expects for its mounting holes:
 
-![][image4]  
+![image](https://github.com/user-attachments/assets/85cdea24-81bc-4dab-93c6-850ec1a42e49)
+
 But the Version 2 enclosure can also support builds using *OTS parts* instead of the Compute Board.  As such, part of the decision of which road to take right now is whether to wait for the above-pictured vision of PiTrac to emerge, or instead use the Version 2 enclosure with the currently-available off-the-shelf system.  Most folks are opting for that option now.  
 
 This second Version 2 option typically houses the large LED driver in the base of the system, with several AC power adapters kept externally with wires running to the tower.  To go that way, you’ll need an enclosure “tower” variant that is fitted for the separate Pi 5 SBCs.  See [here](https://github.com/jamespilgrim/PiTrac/tree/main/3D%20Printed%20Parts/Enclosure%20Version%202/Tower-Connector-Board-Variant).
 
-![][image5]  
+![image](https://github.com/user-attachments/assets/d040da0a-5363-475d-8114-5715e5935a62)
+
 Note that for some LED drivers, the basebox dimensions may have to be enlarged to fit those drivers, as they are larger than the Meanwell 24v power supply that the Version 2 enclosure was originally designed to hold.
 
 The **final crossroad** has a much clearer path forward.  With some help from the Raspberry Pi folks, we’ve finally been able to get the system running on just a single Raspberry Pi 5 SBC that is connected to both of the PiTrac cameras.  We expect almost everyone to go with that option to save money and reduce complexity.  That’s true even for folks who have already built (or are building) their PiTracs with two Pi’s.  However, the very real possibility of a PiTrac with stereoscopic vision is likely to still require two Pi 5’s.  Don’t give your currently-extra Pi away\!

@@ -742,9 +742,6 @@ namespace golf_sim {
                 return true;
             }
 
-            // The ball's position is useful for later analysis
-            GS_LOG_MSG(info, "Teed-up Ball:" + ball1.Format() + "\n");
-
 
             // Using the first ball for reference, determine where the second one is in relation to the first
             success = GetCurrentBallLocation(camera, rgbImg2, ball1, result_ball);
@@ -2056,6 +2053,9 @@ namespace golf_sim {
                 return false;
             }
 
+            // The ball's position is useful for later analysis
+            GS_LOG_MSG(info, "Teed-up Ball:" + calibrated_ball.Format() + "\n");
+
             double expected_strobed_ball_radius = calibrated_ball.radius_at_calibration_pixels_ * (distance_at_calibration_ / expected_camera2_distance);
 
             // Setup to search for a ball that has a reasonable size relationship to the calibrated ball
@@ -3114,7 +3114,6 @@ namespace golf_sim {
             GS_LOG_TRACE_MSG(trace, "ProcessReceivedCam2Image - ball1 is:\n" + ball1.Format());
             GS_LOG_TRACE_MSG(trace, "ProcessReceivedCam2Image - ball2 is:\n" + ball2.Format());
 
-
             // Now use those two 'best' balls to determine the position deltas for the balls so that we 
             // can, for example, compute velocity.
             // Both balls were captured by camera2
@@ -3122,6 +3121,10 @@ namespace golf_sim {
                 GS_LOG_MSG(error, "ProcessReceivedCam2Image - failed to ComputeBallLocation for ball1.");
                 return false;
             }
+
+            // The ball's position is useful for later analysis
+            GS_LOG_MSG(info, "Teed-up Ball:" + ball1.Format() + "\n");
+
 
             GS_LOG_TRACE_MSG(trace, "ProcessReceivedCam2Image - ball2 (with delta information) is:\n" + ball2.Format());
 
@@ -3133,7 +3136,7 @@ namespace golf_sim {
             // Next, calculate launch and side angles as between the initial, stationary, ball and each of
             // the strobed images.  Given the distance from the initial ball and the later in-flight
             // exposures, the average angles should be pretty accurate, even if, for example, there is
-            // some noisey calculations of the radius of the strobed ball exposures.
+            // some noisy calculations of the radius of the strobed ball exposures.
 
             std::vector<GolfBall> camera1_average_ball_vector;
 

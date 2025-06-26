@@ -8,6 +8,8 @@ If you'd like to check out the software without needing Raspberry Pi's or buildi
 
 With that said, here is what you need to do to make your own PiTrac:
 
+[0\. Figure out what type of PiTrac you want to build - read the project roadmap](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20RoadMap.md)
+
 [1\. Download the PiTrac Repository](#1-download-the-pitrac-repository)
 
 [2\. Gather the Parts You’ll Need](#2-gather-the-parts-youll-need)

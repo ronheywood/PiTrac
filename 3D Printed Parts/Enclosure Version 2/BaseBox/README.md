@@ -14,6 +14,7 @@ The Light Shield Body prints pretty well with any settings, but we use 2 perimet
 
 Note that a beginning of a sketch for an x-shaped leveling support base has been started in the model, but is not finished and not yet printable.
 
+Note also that the "shank shield" is not designed for 3D printing.  The hope is that the .dxf file can be used to laser cut or mill that part out of acrylic or (better) polycarbonite.
 **Assembly Notes:**
 
 See the [main assembly instructions](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20Version%202%20Assembly.md).

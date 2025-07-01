@@ -276,7 +276,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
 15. Install Boost (a set of utilities that PiTrac uses)  
     1. Install the current version of the boost development environment  
        1. `sudo apt-get install libboost1.74-all`  
-    2. Create a boost.pc file to tell meson how to find boost files when PiTrac is compiled  
+    2. NOTE - This next step should no longer be needed.  Only do this if the "meson setup build" step does not work.   Create a boost.pc file to tell meson how to find boost files when PiTrac is compiled  
        1. `sudo vi  /usr/share/pkgconfig/boost.pc`    and in it place:
        ```
        # Package Information for pkg-config  

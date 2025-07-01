@@ -87,6 +87,7 @@ namespace golf_sim {
             { "3", CameraModel::PiHQCam6mmWideLens },
             { "4", CameraModel::PiGSCam6mmWideLens },
             { "5", CameraModel::PiGSCam3_6mmLens },
+            { "6", CameraModel::InnoMakerIMX296GS3_6mmM12Lens },
             { "100", CameraModel::kUnknown },
         };
         if (camera_table.count(model_enum_value_string) == 0)
@@ -180,8 +181,22 @@ namespace golf_sim {
 
         if (model == PiGSCam6mmWideLens) {
             focal_length_ = 6.0f;
-            horizontalFoV = 50.0f;  
+            horizontalFoV = 50.0f;
             verticalFoV = 50.0f;
+            is_mono_camera_ = false;
+            expected_ball_radius_pixels_at_40cm_ = 87;
+        }
+
+        if (model == InnoMakerIMX296GS3_6mmM12Lens) {
+            focal_length_ = 3.6f;
+            horizontalFoV = 70.0f;
+            verticalFoV = 70.0f;
+            is_mono_camera_ = true;
+            expected_ball_radius_pixels_at_40cm_ = 61;
+        }
+
+        // This section deals with the common characteristics of some of the cameras
+        if (model == PiGSCam6mmWideLens || model == InnoMakerIMX296GS3_6mmM12Lens) {
 
             // Sensor pixel width is 3.45uM square?  No - 6.33mm diagonal.  It appears that
             // the actual width is the full resolution (1456)  * 3.4uM = 4.95mm,
@@ -200,19 +215,29 @@ namespace golf_sim {
                 resolution_y_ = 1088;
             }
 
+            // For some reason, the effective resolution when taking video (and in particular, when cropping)
+            // appears to be less in the y direction than when taking a still image.
             video_resolution_x_ = resolution_x_;
             video_resolution_y_ = 1080;
 
             GS_LOG_TRACE_MSG(trace, "Video resolution (x,y) is: " + std::to_string(video_resolution_x_) + "/" + std::to_string(video_resolution_y_) + ".");
 
 
+            // Attempt to get the expected ball radius from the .json file
             std::string ball_radius_pixels_at_40cm_name = "kExpectedBallRadiusPixelsAt40cmCamera" + std::string(camera_number == GsCameraNumber::kGsCamera1 ? "1" : "2");
 
-            GolfSimConfiguration::SetConstant("gs_config.cameras." + ball_radius_pixels_at_40cm_name, expected_ball_radius_pixels_at_40cm_);
+            int expected_ball_radius_pixels_at_40cm_from_config_file = -1;
 
-            if (expected_ball_radius_pixels_at_40cm_ < 1) {
-                GS_LOG_TRACE_MSG(warning, ball_radius_pixels_at_40cm_name + " not set in .json config file.  Setting to default instead.");
-                GolfSimConfiguration::SetConstant("gs_config.ball_position.kExpectedBallRadiusPixelsAt40cm", expected_ball_radius_pixels_at_40cm_);                
+            GolfSimConfiguration::SetConstant("gs_config.cameras." + ball_radius_pixels_at_40cm_name, expected_ball_radius_pixels_at_40cm_from_config_file);
+
+            // The default will be used unless the .json file has a value, in which case that value will be used.
+
+            if (expected_ball_radius_pixels_at_40cm_from_config_file < 1) {
+                GS_LOG_TRACE_MSG(trace, ball_radius_pixels_at_40cm_name + " not set in .json config file.  Using default instead of : " + std::to_string(expected_ball_radius_pixels_at_40cm_));
+            }
+            else {
+                expected_ball_radius_pixels_at_40cm_ = expected_ball_radius_pixels_at_40cm_from_config_file;
+                GS_LOG_TRACE_MSG(info, "Over-riding default " + ball_radius_pixels_at_40cm_name + " using value from.json config file of : " + std::to_string(expected_ball_radius_pixels_at_40cm_));
             }
 
             cv::Mat camera_calibration_matrix_values = cv::Mat(3, 3, CV_64F);
@@ -260,11 +285,15 @@ namespace golf_sim {
             }
         }
         else if (model == PiHQCam6mmWideLens) {
+
+            // TBD - This camera is no longer supported - REMOVE
             focal_length_ = 6.25f;
             horizontalFoV = 63.0f;  // TBD - Not certain of FoV yet
             verticalFoV = 50.0f;
             sensor_width_ = 6.287f;
             sensor_height_ = 4.712f;
+
+            is_mono_camera_ = false;
 
             if (resolution_x_override_ > 0 && resolution_y_override_ > 0) {
                 resolution_x_ = resolution_x_override_;
@@ -304,12 +333,14 @@ namespace golf_sim {
             }
         }
         else if (model == PiCam2) {
+            // TBD - This camera is no longer supported - REMOVE
             focal_length_ = 3.04f;
             horizontalFoV = 62.2f;
             verticalFoV = 48.8f;
             sensor_width_ = 3.68f;
             sensor_height_ = 2.76f;
 
+            is_mono_camera_ = false;
             // Other possible resolutions for this camera:
             //            resolution_x_ = 1024;
             //            resolution_y_ = 768;

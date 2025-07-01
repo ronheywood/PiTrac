@@ -447,7 +447,12 @@ namespace golf_sim {
 		}
 
 		if (lggpio_chip_handle_ < 0) {
-			GS_LOG_MSG(error, "PulseStrobe::InitGPIOSystem failed to initialize (lgGpioChipOpen)");
+			GS_LOG_MSG(trace, "PulseStrobe::InitGPIOSystem failed to initialize (lgGpioChipOpen). Attempting with different chip number kRPi4GpioChipNumber.");
+			lggpio_chip_handle_ = lgGpiochipOpen(kRPi4GpioChipNumber);
+		}
+
+		if (lggpio_chip_handle_ < 0) {
+			GS_LOG_MSG(error, "PulseStrobe::InitGPIOSystem failed to initialize (lgGpioChipOpen).  Received handle: " + std::to_string(lggpio_chip_handle_) );
 			return false;
 		}
 

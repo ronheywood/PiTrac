@@ -9,7 +9,8 @@ on:
       - "**"
 env:
   BOOST_VERSION: 1.84.0
-  BOOST_MSVC_VERSION: "14.3"
+  BOOST_ROOT: C:\Dev_Env\boost
+  OPENCV_DIR: C:\opencv
 jobs:
   camera-tests:
     name: Image Analysis Tests
@@ -17,14 +18,14 @@ jobs:
     defaults:
       run:
         working-directory: Software/LMSourceCode/ImageProcessing/ImageAnalysis
-    steps:      
+    steps:
       - name: Checkout code
         uses: actions/checkout@v4   
 
       - name: Cache OpenCV
         uses: actions/cache@v3
         with:
-          path: C:\opencv
+          path: ${{ env.OPENCV_DIR }}
           key: ${{ runner.os }}-opencv-4.10.0-binaries
           restore-keys: |
             ${{ runner.os }}-opencv-4.10.0-
@@ -32,21 +33,17 @@ jobs:
       - name: Install CMake
         uses: jwlawson/actions-setup-cmake@v2
         with:
-          cmake-version: "3.20"          
+          cmake-version: "3.20"
 
       - name: Install OpenCV
         run: |
-          if (-not (Test-Path "C:\opencv")) {
+          if (-not (Test-Path "$env:OPENCV_DIR")) {
             Write-Host "Installing OpenCV 4.10.0..."
             $url = "https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-windows.exe"
-            $output = "$env:TEMP\opencv-4.10.0-windows.exe"
-            
-            Invoke-WebRequest -Uri $url -OutFile $output
-            Move-Item -Path $output -Destination "C:\opencv.exe" -Force
-            Start-Process -FilePath "C:\opencv.exe" -ArgumentList "-o", "C:\opencv", "-y" -Wait
-            Remove-Item "C:\opencv.exe"
-            
-            Write-Host "✓ OpenCV installation complete"
+            Invoke-WebRequest -Uri $url -OutFile "opencv.exe"
+            Start-Process -FilePath "opencv.exe" -ArgumentList "-o", "$env:OPENCV_DIR", "-y" -Wait
+            Remove-Item "opencv.exe"
+            Write-Host "✓ OpenCV installed at $env:OPENCV_DIR"
           } else {
             Write-Host "✓ OpenCV found in cache"
           }
@@ -54,62 +51,28 @@ jobs:
 
       - name: Install boost
         uses: MarkusJx/install-boost@v2
-        id: install-boost
         with:
           boost_version: ${{ env.BOOST_VERSION }}
           boost_install_dir: C:\Dev_Env\
           platform_version: 2022
           toolset: msvc
-
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: x64      
+          arch: x64
           
       - name: Configure CMake
         run: |
-          # Clean build directory
           if (Test-Path build) { Remove-Item build -Recurse -Force }
-          if (Test-Path CMakeCache.txt) { Remove-Item CMakeCache.txt -Force }
           mkdir build
-          # Verify required paths exist (CMakeLists.txt hardcodes these)
-          Write-Host "Verifying hardcoded paths:"
-          Write-Host "  OpenCV: $(Test-Path 'C:\opencv\build\OpenCVConfig.cmake')"
-          Write-Host "  Boost: $(Test-Path 'C:\Dev_Env\boost\boost\include\boost-1_84')"
-          
-          # Simple CMake call - all paths hardcoded in CMakeLists.txt
-          Write-Host "Running CMake..."
-          cmake . -DCMAKE_BUILD_TYPE=Release -B build
-          
-          # Check if CMake found our hardcoded Boost setup
-          if (Test-Path "build/CMakeCache.txt") {
-            $boostCheck = Select-String -Path "build/CMakeCache.txt" -Pattern "Boost.*LIBRARY" -Quiet
-            if ($boostCheck) {
-              Write-Host "⚠ Warning: CMake still found Boost libraries despite header-only setup"
-            } else {
-              Write-Host "✓ CMake using header-only Boost (no library references found)"
-            }
-          }
+          Write-Host "Configuring CMake..."
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
         shell: pwsh
         
-      - name: Build tests
+      - name: Build and Test
         run: |
           pushd build
           cmake --build . --config Release
+          ctest -C Release --output-on-failure
           popd
-        shell: pwsh
-
-      - name: Approval Tests
-        run: |
-          ./build/Release/test_approval_with_pitrac_images.exe
-        shell: pwsh      
-      
-      - name: Domain Tests
-        run: |
-          ./build/Release/test_image_analysis_domain.exe
-        shell: pwsh
-      
-      - name: OpenCV Tests
-        run: |
-          ./build/Release/test_opencv_analyzer.exe
         shell: pwsh

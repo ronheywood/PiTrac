@@ -4,38 +4,51 @@
 cmake_minimum_required(VERSION 3.16)
 project(ImageAnalysis)
 
+# Handle CMake policy for FindBoost module removal in newer CMake versions
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 OLD)  # Keep old behavior for compatibility
+endif()
+
+# Handle CMake policy for BOOST_ROOT variable
+if(POLICY CMP0144)
+    cmake_policy(SET CMP0144 NEW)
+endif()
+
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find required packages
-#set(OpenCV_DIR "C:/opencv/build")
 find_package(OpenCV REQUIRED)
 
-# Configure Boost detection
+# Configure Boost detection - require explicit BOOST_ROOT
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 
-message(STATUS "Looking for Boost Test framework...")
-if(WIN32)
-    # On Windows, try different naming conventions
-    find_package(Boost QUIET COMPONENTS unit_test_framework)
-    if(NOT Boost_unit_test_framework_FOUND)
-        find_package(Boost QUIET COMPONENTS test)
-        if(NOT Boost_test_FOUND)
-            find_package(Boost QUIET COMPONENTS test_exec_monitor)
-            if(NOT Boost_test_exec_monitor_FOUND)
-                # Try header-only approach as fallback
-                find_package(Boost REQUIRED)
-                set(BOOST_TEST_HEADER_ONLY TRUE)
-            endif()
-        endif()
-    endif()
-else()
-    # On Unix systems, standard naming should work
-    find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+# Require BOOST_ROOT to be set (either environment variable or CMake variable)
+if(NOT DEFINED ENV{BOOST_ROOT} AND NOT DEFINED BOOST_ROOT)
+    message(FATAL_ERROR 
+        "BOOST_ROOT must be set. Please set environment variable or pass -DBOOST_ROOT=<path> to CMake.\n"
+        "Example: $env:BOOST_ROOT = \"C:/Dev_Libs/boost\" (PowerShell)\n"
+        "Or: cmake -DBOOST_ROOT=\"C:/Dev_Libs/boost\" .."
+    )
 endif()
+
+# Use environment variable if set, otherwise use CMake variable
+if(DEFINED ENV{BOOST_ROOT} AND NOT DEFINED BOOST_ROOT)
+    set(BOOST_ROOT $ENV{BOOST_ROOT})
+    message(STATUS "Using BOOST_ROOT from environment: ${BOOST_ROOT}")
+else()
+    message(STATUS "Using BOOST_ROOT from CMake: ${BOOST_ROOT}")
+endif()
+
+# Configure Boost detection
+set(Boost_NO_SYSTEM_PATHS ON)
+set(Boost_NO_BOOST_CMAKE ON)  # Use traditional FindBoost for consistency
+
+# Find Boost with unit test framework
+find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 
 # Include directories
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -83,115 +96,33 @@ else()
     )
 endif()
 
+# Function to configure Boost Test linking for a target
+function(configure_boost_test_target target_name)
+    target_link_libraries(${target_name} PRIVATE 
+        Boost::unit_test_framework 
+        image_analysis 
+        ${OpenCV_LIBS}
+    )
+    target_compile_definitions(${target_name} PRIVATE BOOST_TEST_DYN_LINK)
+endfunction()
+
 # Add tests if Boost is available
 if(Boost_FOUND)
     enable_testing()
     
     # Domain tests (no external dependencies)
-    add_executable(test_image_analysis_domain
-        tests/test_image_analysis_domain.cpp
-    )
-    
-    # Configure Boost linking
-    if(BOOST_TEST_HEADER_ONLY)
-        target_compile_definitions(test_image_analysis_domain 
-            PRIVATE 
-            BOOST_TEST_HEADER_ONLY=1
-        )
-        target_include_directories(test_image_analysis_domain 
-            PRIVATE 
-            ${Boost_INCLUDE_DIRS}
-        )
-    else()
-        if(TARGET Boost::unit_test_framework)
-            target_link_libraries(test_image_analysis_domain PRIVATE Boost::unit_test_framework)
-            target_compile_definitions(test_image_analysis_domain PRIVATE BOOST_TEST_DYN_LINK)
-        elseif(TARGET Boost::test)
-            target_link_libraries(test_image_analysis_domain PRIVATE Boost::test)
-            target_compile_definitions(test_image_analysis_domain PRIVATE BOOST_TEST_DYN_LINK)
-        else()
-            target_link_libraries(test_image_analysis_domain PRIVATE ${Boost_LIBRARIES})
-            target_include_directories(test_image_analysis_domain PRIVATE ${Boost_INCLUDE_DIRS})
-            target_compile_definitions(test_image_analysis_domain PRIVATE BOOST_TEST_DYN_LINK)
-        endif()
-    endif()
-      target_link_libraries(test_image_analysis_domain
-        PRIVATE
-        image_analysis
-        ${OpenCV_LIBS}
-    )
+    add_executable(test_image_analysis_domain tests/test_image_analysis_domain.cpp)
+    configure_boost_test_target(test_image_analysis_domain)
     add_test(NAME DomainTests COMMAND test_image_analysis_domain)
     
     # OpenCV integration tests
-    add_executable(test_opencv_analyzer
-        tests/test_opencv_analyzer.cpp
-    )
-    
-    # Configure Boost linking for OpenCV tests
-    if(BOOST_TEST_HEADER_ONLY)
-        target_compile_definitions(test_opencv_analyzer 
-            PRIVATE 
-            BOOST_TEST_HEADER_ONLY=1
-        )
-        target_include_directories(test_opencv_analyzer 
-            PRIVATE 
-            ${Boost_INCLUDE_DIRS}
-        )
-    else()
-        if(TARGET Boost::unit_test_framework)
-            target_link_libraries(test_opencv_analyzer PRIVATE Boost::unit_test_framework)
-            target_compile_definitions(test_opencv_analyzer PRIVATE BOOST_TEST_DYN_LINK)
-        elseif(TARGET Boost::test)
-            target_link_libraries(test_opencv_analyzer PRIVATE Boost::test)
-            target_compile_definitions(test_opencv_analyzer PRIVATE BOOST_TEST_DYN_LINK)
-        else()
-            target_link_libraries(test_opencv_analyzer PRIVATE ${Boost_LIBRARIES})
-            target_include_directories(test_opencv_analyzer PRIVATE ${Boost_INCLUDE_DIRS})
-            target_compile_definitions(test_opencv_analyzer PRIVATE BOOST_TEST_DYN_LINK)
-        endif()
-    endif()
-    
-    target_link_libraries(test_opencv_analyzer
-        PRIVATE
-        image_analysis
-        ${OpenCV_LIBS}
-    )
+    add_executable(test_opencv_analyzer tests/test_opencv_analyzer.cpp)
+    configure_boost_test_target(test_opencv_analyzer)
     add_test(NAME OpenCVTests COMMAND test_opencv_analyzer)
     
     # Approval tests with real PiTrac images
-    add_executable(test_approval_with_pitrac_images
-        tests/test_approval_with_pitrac_images.cpp
-    )
-    
-    # Configure Boost linking for approval tests
-    if(BOOST_TEST_HEADER_ONLY)
-        target_compile_definitions(test_approval_with_pitrac_images 
-            PRIVATE 
-            BOOST_TEST_HEADER_ONLY=1
-        )
-        target_include_directories(test_approval_with_pitrac_images 
-            PRIVATE 
-            ${Boost_INCLUDE_DIRS}
-        )
-    else()
-        if(TARGET Boost::unit_test_framework)
-            target_link_libraries(test_approval_with_pitrac_images PRIVATE Boost::unit_test_framework)
-            target_compile_definitions(test_approval_with_pitrac_images PRIVATE BOOST_TEST_DYN_LINK)
-        elseif(TARGET Boost::test)
-            target_link_libraries(test_approval_with_pitrac_images PRIVATE Boost::test)
-            target_compile_definitions(test_approval_with_pitrac_images PRIVATE BOOST_TEST_DYN_LINK)
-        else()
-            target_link_libraries(test_approval_with_pitrac_images PRIVATE ${Boost_LIBRARIES})
-            target_include_directories(test_approval_with_pitrac_images PRIVATE ${Boost_INCLUDE_DIRS})
-            target_compile_definitions(test_approval_with_pitrac_images PRIVATE BOOST_TEST_DYN_LINK)
-        endif()
-    endif()
-    
-    target_link_libraries(test_approval_with_pitrac_images
-        PRIVATE
-        image_analysis
-        ${OpenCV_LIBS}
-    )
+    add_executable(test_approval_with_pitrac_images tests/test_approval_with_pitrac_images.cpp)
+    configure_boost_test_target(test_approval_with_pitrac_images)
     add_test(NAME ApprovalTests COMMAND test_approval_with_pitrac_images)
     
     # Set test properties
@@ -250,27 +181,9 @@ add_custom_target(run_approval_tests
     COMMENT "Running approval tests with real PiTrac images"
 )
 
-# Documentation target (requires Doxygen)
-find_package(Doxygen QUIET)
-if(DOXYGEN_FOUND)
-    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in)
-    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
-    
-    if(EXISTS ${DOXYGEN_IN})
-        configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
-        add_custom_target(docs
-            COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            COMMENT "Generating API documentation with Doxygen"
-            VERBATIM
-        )
-    endif()
-endif()
-
 # Print configuration summary
 message(STATUS "Image Analysis Bounded Context Configuration:")
 message(STATUS "  OpenCV version: ${OpenCV_VERSION}")
 message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "  C++ standard: ${CMAKE_CXX_STANDARD}")
-message(STATUS "  Tests enabled: ${GTest_FOUND}")
-message(STATUS "  Documentation: ${DOXYGEN_FOUND}")
+message(STATUS "  Tests enabled: ${Boost_FOUND}")

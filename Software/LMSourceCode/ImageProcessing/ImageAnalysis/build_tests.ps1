@@ -19,6 +19,23 @@ Write-Host "=================================" -ForegroundColor Green
 
 $BuildDir = "build"
 
+# Check and set environment variables for dependencies if not already set
+if (-not $env:BOOST_ROOT) {
+    $DefaultBoostPath = "C:\Dev_Libs\boost"
+    Write-Host "BOOST_ROOT environment variable not set. Using default: $DefaultBoostPath" -ForegroundColor Yellow
+    $env:BOOST_ROOT = $DefaultBoostPath
+} else {
+    Write-Host "Using BOOST_ROOT: $env:BOOST_ROOT" -ForegroundColor Green
+}
+
+if (-not $env:OPENCV_DIR) {
+    $DefaultOpenCVPath = "C:\opencv"
+    Write-Host "OPENCV_DIR environment variable not set. Using default: $DefaultOpenCVPath" -ForegroundColor Yellow
+    $env:OPENCV_DIR = $DefaultOpenCVPath
+} else {
+    Write-Host "Using OPENCV_DIR: $env:OPENCV_DIR" -ForegroundColor Green
+}
+
 # Check required files
 if (!(Test-Path "domain\value_objects.hpp") -or !(Test-Path "CMakeLists.txt")) {
     Write-Host "ERROR: Run this script from the ImageAnalysis directory" -ForegroundColor Red

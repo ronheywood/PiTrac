@@ -19,6 +19,27 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find required packages
+# Configure OpenCV detection - require explicit OPENCV_DIR
+if(NOT DEFINED ENV{OPENCV_DIR} AND NOT DEFINED OPENCV_DIR)
+    message(FATAL_ERROR 
+        "OPENCV_DIR must be set. Please set environment variable or pass -DOPENCV_DIR=<path> to CMake.\n"
+        "Example: $env:OPENCV_DIR = \"C:/opencv\" (PowerShell)\n"
+        "Or: cmake -DOPENCV_DIR=\"C:/opencv\" .."
+    )
+endif()
+
+# Use environment variable if set, otherwise use CMake variable
+if(DEFINED ENV{OPENCV_DIR} AND NOT DEFINED OPENCV_DIR)
+    set(OPENCV_DIR $ENV{OPENCV_DIR})
+    message(STATUS "Using OPENCV_DIR from environment: ${OPENCV_DIR}")
+else()
+    message(STATUS "Using OPENCV_DIR from CMake: ${OPENCV_DIR}")
+endif()
+
+# Add OpenCV directory to the prefix path so find_package can find it
+list(APPEND CMAKE_PREFIX_PATH ${OPENCV_DIR})
+
+# Now find OpenCV with the specified path
 find_package(OpenCV REQUIRED)
 
 # Configure Boost detection - require explicit BOOST_ROOT

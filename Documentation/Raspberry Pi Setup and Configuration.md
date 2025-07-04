@@ -33,8 +33,10 @@
 ## Summary
 
 These instructions are targeted toward folks who do not have a lot of experience building software systems in the Pi Operating System and who could benefit from more step-by-step direction. Someone who’s familiar with using tools like meson and ninja to build software can likely skip over many of these steps. However, the instructions contain a number of idiosyncratic steps and configuration requirements that are particular to PiTrac.
-
+r
 These instructions start with a Raspberry Pi with nothing on it, and are meant to describe all the steps to get from that point to a working, compiled version of PiTrac.  PiTrac currently requires two Raspberry Pi’s, so the majority of these instructions will have to be repeated twice.  Because the ‘smaller’ Pi system that connects to Camera 2 is the only Pi that handles the Tomcat/Tomee web-based GUI for the system, there are a few more steps for that system.
+
+NOTE - The new "single-pi" version of PiTrac does not have its own documentation yet.  Until then, please note that these instructions can work when using only a single Pi.  You just need to do everything with what we consider here to be the "Pi 1" system even if the instructions refer to the Pi 2 system.  For example, if a step in this document says "Log into the Pi 2 computer...", you will just log into the (only) Pi 1 system.
 
 ## Necessary & Recommended Components
 
@@ -651,7 +653,7 @@ export PITRAC_MSG_BROKER_FULL_ADDRESS=tcp://10.0.0.41:61616
 # Tell any rpicam apps where to get their configuration info (including, e.g., any timeout settings)
 export LIBCAMERA_RPI_CONFIG_FILE=/usr/share/libcamera/pipeline/rpi/pisp/rpi_apps.yaml
 
-# For Single-Pi configurations (most) pecify that both cameras are Official Pi GS cameras with 6mm lenses
+# For Single-Pi configurations (most) specify that both cameras are Official Pi GS cameras with 6mm lenses
 export PITRAC_SLOT1_CAMERA_TYPE=4
 export PITRAC_SLOT2_CAMERA_TYPE=4
 

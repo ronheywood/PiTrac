@@ -41,7 +41,6 @@ endif()
 list(APPEND CMAKE_PREFIX_PATH "${OPENCV_DIR}")
 message(STATUS "Looking for OpenCVConfig.cmake in: ${OPENCV_DIR}")
 
-# Find OpenCV using the specified path - no fallbacks or guessing
 find_package(OpenCV REQUIRED)
 
 # Configure Boost detection - require explicit BOOST_ROOT

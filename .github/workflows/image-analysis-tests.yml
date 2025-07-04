@@ -60,7 +60,8 @@ jobs:
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: x64
+          arch: x64      
+          
       - name: Configure CMake
         run: |
           if (Test-Path build) { Remove-Item build -Recurse -Force }
@@ -71,6 +72,21 @@ jobs:
           # This should be the directory that contains OpenCVConfig.cmake
           $OpenCVConfigPath = "$env:OPENCV_DIR\build"
           Write-Host "Setting OPENCV_DIR to: $OpenCVConfigPath"
+          
+          # Check if OpenCVConfig.cmake exists and list directory contents if it doesn't
+          $ConfigFile = Join-Path $OpenCVConfigPath "OpenCVConfig.cmake"
+          if (-not (Test-Path $ConfigFile)) {
+            Write-Host "⚠️ WARNING: OpenCVConfig.cmake not found at $ConfigFile" -ForegroundColor Yellow
+            Write-Host "Listing contents of $env:OPENCV_DIR..."
+            Get-ChildItem -Path $env:OPENCV_DIR -Recurse -Depth 1 | Select-Object FullName
+            
+            if (Test-Path "$env:OPENCV_DIR\build") {
+              Write-Host "Listing contents of $env:OPENCV_DIR\build..."
+              Get-ChildItem -Path "$env:OPENCV_DIR\build" -Recurse -Depth 1 | Select-Object FullName
+            }
+          } else {
+            Write-Host "✓ Found OpenCVConfig.cmake at $ConfigFile" -ForegroundColor Green
+          }
           
           cmake -B build -DCMAKE_BUILD_TYPE=Release -DOPENCV_DIR="$OpenCVConfigPath"
         shell: pwsh

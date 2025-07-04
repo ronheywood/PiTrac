@@ -56,17 +56,23 @@ jobs:
           boost_install_dir: C:\Dev_Env\
           platform_version: 2022
           toolset: msvc
+          
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
-          
+
       - name: Configure CMake
         run: |
           if (Test-Path build) { Remove-Item build -Recurse -Force }
           mkdir build
           Write-Host "Configuring CMake..."
-          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          
+          # Set the correct OpenCV configuration path
+          $OpenCVConfigPath = Join-Path $env:OPENCV_DIR "build"
+          Write-Host "Using OpenCV config path: $OpenCVConfigPath"
+          
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$OpenCVConfigPath"
         shell: pwsh
         
       - name: Build and Test

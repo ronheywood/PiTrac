@@ -39,11 +39,14 @@ jobs:
         run: |
           if (-not (Test-Path "$env:OPENCV_DIR")) {
             Write-Host "Installing OpenCV 4.10.0..."
+            New-Item -ItemType Directory -Path C:\tools -Force
+            pushd C:\tools
             $url = "https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-windows.exe"
             Invoke-WebRequest -Uri $url -OutFile "opencv.exe"
             Start-Process -FilePath "opencv.exe" -ArgumentList "-o", "$env:OPENCV_DIR", "-y" -Wait
             Remove-Item "opencv.exe"
             Write-Host "✓ OpenCV installed at $env:OPENCV_DIR"
+            popd
           } else {
             Write-Host "✓ OpenCV found in cache"
           }

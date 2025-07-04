@@ -544,7 +544,7 @@ KillSignal=SIGCONT
 [Install]  
 WantedBy=multi-user.target
 ```
-11. `sudo cp context.xml context.xml.ORIGINAL` [just in case]  
+11. `cd webapps/manager/META-INF; sudo cp context.xml context.xml.ORIGINAL` [just in case]  
 
 12. Update /opt/tomee/webapps/manager/META-INF/context.xml to allow “.\*” instead of just 127.0….  Replace the whole regex string.  The result should simply be allow=".\*" on that line  
 ```xml

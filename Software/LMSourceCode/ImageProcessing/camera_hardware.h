@@ -35,6 +35,7 @@ namespace golf_sim {
             PiHQCam6mmWideLens = 3,
             PiGSCam6mmWideLens = 4,
             PiGSCam3_6mmLens = 5,
+            InnoMakerIMX296GS3_6mmM12Lens = 6,
             kUnknown = 100
         };
 
@@ -53,15 +54,17 @@ namespace golf_sim {
         // kGsCamera2 is the camera that images the ball in flight
         GsCameraNumber camera_number_ = GsCameraNumber::kGsCamera1;
 
-        CameraModel cameraModel = CameraModel::PiHQCam6mmWideLens;
+        CameraModel camera_model_ = CameraModel::PiHQCam6mmWideLens;
         float focal_length_ = 0;        // In millimeters
-        float horizontalFoV = 0;        // In degrees
-        float verticalFoV = 0;          // In degrees
+        float horizontalFoV_ = 0;        // In degrees
+        float verticalFoV_ = 0;          // In degrees
         float sensor_width_ = 0;        // The physical size of the camera sensor, inclusive of all the pixels.  In mm
         float sensor_height_ = 0;       // In mm
 
-        cv::Mat calibrationMatrix;
-        cv::Mat cameraDistortionVector;
+        bool use_calibration_matrix_ = false;
+
+        cv::Mat calibrationMatrix_;
+        cv::Mat cameraDistortionVector_;
 
         // These SHOULD depend on camera model
         // -1 if not set via init_camera_parameters or otherwise overridden
@@ -75,7 +78,12 @@ namespace golf_sim {
 
         cv::Vec2d camera_angles_;
 
+        // Will be set to a reasonable default based on the camera in use
+        // Can be overridden from the .json config file using either of 
+        // kExpectedBallRadiusPixelsAt40cmCamera1 or 2
         int expected_ball_radius_pixels_at_40cm_ = 0;
+
+        bool is_mono_camera_ = false;
 
         // if set, the camera will use this image (file) as if (it were the image that the
         // camera took on the Pi, regardless of operating system.  First will be used first, then
@@ -101,7 +109,9 @@ namespace golf_sim {
         void init_camera();
         void deinit_camera();
 
-        void init_camera_parameters(const GsCameraNumber camera_number, const CameraModel model);
+        void init_camera_parameters(const GsCameraNumber camera_number, 
+                                    const CameraModel model, 
+                                    const bool use_default_focal_length = false);
 
         bool prepareToTakePhoto();
         cv::Mat take_photo();

@@ -425,13 +425,13 @@ cv::Mat GsAutomatedTesting::UndistortImage(const cv::Mat& img, CameraHardware::C
     c.camera_hardware_.resolution_x_override_ = img.cols;
     c.camera_hardware_.resolution_y_override_ = img.rows;
     c.camera_hardware_.init_camera_parameters(GsCameraNumber::kGsCamera1, camera_model);
-    cv::Mat cameracalibrationMatrix = c.camera_hardware_.calibrationMatrix;
-    cv::Mat cameraDistortionVector = c.camera_hardware_.cameraDistortionVector;
+    cv::Mat cameracalibrationMatrix_ = c.camera_hardware_.calibrationMatrix_;
+    cv::Mat cameraDistortionVector_ = c.camera_hardware_.cameraDistortionVector_;
 
     cv::Mat unDistortedBall1Img;
     cv::Mat m_undistMap1, m_undistMap2;
     // TBD - is the size rows, cols?  or cols, rows?
-    cv::initUndistortRectifyMap(cameracalibrationMatrix, cameraDistortionVector, cv::Mat(), cameracalibrationMatrix, cv::Size(img.cols, img.rows), CV_32FC1, m_undistMap1, m_undistMap2);
+    cv::initUndistortRectifyMap(cameracalibrationMatrix_, cameraDistortionVector_, cv::Mat(), cameracalibrationMatrix_, cv::Size(img.cols, img.rows), CV_32FC1, m_undistMap1, m_undistMap2);
     cv::remap(img, unDistortedBall1Img, m_undistMap1, m_undistMap2, cv::INTER_LINEAR);
 
     return unDistortedBall1Img;

@@ -46,7 +46,7 @@ namespace golf_sim {
 			kExternallyStrobed
 		};
 
-		static cv::Mat undistort_camera_image(const cv::Mat& img, GsCameraNumber camera_number, CameraHardware::CameraModel cameraModel);
+		static cv::Mat undistort_camera_image(const cv::Mat& img, const GolfSimCamera& camera);
 		static bool SendCamera2PreImage(const cv::Mat& raw_image);
 
 		static uint kMaxWatchingCropWidth;
@@ -81,7 +81,7 @@ namespace golf_sim {
 		static int previously_found_device_number_;
 	};
 
-	bool TakeRawPicture(cv::Mat& img);
+	bool TakeRawPicture(const GolfSimCamera& camera, cv::Mat& img);
 
 	// Takes a picture and then tries to find the ball
 	bool CheckForBall(GolfBall& ball, cv::Mat& return_image);
@@ -98,7 +98,7 @@ namespace golf_sim {
 	bool ConfigCameraForCropping(GolfBall ball, GolfSimCamera& camera, RPiCamEncoder& app);
 
 	// Uses media-ctl to setup a cropping mode to allow for high FPS.  Requires GS camera.
-	bool SendCameraCroppingCommand(const GsCameraNumber camera_number, cv::Vec2i& cropping_window_size, cv::Vec2i& cropping_window_offset);
+	bool SendCameraCroppingCommand(const GolfSimCamera &camera, cv::Vec2i& cropping_window_size, cv::Vec2i& cropping_window_offset);
 
 	// Sets up the rpicam-app-based post-processing pipeline so that the motion-detection stage knows 
 	// how to analyze the cropped image
@@ -108,17 +108,17 @@ namespace golf_sim {
 	// the camera sensor.
 	bool ConfigureLibCameraOptions(RPiCamEncoder& app, const cv::Vec2i& cropping_window_size, uint cropped_frame_rate_fps_fps);
 
-	std::string GetCmdLineForMediaCtlCropping(const GsCameraNumber camera_number, cv::Vec2i croppedHW, cv::Vec2i cropOffsetXY);
+	std::string GetCmdLineForMediaCtlCropping(const GolfSimCamera &camera_number, cv::Vec2i croppedHW, cv::Vec2i cropOffsetXY);
 
 	// Determine where the camera is, such as /dev/media2 at device 6
 	bool DiscoverCameraLocation(const GsCameraNumber camera_number, int& media_number, int& device_number);
 
 	bool RetrieveCameraInfo(const GsCameraNumber camera_number, cv::Vec2i& resolution, uint& frameRate, bool restartCamera = false);
 
-	LibcameraJpegApp* ConfigureForLibcameraStill(const GsCameraNumber camera_number);
+	LibcameraJpegApp* ConfigureForLibcameraStill(const GolfSimCamera& camera);
 	bool DeConfigureForLibcameraStill(const GsCameraNumber camera_number);
 
-	bool TakeLibcameraStill(cv::Mat& return_image);
+	bool TakeLibcameraStill(const GolfSimCamera& camera, cv::Mat& return_image);
 
 	bool WatchForHitAndTrigger(const GolfBall& ball, cv::Mat& return_image, bool& motion_detected);
 

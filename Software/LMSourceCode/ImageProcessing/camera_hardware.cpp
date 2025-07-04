@@ -171,28 +171,29 @@ namespace golf_sim {
 
     // TBD - Need to change signature to accept the desired resolution.  Different resolutions can result in
     // very different calibration matrices.
-    void CameraHardware::init_camera_parameters(const GsCameraNumber camera_number, const CameraModel model) {
+    void CameraHardware::init_camera_parameters(const GsCameraNumber camera_number, const CameraModel model, const bool use_default_focal_length) {
 
         GS_LOG_TRACE_MSG(trace, "getCameraParameters called with camera number = " + std::to_string(camera_number) + " and model = " + std::to_string(model));
 
         int sizes[3] = { 3, 3 };
         
         camera_number_ = camera_number;
+        camera_model_ = model;
 
         if (model == PiGSCam6mmWideLens) {
             focal_length_ = 6.0f;
-            horizontalFoV = 50.0f;
-            verticalFoV = 50.0f;
+            horizontalFoV_ = 50.0f;
+            verticalFoV_ = 50.0f;
             is_mono_camera_ = false;
             expected_ball_radius_pixels_at_40cm_ = 87;
         }
 
         if (model == InnoMakerIMX296GS3_6mmM12Lens) {
             focal_length_ = 3.6f;
-            horizontalFoV = 70.0f;
-            verticalFoV = 70.0f;
+            horizontalFoV_ = 70.0f;
+            verticalFoV_ = 70.0f;
             is_mono_camera_ = true;
-            expected_ball_radius_pixels_at_40cm_ = 61;
+            expected_ball_radius_pixels_at_40cm_ = 57;
         }
 
         // This section deals with the common characteristics of some of the cameras
@@ -222,7 +223,6 @@ namespace golf_sim {
 
             GS_LOG_TRACE_MSG(trace, "Video resolution (x,y) is: " + std::to_string(video_resolution_x_) + "/" + std::to_string(video_resolution_y_) + ".");
 
-
             // Attempt to get the expected ball radius from the .json file
             std::string ball_radius_pixels_at_40cm_name = "kExpectedBallRadiusPixelsAt40cmCamera" + std::string(camera_number == GsCameraNumber::kGsCamera1 ? "1" : "2");
 
@@ -233,7 +233,7 @@ namespace golf_sim {
             // The default will be used unless the .json file has a value, in which case that value will be used.
 
             if (expected_ball_radius_pixels_at_40cm_from_config_file < 1) {
-                GS_LOG_TRACE_MSG(trace, ball_radius_pixels_at_40cm_name + " not set in .json config file.  Using default instead of : " + std::to_string(expected_ball_radius_pixels_at_40cm_));
+                GS_LOG_TRACE_MSG(trace, ball_radius_pixels_at_40cm_name + " not set in .json config file.  Using default instead of : " + std::to_string(expected_ball_radius_pixels_at_40cm_)); 
             }
             else {
                 expected_ball_radius_pixels_at_40cm_ = expected_ball_radius_pixels_at_40cm_from_config_file;
@@ -252,44 +252,51 @@ namespace golf_sim {
             std::string calibration_element_name = "kCamera" + std::to_string((int)camera_number_) + "CalibrationMatrix";
             std::string distortion_element_name = "kCamera" + std::to_string((int)camera_number_) + "DistortionVector";
 
-            GolfSimConfiguration::SetConstant("gs_config.cameras." + calibration_element_name, camera_calibration_matrix_values);
-            GolfSimConfiguration::SetConstant("gs_config.cameras." + distortion_element_name, camera_distortion_values);
+            if (GolfSimConfiguration::PropertyExists("gs_config.cameras." + calibration_element_name) ) {
+                GolfSimConfiguration::SetConstant("gs_config.cameras." + calibration_element_name, camera_calibration_matrix_values);
+                GolfSimConfiguration::SetConstant("gs_config.cameras." + distortion_element_name, camera_distortion_values);
+            }
             
             bool calibration_information_is_valid = (camera_calibration_matrix_values.at<double>(0,0) != 0.0) &&
                                                     (camera_distortion_values.at<double>(0, 0) != 0.0);
 
-            GS_LOG_TRACE_MSG(trace, calibration_element_name + " = ");
-            std::stringstream ss1; ;
-            ss1 << camera_calibration_matrix_values << std::endl;
-            GS_LOG_TRACE_MSG(trace, ss1.str());
-
-            GS_LOG_TRACE_MSG(trace, distortion_element_name + " = ");
-            std::stringstream ss2; ;
-            ss2 << camera_distortion_values << std::endl;
-            GS_LOG_TRACE_MSG(trace, ss2.str());
-
-            calibrationMatrix = camera_calibration_matrix_values;
-            cameraDistortionVector = camera_distortion_values;
-
             if (!calibration_information_is_valid) {
                 // We don't have calibration parameters for this resolution
-                GS_LOG_MSG(warning, "No calibration parameters for resolution (width = " + std::to_string(resolution_x_) + ") are available.  Using identify parameters");
+                GS_LOG_MSG(trace, "No calibration parameters for resolution (width = " + std::to_string(resolution_x_) + ") are available.  Using identity (no-transform) parameters");
 
-                calibrationMatrix = (cv::Mat_<float>(3, 3) <<
+                calibrationMatrix_ = (cv::Mat_<float>(3, 3) <<
                     1, 0, 0,
                     0, 1, 0,
                     0, 0, 1);
 
-                cameraDistortionVector = (cv::Mat_<float>(1, 5) <<
+                cameraDistortionVector_ = (cv::Mat_<float>(1, 5) <<
                     1, 1, 1, 1, 1);
+
+                use_calibration_matrix_ = false;
+            }
+            else {
+                GS_LOG_TRACE_MSG(trace, calibration_element_name + " = ");
+                std::stringstream ss1; ;
+                ss1 << camera_calibration_matrix_values << std::endl;
+                GS_LOG_TRACE_MSG(trace, ss1.str());
+
+                GS_LOG_TRACE_MSG(trace, distortion_element_name + " = ");
+                std::stringstream ss2; ;
+                ss2 << camera_distortion_values << std::endl;
+                GS_LOG_TRACE_MSG(trace, ss2.str());
+
+                calibrationMatrix_ = camera_calibration_matrix_values;
+                cameraDistortionVector_ = camera_distortion_values;
+
+                use_calibration_matrix_ = false;
             }
         }
         else if (model == PiHQCam6mmWideLens) {
 
             // TBD - This camera is no longer supported - REMOVE
             focal_length_ = 6.25f;
-            horizontalFoV = 63.0f;  // TBD - Not certain of FoV yet
-            verticalFoV = 50.0f;
+            horizontalFoV_ = 63.0f;  // TBD - Not certain of FoV yet
+            verticalFoV_ = 50.0f;
             sensor_width_ = 6.287f;
             sensor_height_ = 4.712f;
 
@@ -311,32 +318,35 @@ namespace golf_sim {
             // These are defaults from measurements from a real camera, but may differ from
             // camera instance to instance.
             if (resolution_x_ == 4056) {
-                calibrationMatrix = (cv::Mat_<float>(3, 3) <<
+                calibrationMatrix_ = (cv::Mat_<float>(3, 3) <<
                     3942.884592, 0.000000, 1992.630087,
                     0.000000, 3929.331993, 1656.927712,
                     0.000000, 0.000000, 1.000000);
 
-                cameraDistortionVector = (cv::Mat_<float>(1, 5) <<
+                cameraDistortionVector_ = (cv::Mat_<float>(1, 5) <<
                     -0.505410, 0.293051, -0.008886, 0.002192, -0.126480);
+                use_calibration_matrix_ = true;
             }
             else {
                 // We don't have calibration parameters for this resolution
                 LoggingTools::Warning("No calibration parameters for resolution (width = " + std::to_string(resolution_x_) + ") are available.  Using identify parameters");
 
-                calibrationMatrix = (cv::Mat_<float>(3, 3) <<
+                calibrationMatrix_ = (cv::Mat_<float>(3, 3) <<
                     1, 0, 0,
                     0, 1, 0,
                     0, 0, 1);
 
-                cameraDistortionVector = (cv::Mat_<float>(1, 5) <<
+                cameraDistortionVector_ = (cv::Mat_<float>(1, 5) <<
                     1, 1, 1, 1, 1);
+
+                use_calibration_matrix_ = false;
             }
         }
         else if (model == PiCam2) {
             // TBD - This camera is no longer supported - REMOVE
             focal_length_ = 3.04f;
-            horizontalFoV = 62.2f;
-            verticalFoV = 48.8f;
+            horizontalFoV_ = 62.2f;
+            verticalFoV_ = 48.8f;
             sensor_width_ = 3.68f;
             sensor_height_ = 2.76f;
 
@@ -363,40 +373,45 @@ namespace golf_sim {
             video_resolution_y_ = resolution_y_;
 
             if (resolution_x_ == 3280) {
-                calibrationMatrix = (cv::Mat_<float>(3, 3) <<
+                calibrationMatrix_ = (cv::Mat_<float>(3, 3) <<
                     2716.386350, 0.000000, 1766.508245,
                     0.000000, 2712.451173, 1323.332502,
                     0.000000, 0.000000, 1.000000);
 
-                cameraDistortionVector = (cv::Mat_<float>(1, 5) <<
+                cameraDistortionVector_ = (cv::Mat_<float>(1, 5) <<
                     0.180546, -0.486020,   0.015867,  0.020743,  0.242820);
+                use_calibration_matrix_ = true;
             }
             else if (resolution_x_ == 2592) {
-                calibrationMatrix = (cv::Mat_<float>(3, 3) <<
+                calibrationMatrix_ = (cv::Mat_<float>(3, 3) <<
                     2031.299942, 0.000000, 1228.929011,
                     0.000000, 2034.953849, 937.969291,
                     0.000000, 0.000000, 1.000000);
 
-                cameraDistortionVector = (cv::Mat_<float>(1, 5) <<
+                cameraDistortionVector_ = (cv::Mat_<float>(1, 5) <<
                     0.159431, -0.181717, 0.004414, -0.004092, -0.427269);
+
+                    use_calibration_matrix_ = true;
             }
             else {
                 // We don't have calibration parameters for this resolution
                 LoggingTools::Warning("No calibration parameters for resolution (width = " + std::to_string(resolution_x_) + ") are available.  Using identify parameters");
 
-                calibrationMatrix = (cv::Mat_<float>(3, 3) <<
+                calibrationMatrix_ = (cv::Mat_<float>(3, 3) <<
                     1, 0, 0,
                     0, 1, 0,
                     0, 0, 1);
 
-                cameraDistortionVector = (cv::Mat_<float>(1, 5) <<
+                cameraDistortionVector_ = (cv::Mat_<float>(1, 5) <<
                     1, 1, 1, 1, 1);
+
+                use_calibration_matrix_ = false;
             }
          }
         else if (model == PiCam13) {
             focal_length_ = 3.6f;
-            horizontalFoV = 53.5f;
-            verticalFoV = 41.41f;
+            horizontalFoV_ = 53.5f;
+            verticalFoV_ = 41.41f;
             // TBD - Other params for other potential resolutions
 
             //            resolution_x_ = 1024;
@@ -421,10 +436,14 @@ namespace golf_sim {
 
         // Customize any parameters that have been set in the JSON config file
 
-        std::string tag = "gs_config.cameras.kCamera" + std::to_string(camera_number_) + "FocalLength";
-        if (GolfSimConfiguration::PropertyExists(tag)) {
-            GolfSimConfiguration::SetConstant(tag, focal_length_);
-            GS_LOG_TRACE_MSG(trace, "Set focal length (from JSON file) = " + std::to_string(focal_length_));
+        std::string tag;
+
+        if (!use_default_focal_length) {
+            tag = "gs_config.cameras.kCamera" + std::to_string(camera_number_) + "FocalLength";
+            if (GolfSimConfiguration::PropertyExists(tag)) {
+                GolfSimConfiguration::SetConstant(tag, focal_length_);
+                GS_LOG_TRACE_MSG(trace, "Setting focal length (from JSON file) = " + std::to_string(focal_length_));
+            }
         }
 
         tag = "gs_config.cameras.kCamera" + std::to_string(camera_number_) + "Angles";

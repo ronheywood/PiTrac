@@ -227,13 +227,13 @@ namespace golf_sim {
             // TBD - For now, just ignore.    return false;
         }
 
-        // Get a reasonable default in case (for some reason), the camera's radius has not been set;
+        // Get a reasonable default in case (for some reason), the camera's expected radius has not been set
         double radius = kExpectedBallRadiusPixelsAt40cm;
 
         // Get the camera's expected ball radius.  There might be two different cameras, or two different
         // lenses (e.g., one wide, one telephoto), with different respective radii.
         if (camera_hardware.expected_ball_radius_pixels_at_40cm_ > 0) {
-            kExpectedBallRadiusPixelsAt40cm = camera_hardware.expected_ball_radius_pixels_at_40cm_;
+            radius = camera_hardware.expected_ball_radius_pixels_at_40cm_;
         }
         else {
             GS_LOG_TRACE_MSG(warning, "expected_ball_radius_pixels_at_40cm_ not set in camera in GolfSimCamera::getExpectedBallRadiusPixels().  Setting to default instead.");
@@ -1783,8 +1783,8 @@ namespace golf_sim {
 
             GS_LOG_TRACE_MSG(trace, "GolfSimCamera::RemoveUnlikelyAngleLowerQualityBalls");
 
-            if (initial_balls.size() < 1) {
-                GS_LOG_TRACE_MSG(warning, "initial_balls vector was empty.  Exiting function.");
+            if (initial_balls.size() < 2) {
+                GS_LOG_TRACE_MSG(warning, "initial_balls vector was empty or had only 1 ball.  Exiting function.");
                 return;
             }
 
@@ -1804,7 +1804,7 @@ namespace golf_sim {
             // This index should point to the highest-quality ball
             size_t outer_index = 0;
 
-            while (outer_index < initial_balls.size() - 1) {
+            while ( (outer_index < initial_balls.size() - 1) && (initial_balls.size() > 0) ) {
 
                 GolfBall& current_ball = initial_balls[outer_index];
 
@@ -3002,13 +3002,13 @@ namespace golf_sim {
 
             cv::cvtColor(strobed_balls_color_image, strobed_balls_gray_image, cv::COLOR_BGR2GRAY);
 
-            CameraHardware::CameraModel  cameraModel = CameraHardware::PiGSCam6mmWideLens;
+            CameraHardware::CameraModel  camera_1_model = GolfSimCamera::kSystemSlot1CameraType;
 
             // Get the ball data.  We will calibrate based on the first ball and then get the second one
             // using that calibrated data from the first ball.
 
             GolfSimCamera camera_1;
-            camera_1.camera_hardware_.init_camera_parameters(GsCameraNumber::kGsCamera1, cameraModel);
+            camera_1.camera_hardware_.init_camera_parameters(GsCameraNumber::kGsCamera1, camera_1_model);
 
             // One set of positions, below describes the relationship of camera2 to itself and the z-plane of the ball.
             // That set does not contain any displacement in the X,Y plane.
@@ -3067,7 +3067,9 @@ namespace golf_sim {
             LoggingTools::DebugShowImage("Current Gray Image 1", strobed_balls_gray_image);
 
             GolfSimCamera camera_2;
-            camera_2.camera_hardware_.init_camera_parameters(GsCameraNumber::kGsCamera2, cameraModel);
+            CameraHardware::CameraModel  camera_2_model = GolfSimCamera::kSystemSlot2CameraType;
+
+            camera_2.camera_hardware_.init_camera_parameters(GsCameraNumber::kGsCamera2, camera_2_model);
 
 
             success = camera_2.AnalyzeStrobedBalls(strobed_balls_color_image,
@@ -3764,7 +3766,10 @@ namespace golf_sim {
         }
 
 
-        bool GolfSimCamera::TakeStillPicture(const GsCameraNumber camera_number, cv::Mat& color_image) {
+        bool GolfSimCamera::TakeStillPicture(const GolfSimCamera &camera, cv::Mat& color_image) {
+
+
+            const GsCameraNumber camera_number = camera.camera_hardware_.camera_number_;
 
             GS_LOG_TRACE_MSG(trace, "TakeStillPicture called with camera number = " + std::to_string(camera_number));
 
@@ -3777,11 +3782,11 @@ namespace golf_sim {
             if (camera_number == GsCameraNumber::kGsCamera1) {
                 // We will need a camera for context
                 // TBD - Refactor to avoid having to hard-set the camera model
-                CameraHardware::CameraModel  cameraModel = CameraHardware::PiGSCam6mmWideLens;
+                CameraHardware::CameraModel  camera_model = GolfSimCamera::kSystemSlot1CameraType;
                 GolfSimCamera camera;
-                camera.camera_hardware_.init_camera_parameters(camera_number, cameraModel);
+                camera.camera_hardware_.init_camera_parameters(camera_number, camera_model);
 
-                if (!TakeRawPicture(color_image)) {
+                if (!TakeRawPicture(camera, color_image)) {
                     GS_LOG_MSG(error, "Failed to TakeRawPicture.");
                     return false;
                 }
@@ -4026,10 +4031,12 @@ namespace golf_sim {
             }
 
             // We will need a camera for context
-            // TBD - Refactor to avoid having to hard-set the camera model
-            CameraHardware::CameraModel  cameraModel = CameraHardware::PiGSCam6mmWideLens;
+            const CameraHardware::CameraModel  camera_model = (camera_number == GsCameraNumber::kGsCamera1) ? GolfSimCamera::kSystemSlot1CameraType : GolfSimCamera::kSystemSlot2CameraType;
+            GS_LOG_TRACE_MSG(trace, "AutoCalibrateCamera called with camera model = " + std::to_string(camera_model));
             GolfSimCamera camera;
-            camera.camera_hardware_.init_camera_parameters(camera_number, cameraModel);
+            // Use the default focal length for the camera, as the focal length is one parameter
+            // that this function is being called to re-set
+            camera.camera_hardware_.init_camera_parameters(camera_number, camera_model, true /* Use default, not .json focal-length*/);
 
             cv::Mat color_image;
 
@@ -4085,7 +4092,7 @@ namespace golf_sim {
             // Find an average focal length
             for (int i = 0; i < number_attempts; i++) {
 
-                if (!GolfSimCamera::TakeStillPicture(camera_number, color_image)) {
+                if (!GolfSimCamera::TakeStillPicture(camera, color_image)) {
                     GS_LOG_MSG(error, "FAILED to TakeStillPicture");
                     return false;
                 }

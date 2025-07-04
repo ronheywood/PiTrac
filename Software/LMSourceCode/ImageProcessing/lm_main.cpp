@@ -343,9 +343,9 @@ bool testSpinDetection() {
     cv::Mat ball1ImgColor;
     cv::Mat ball2ImgColor;
 
-    CameraHardware::CameraModel  cameraModel = CameraHardware::PiGSCam6mmWideLens;
+    CameraHardware::CameraModel  camera_2_model = GolfSimCamera::kSystemSlot1CameraType;
 
-    if (!GsAutomatedTesting::ReadTestImages(k0_DegreeBallFileName_00, kUnknown_DegreeBallFileName_00, ball1ImgGray, ball2ImgGray, ball1ImgColor, ball2ImgColor, cameraModel, false /*No Undistort*/)) {
+    if (!GsAutomatedTesting::ReadTestImages(k0_DegreeBallFileName_00, kUnknown_DegreeBallFileName_00, ball1ImgGray, ball2ImgGray, ball1ImgColor, ball2ImgColor, camera_2_model, false /*No Undistort*/)) {
         GS_LOG_TRACE_MSG(trace, "Failed to read valid images.");
         return false;
     }
@@ -354,7 +354,7 @@ bool testSpinDetection() {
     // using that calibrated data from the first ball.
     
     GolfSimCamera c;
-    c.camera_hardware_.init_camera_parameters(GsCameraNumber::kGsCamera1, cameraModel);
+    c.camera_hardware_.init_camera_parameters(GsCameraNumber::kGsCamera1, camera_2_model);
 
     GolfBall ball1, ball2;
 
@@ -475,9 +475,10 @@ bool testAnalyzeStrobedBalls() {
     cv::Mat ball1ImgColor;
     cv::Mat ball2ImgColor; 
 
-    CameraHardware::CameraModel  cameraModel = CameraHardware::PiGSCam6mmWideLens;
+    const GsCameraNumber camera_number = GolfSimOptions::GetCommandLineOptions().GetCameraNumber();
+    const CameraHardware::CameraModel camera_model = GolfSimCamera::kSystemSlot1CameraType;
 
-    if (!GsAutomatedTesting::ReadTestImages(kTestCamImageFileName_00, kTestCam2StrobedmageFileName, ball1ImgGray, ball2ImgGray, ball1ImgColor, ball2ImgColor, cameraModel,false /*No Undistort*/)) {
+    if (!GsAutomatedTesting::ReadTestImages(kTestCamImageFileName_00, kTestCam2StrobedmageFileName, ball1ImgGray, ball2ImgGray, ball1ImgColor, ball2ImgColor, camera_model, false /*No Undistort*/)) {
         GS_LOG_TRACE_MSG(trace, "Failed to read valid images.");
         return false;
     }
@@ -536,7 +537,10 @@ bool test_strobed_balls_detection() {
     cv::Mat ball2ImgGray;
     cv::Mat ball1ImgColor;
     cv::Mat ball2ImgColor;
-    if (!GsAutomatedTesting::ReadTestImages(kCam1BallOnTee, kCam2BallInFlight, ball1ImgGray, ball2ImgGray, ball1ImgColor, ball2ImgColor, CameraHardware::PiGSCam6mmWideLens)) {
+
+    const CameraHardware::CameraModel camera_model = GolfSimCamera::kSystemSlot1CameraType;
+
+    if (!GsAutomatedTesting::ReadTestImages(kCam1BallOnTee, kCam2BallInFlight, ball1ImgGray, ball2ImgGray, ball1ImgColor, ball2ImgColor, camera_model)) {
         GS_LOG_MSG(error, "Failed to read valid images.");
         return false;
     }
@@ -547,7 +551,7 @@ bool test_strobed_balls_detection() {
 
     GolfSimCamera c;
     //get camera operational and make sure working correctly
-    c.camera_hardware_.cameraModel = CameraHardware::CameraModel::PiGSCam6mmWideLens;
+    c.camera_hardware_.camera_model_ = camera_model;
 
     GolfBall ball1, ball2;
 
@@ -555,7 +559,8 @@ bool test_strobed_balls_detection() {
     c.camera_hardware_.firstCannedImage = ball1ImgColor;
     c.camera_hardware_.secondCannedImageFileName = kBaseTestDir + kCam2BallInFlight;
     c.camera_hardware_.secondCannedImage = ball2ImgColor;
-    c.camera_hardware_.init_camera_parameters(GsCameraNumber::kGsCamera1, CameraHardware::CameraModel::PiGSCam6mmWideLens);
+    CameraHardware::CameraModel  camera_1_model = GolfSimCamera::kSystemSlot1CameraType;
+    c.camera_hardware_.init_camera_parameters(GsCameraNumber::kGsCamera1, camera_1_model);
 
     std::vector<cv::Vec3d> camera_positions_from_origin = std::vector<cv::Vec3d>({ GolfSimCamera::kCamera1PositionsFromExpectedBallMeters, GolfSimCamera::kCamera2PositionsFromExpectedBallMeters });
 
@@ -611,7 +616,7 @@ bool test_hit_trigger() {
 
     //get camera operational and make sure working correctly
     GolfSimCamera c;
-    c.camera_hardware_.cameraModel = CameraHardware::CameraModel::PiCam2;
+    c.camera_hardware_.camera_model_ = CameraHardware::CameraModel::PiCam2;
 
     cv::Mat ball1ImgColor;
     cv::Mat ball2ImgColor;
@@ -626,8 +631,8 @@ bool test_hit_trigger() {
 
     cv::Mat ball1Img;
     cv::Mat ball2Img;
-    ball1Img = GsAutomatedTesting::UndistortImage(ball1ImgColor, c.camera_hardware_.cameraModel);
-    ball2Img = GsAutomatedTesting::UndistortImage(ball2ImgColor, c.camera_hardware_.cameraModel);
+    ball1Img = GsAutomatedTesting::UndistortImage(ball1ImgColor, c.camera_hardware_.camera_model_);
+    ball2Img = GsAutomatedTesting::UndistortImage(ball2ImgColor, c.camera_hardware_.camera_model_);
 
     c.camera_hardware_.resolution_x_ = ball1Img.cols;
     c.camera_hardware_.resolution_y_ = ball1Img.rows;
@@ -637,7 +642,7 @@ bool test_hit_trigger() {
     c.camera_hardware_.secondCannedImageFileName = kBaseTestDir + kStationaryBallFileName_01;
     c.camera_hardware_.firstCannedImage = ball1Img;
     c.camera_hardware_.secondCannedImage = ball2Img;
-    c.camera_hardware_.init_camera_parameters(GsCameraNumber::kGsCamera1, c.camera_hardware_.cameraModel);
+    c.camera_hardware_.init_camera_parameters(GsCameraNumber::kGsCamera1, c.camera_hardware_.camera_model_);
 
 
     if (!c.prepareToTakePhoto()) {
@@ -910,6 +915,7 @@ void run_main(int argc, char* argv[])
 #ifdef __unix__   
     // What the program will do depends on its mode
 
+
     if (GolfSimOptions::GetCommandLineOptions().shutdown_) {
 
         GS_LOG_TRACE_MSG(trace, "Running in global shutdown mode.");
@@ -1039,7 +1045,11 @@ void run_main(int argc, char* argv[])
         }
         cv::Mat image;
 
-        if (!GolfSimCamera::TakeStillPicture(camera_number, image)) {
+        GolfSimCamera camera;
+        const CameraHardware::CameraModel camera_model = (camera_number == GsCameraNumber::kGsCamera1) ? GolfSimCamera::kSystemSlot1CameraType : GolfSimCamera::kSystemSlot2CameraType;
+        camera.camera_hardware_.init_camera_parameters(camera_number, camera_model);
+
+        if (!GolfSimCamera::TakeStillPicture(camera, image)) {
             GS_LOG_MSG(error, "FAILED to PulseStrobe::SendCameraPrimingPulses");
         }
 
@@ -1260,17 +1270,16 @@ void run_main(int argc, char* argv[])
             cv::Mat img;
             std::vector<cv::Vec3d> camera_positions_from_origin = std::vector<cv::Vec3d>({ GolfSimCamera::kCamera1PositionsFromExpectedBallMeters, GolfSimCamera::kCamera2PositionsFromExpectedBallMeters });
 
-            CameraHardware::CameraModel  cameraModel = CameraHardware::PiGSCam6mmWideLens;
             GolfSimCamera camera;
-            camera.camera_hardware_.init_camera_parameters(GolfSimOptions::GetCommandLineOptions().GetCameraNumber(), cameraModel);
-
+            const CameraHardware::CameraModel camera_model = (camera_number == GsCameraNumber::kGsCamera1) ? GolfSimCamera::kSystemSlot1CameraType : GolfSimCamera::kSystemSlot2CameraType;
+            camera.camera_hardware_.init_camera_parameters(camera_number, camera_model);
 
             int i = 0;
 
             while (GolfSimGlobals::golf_sim_running_) {
 
 
-                if (!GolfSimCamera::TakeStillPicture(camera_number, img)) {
+                if (!GolfSimCamera::TakeStillPicture(camera, img)) {
                     GS_LOG_MSG(error, "FAILED to PulseStrobe::SendCameraPrimingPulses");
                 }
 
@@ -1369,18 +1378,23 @@ void run_main(int argc, char* argv[])
             GsCameraNumber camera_number = (GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1BallLocation ?
                 GsCameraNumber::kGsCamera1 : GsCameraNumber::kGsCamera2);
 
+            GolfSimCamera camera;
+            CameraHardware::CameraModel camera_model = (camera_number == GsCameraNumber::kGsCamera1) ? GolfSimCamera::kSystemSlot1CameraType : GolfSimCamera::kSystemSlot2CameraType;
+            camera.camera_hardware_.init_camera_parameters(camera_number, camera_model);
+
             cv::Mat color_image;
 
-            if (!GolfSimCamera::TakeStillPicture(camera_number, color_image)) {
+            if (!GolfSimCamera::TakeStillPicture(camera, color_image)) {
                 GS_LOG_MSG(error, "FAILED to TakeStillPicture");
                 return;
             }
 
             GolfBall ball;
 
-            CameraHardware::CameraModel  cameraModel = CameraHardware::PiGSCam6mmWideLens;
-            GolfSimCamera camera;
-            camera.camera_hardware_.init_camera_parameters(GolfSimOptions::GetCommandLineOptions().GetCameraNumber(), cameraModel);
+            camera_number = GolfSimOptions::GetCommandLineOptions().GetCameraNumber();
+            camera_model = (camera_number == GsCameraNumber::kGsCamera1) ? GolfSimCamera::kSystemSlot1CameraType : GolfSimCamera::kSystemSlot2CameraType;
+
+            camera.camera_hardware_.init_camera_parameters(camera_number, camera_model);
             camera.camera_hardware_.firstCannedImageFileName = std::string("/mnt/VerdantShare/dev/GolfSim/LM/Images/") + "FirstWaitingImage";
             camera.camera_hardware_.firstCannedImage = color_image;
 

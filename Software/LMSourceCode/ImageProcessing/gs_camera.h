@@ -482,7 +482,7 @@ namespace golf_sim {
 
         // Take a single still picture with the specified camera.  May require the Pi 2 (Camera 2) 
         // process to be running if that is the specified camera.
-        static bool TakeStillPicture(const GsCameraNumber camera_number, cv::Mat& color_image);
+        static bool TakeStillPicture(const GolfSimCamera& camera, cv::Mat& color_image);
 
         // Returns -1.0 on error, otherwise a positive focal length (e.g., 6.3)
         static double DetermineFocalLengthForAutoCalibration(const cv::Mat& color_image, const GolfSimCamera& camera);

@@ -80,7 +80,7 @@ bool ball_flight_camera_event_loop(LibcameraJpegApp& app, cv::Mat& returnImg)
 
 	GS_LOG_TRACE_MSG(trace, "ball_flight_camera_event_loop started.  Opened Camera....");
 
-
+	// The RGB flag still works for grayscale mono images
 	uint flags = RPiCamApp::FLAG_STILL_RGB;
 	app.ConfigureViewfinder(flags);
 
@@ -91,7 +91,7 @@ bool ball_flight_camera_event_loop(LibcameraJpegApp& app, cv::Mat& returnImg)
 
 	auto start_time = std::chrono::high_resolution_clock::now();
 
-	const long kQuiesceTimeMs = 2000; 
+	const long kQuiesceTimeMs = 1000; 
 
 	// Set the starting time to now, even though we will override it when the first trigger is received
 	std::chrono::steady_clock::time_point timeOfFirstTrigger = std::chrono::steady_clock::now();
@@ -180,22 +180,18 @@ bool ball_flight_camera_event_loop(LibcameraJpegApp& app, cv::Mat& returnImg)
 				
 				return false;
 			}
-                        /*
 
-                        const libcamera::Request::BufferMap& buffers = payload->buffers;
-
-                        // Create an OpenCV Mat object from the payload
-
-                        libcamera::Span<uint8_t> buffer = r.Get()[0];
-                        uint32_t* image = (uint32_t*)buffer.data();
-                        */
-
-			GS_LOG_TRACE_MSG(trace, "About to create Mat frame.  Info.height, width = " + std::to_string(info.height) + 
+			GS_LOG_TRACE_MSG(trace, "About to create Mat frame in kWaitingForFinalImageFlush.  Info.height, width = " + std::to_string(info.height) + 
 								", " + std::to_string(info.width) + ". Stride = " + std::to_string(info.stride));
+
 
 			// TBD - Need to figure out how to get this picture to be in color again!!
 			cv::Mat frame = cv::Mat(info.height, info.width, CV_8UC3, image, info.stride);
 			// cv::Mat frame = cv::Mat(info.height, info.width, CV_8U, image, info.stride);
+
+			// golf_sim::LoggingTools::LogImage("", frame, std::vector < cv::Point >{}, true, "Cam2_FinalImageFlush_Image.png");
+
+
 
 			GS_LOG_TRACE_MSG(trace, "Created Mat frame");
 
@@ -293,6 +289,7 @@ bool ball_flight_camera_event_loop(LibcameraJpegApp& app, cv::Mat& returnImg)
 		case kWaitingForPreImageFlush: {
 			GS_LOG_TRACE_MSG(trace, "Received Pre-Image Flush.  Saving current image");
 
+			/*** TBD - REMOVE - DEPRECATED - This never worked 
 			Stream* stream = app.ViewfinderStream();
 			StreamInfo info = app.GetStreamInfo(stream);
 			CompletedRequestPtr& payload = std::get<CompletedRequestPtr>(msg.payload);
@@ -309,6 +306,7 @@ bool ball_flight_camera_event_loop(LibcameraJpegApp& app, cv::Mat& returnImg)
                         cv::Mat pre_image = frame.clone();
 
                         golf_sim::LibCameraInterface::SendCamera2PreImage(pre_image);
+			***/
 
 			// TBD - If using second priming group, use state = kWaitingForSecondPrimingPulseGroup;
 			state = kWaitingForFinalImageTrigger;
@@ -387,6 +385,10 @@ bool ball_flight_camera_event_loop(LibcameraJpegApp& app, cv::Mat& returnImg)
 
 
 			RPiCamApp::Msg msg = app.Wait();
+
+			// TBD - REMOVE - Otherwise will slow things down
+			// GS_LOG_MSG(trace, "   Received camera message: " + std::to_string((int)msg.type));
+
 			if (msg.type == RPiCamApp::MsgType::Timeout)
 			{
 				GS_LOG_MSG(error, "ERROR: Device timeout detected, attempting a restart.");

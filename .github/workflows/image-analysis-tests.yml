@@ -10,7 +10,7 @@ on:
 env:
   BOOST_VERSION: 1.84.0
   BOOST_ROOT: C:\Dev_Env\boost
-  OPENCV_DIR: C:\opencv
+  OPENCV_DIR: C:\tools\opencv
 jobs:
   camera-tests:
     name: Image Analysis Tests
@@ -61,7 +61,7 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64      
-          
+
       - name: Configure CMake
         run: |
           if (Test-Path build) { Remove-Item build -Recurse -Force }

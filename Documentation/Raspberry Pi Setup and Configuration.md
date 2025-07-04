@@ -69,9 +69,9 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
    2. If you are American, ignore the clearly-incorrect spelling of “customization.” ;)  
    3. In the GENERAL tab,:  
       1. Select a hostname that will easily distinguish between the two Pi’s in the system, such as rsp01, rsp02, etc.  
-      2. Add a \<PiTracUser\> username that will be used to compile and run PiTrac, and that can log into your NAS, if you’re using a server (recommended).  E.g., “pitrac” as a user (or just use “pi”)  
+      2. Add a \<PiTracUsername\> username that will be used to compile and run PiTrac, and that can log into your NAS, if you’re using a server (recommended).  E.g., “pitrac” as a user (or just use “pi”)  
          1. This will be the username and password necessary to log into the system for the first time, so double-check you’ve verified both.  
-         2. Use the actual user name whenever you see \<PiTracUser\> below  
+         2. Use the actual user name whenever you see \<PiTracUsername\> below  
       3. Make sure the wireless LAN credentials are setup in case you can’t connect a hard line  
    4. In the SERVICES tab,  
       1. Enable SSH and use password authentication  
@@ -184,11 +184,11 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
       1. Should show “active (running)”  
    2. mount \-t cifs  
    3. Create the directory structure that the two Pis will share (this helps facilitate transfer of debugging images between the two Pis, as well as images for the PiTrac GUI)  
-      2. mkdir -p /home/\<PiTracUser\>/LM\_Shares/WebShare  
-      3. mkdir /home/\<PiTracUser\>/LM\_Shares/Images  
+      2. mkdir -p /home/\<PiTracUsername\>/LM\_Shares/WebShare  
+      3. mkdir /home/\<PiTracUsername\>/LM\_Shares/Images  
    2. sudo vi /etc/samba/smb.conf   and add the following lines at the bottom  
       1. \[LM\_Shares\]  
-      2. path \= /home/\<PiTracUser\>/LM\_Shares  
+      2. path \= /home/\<PiTracUsername\>/LM\_Shares  
       3. writeable=Yes  
       4. create mask=0777  
       5. directory mask=0777  
@@ -199,7 +199,7 @@ These instructions start with a Raspberry Pi with nothing on it, and are meant t
       e. For the Pi to which the directory will be shared:  
    3. Add the following to /etc/fstab after the last non-comment line, replacing PWD and other things in \[\]’s with the real pwd and info for the PiTracUserName and password  
       1. //\<Pi 1’s IP Address\>/LM\_Shares /home/\<PiTracUser\>/LM\_Shares cifs username=\[PiTracUserName\],password=\[PWD\],workgroup=WORKGROUP,users,exec,auto,rw,file\_mode=0777,dir\_mode=0777,user\_xattr 0 0  
-   3. mkdir /home/<PiTracUser>/LM_Shares      (this will be the Pi 2 mount point)
+   3. mkdir /home/<PiTracUsername>/LM_Shares      (this will be the Pi 2 mount point)
    4. sudo systemctl daemon-reload  
    5. sudo mount \-a  
    6. Check to make sure the second Pi can “see” the other Pi’s LM\_Shares sub-directories (Images and WebShare)
@@ -561,7 +561,7 @@ WantedBy=multi-user.target
    14. Comment out this section by adding <!-- to the beginning of the section and --> to the end of the section.
    15. For more details, see  https://help.harmanpro.com/disabling-local-host-access-logs-in-tomcat.
    16. Add a new document base/root to allow access to the shared mounted drive:  
-       1. Edit `/opt/tomee/conf/server.xml` and just before the `</Host>` near the end of the file, insert the following, with the PiTracUserName replaced with the name you use:  
+       1. Edit `/opt/tomee/conf/server.xml` and just before the `</Host>` near the end of the file, insert the following, with the <PiTracUserName> replaced with the name you use:  
        2. \<Context docBase="/home/\<PiTracUserName\>/LM\_Shares/WebShare" path="/golfsim/WebShare" /\>  
        3. This will allow the Tomee system to access a directory that is outside of the main Tomee installation tree.  This directory will be used to get debugging images from the other Pi into the web-based GUI that this Pi will be serving up.  
        4. NOTE \- if the shared directory that is mounted off of the other Pi does not exist, Tomee may not be able to start

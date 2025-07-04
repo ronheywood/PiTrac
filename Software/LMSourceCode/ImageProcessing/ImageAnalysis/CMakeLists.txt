@@ -36,18 +36,12 @@ else()
     message(STATUS "Using OPENCV_DIR from CMake: ${OPENCV_DIR}")
 endif()
 
-# First try the OpenCV directory directly
+# Add OpenCV directory to the prefix path so find_package can find it
+# The path should point directly to the directory containing OpenCVConfig.cmake
 list(APPEND CMAKE_PREFIX_PATH "${OPENCV_DIR}")
+message(STATUS "Looking for OpenCVConfig.cmake in: ${OPENCV_DIR}")
 
-# If OpenCV directory has a build subdirectory, also try that
-if(EXISTS "${OPENCV_DIR}/build")
-    message(STATUS "Found build subdirectory, adding: ${OPENCV_DIR}/build")
-    list(APPEND CMAKE_PREFIX_PATH "${OPENCV_DIR}/build")
-endif()
-
-message(STATUS "OpenCV search paths: ${CMAKE_PREFIX_PATH}")
-
-# Now find OpenCV with the specified path
+# Find OpenCV using the specified path - no fallbacks or guessing
 find_package(OpenCV REQUIRED)
 
 # Configure Boost detection - require explicit BOOST_ROOT

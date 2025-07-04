@@ -61,13 +61,18 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
-
       - name: Configure CMake
         run: |
           if (Test-Path build) { Remove-Item build -Recurse -Force }
           mkdir build
           Write-Host "Configuring CMake..."
-          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          
+          # Set the correct OpenCV configuration path with build subdirectory
+          # This should be the directory that contains OpenCVConfig.cmake
+          $OpenCVConfigPath = "$env:OPENCV_DIR\build"
+          Write-Host "Setting OPENCV_DIR to: $OpenCVConfigPath"
+          
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DOPENCV_DIR="$OpenCVConfigPath"
         shell: pwsh
         
       - name: Build and Test

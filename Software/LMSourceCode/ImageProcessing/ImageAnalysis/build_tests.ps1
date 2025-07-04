@@ -56,10 +56,23 @@ Push-Location $BuildDir
 # Configure
 Write-Host "Configuring..." -ForegroundColor Cyan
 
-if ($Verbose) {
-    & cmake .. -G "Visual Studio 17 2022" -A x64
+# Check if $env:OPENCV_DIR ends with 'build' - if not, append it
+if (-not $env:OPENCV_DIR.EndsWith("build")) {
+    $OpenCVConfigPath = Join-Path $env:OPENCV_DIR "build"
+    if (Test-Path "$OpenCVConfigPath") {
+        Write-Host "Using OpenCV config path: $OpenCVConfigPath" -ForegroundColor Cyan
+    } else {
+        Write-Host "Warning: $OpenCVConfigPath not found. Using $env:OPENCV_DIR directly." -ForegroundColor Yellow
+        $OpenCVConfigPath = $env:OPENCV_DIR
+    }
 } else {
-    & cmake .. -G "Visual Studio 17 2022" -A x64 | Out-Null
+    $OpenCVConfigPath = $env:OPENCV_DIR
+}
+
+if ($Verbose) {
+    & cmake .. -G "Visual Studio 17 2022" -A x64 -DOPENCV_DIR="$OpenCVConfigPath"
+} else {
+    & cmake .. -G "Visual Studio 17 2022" -A x64 -DOPENCV_DIR="$OpenCVConfigPath" | Out-Null
 }
 
 if ($LASTEXITCODE -ne 0) {

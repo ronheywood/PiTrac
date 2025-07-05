@@ -50,8 +50,8 @@ jobs:
           } else {
             Write-Host "✓ OpenCV found in cache"
           }
-        shell: pwsh
-
+        shell: pwsh      
+        
       - name: Install boost
         uses: MarkusJx/install-boost@v2
         with:
@@ -59,6 +59,53 @@ jobs:
           boost_install_dir: C:\Dev_Env\
           platform_version: 2022
           toolset: msvc
+
+      - name: Debug Boost Installation
+        run: |
+          Write-Host "=== Boost Installation Debug ===" -ForegroundColor Cyan
+          Write-Host "BOOST_ROOT environment variable: $env:BOOST_ROOT"
+          
+          if (Test-Path "$env:BOOST_ROOT") {
+            Write-Host "✓ BOOST_ROOT directory exists" -ForegroundColor Green
+            Write-Host "Contents of BOOST_ROOT ($env:BOOST_ROOT):"
+            Get-ChildItem -Path "$env:BOOST_ROOT" | Select-Object Name, Length, LastWriteTime
+            
+            # Check for include directory
+            if (Test-Path "$env:BOOST_ROOT\include") {
+              Write-Host "✓ include directory found" -ForegroundColor Green
+              Write-Host "Contents of include directory:"
+              Get-ChildItem -Path "$env:BOOST_ROOT\include" -Depth 1 | Select-Object FullName
+            } else {
+              Write-Host "✗ include directory NOT found" -ForegroundColor Red
+            }
+            
+            # Check for lib directory
+            if (Test-Path "$env:BOOST_ROOT\lib") {
+              Write-Host "✓ lib directory found" -ForegroundColor Green
+              Write-Host "Library files (first 10):"
+              Get-ChildItem -Path "$env:BOOST_ROOT\lib" -Filter "*.lib" | Select-Object Name -First 10
+              
+              # Look specifically for unit_test_framework
+              $utf_libs = Get-ChildItem -Path "$env:BOOST_ROOT\lib" -Filter "*unit_test_framework*"
+              if ($utf_libs.Count -gt 0) {
+                Write-Host "✓ unit_test_framework libraries found:" -ForegroundColor Green
+                $utf_libs | Select-Object Name
+              } else {
+                Write-Host "✗ unit_test_framework libraries NOT found" -ForegroundColor Red
+              }
+            } else {
+              Write-Host "✗ lib directory NOT found" -ForegroundColor Red
+            }
+          } else {
+            Write-Host "✗ BOOST_ROOT directory does NOT exist: $env:BOOST_ROOT" -ForegroundColor Red
+            Write-Host "Contents of C:\Dev_Env\:"
+            if (Test-Path "C:\Dev_Env\") {
+              Get-ChildItem -Path "C:\Dev_Env\" | Select-Object Name, Length, LastWriteTime
+            } else {
+              Write-Host "C:\Dev_Env\ does not exist"
+            }
+          }
+        shell: pwsh
           
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1

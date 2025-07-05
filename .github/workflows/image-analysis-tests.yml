@@ -9,7 +9,7 @@ on:
       - "**"
 env:
   BOOST_VERSION: 1.84.0
-  BOOST_ROOT: C:\Dev_Env\boost
+  BOOST_ROOT: C:\Dev_Env\boost\boost
   OPENCV_DIR: C:\tools\opencv
 jobs:
   camera-tests:

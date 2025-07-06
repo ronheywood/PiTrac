@@ -69,8 +69,7 @@ jobs:
         run: |
           if (Test-Path build) { Remove-Item build -Recurse -Force }
           mkdir build
-          
-          $OpenCVConfigPath = "$env:OPENCV_DIR\build"
+            $OpenCVConfigPath = "$env:OPENCV_DIR\build"
           
           cmake -B build -DCMAKE_BUILD_TYPE=Release -DOPENCV_DIR="$OpenCVConfigPath"
         shell: pwsh      
@@ -83,64 +82,8 @@ jobs:
           # Add OpenCV DLLs to PATH for test execution
           $opencvBinPath = "$env:OPENCV_DIR\build\x64\vc16\bin"
           if (Test-Path $opencvBinPath) {
-            Write-Host "Adding OpenCV DLL path to PATH: $opencvBinPath" -ForegroundColor Green
             $env:PATH = "$opencvBinPath;$env:PATH"
-          } else {
-            Write-Host "OpenCV DLL path not found: $opencvBinPath" -ForegroundColor Red
-            Write-Host "Available OpenCV structure:"
-            if (Test-Path "$env:OPENCV_DIR") {
-              Get-ChildItem -Path "$env:OPENCV_DIR" -Recurse -Depth 2 | Where-Object Name -like "*bin*" | Select-Object FullName
-            }
           }
-          
-          Write-Host "=== Debugging Test Executables ===" -ForegroundColor Cyan
-          
-          # Check if test executables exist
-          Write-Host "Checking for test executables..."
-          Get-ChildItem -Path "Release" -Filter "test_*.exe" | ForEach-Object {
-            Write-Host "Found: $($_.Name)" -ForegroundColor Green
-          }
-          
-          # Try to run the simplest test directly with a timeout
-          Write-Host "Attempting to run test_image_analysis_domain.exe directly..."
-          $testPath = "Release\test_image_analysis_domain.exe"
-          if (Test-Path $testPath) {
-            Write-Host "Executable exists, attempting to run with 10 second timeout..."
-            try {
-              # Use Start-Process with timeout to see if it hangs
-              $process = Start-Process -FilePath $testPath -ArgumentList "--version" -PassThru -NoNewWindow -RedirectStandardOutput "test_output.txt" -RedirectStandardError "test_error.txt"
-              $process | Wait-Process -Timeout 10
-              if (-not $process.HasExited) {
-                Write-Host "Process is hanging! Killing it..." -ForegroundColor Red
-                $process | Stop-Process -Force
-                Write-Host "Process killed - this confirms hanging issue" -ForegroundColor Red
-              } else {
-                Write-Host "Process completed with exit code: $($process.ExitCode)" -ForegroundColor Green
-                if (Test-Path "test_output.txt") {
-                  Write-Host "=== STDOUT ===" -ForegroundColor Yellow
-                  Get-Content "test_output.txt"
-                }
-                if (Test-Path "test_error.txt") {
-                  Write-Host "=== STDERR ===" -ForegroundColor Yellow
-                  Get-Content "test_error.txt"
-                }
-              }
-            } catch {
-              Write-Host "Error running test: $($_.Exception.Message)" -ForegroundColor Red
-            }
-          } else {
-            Write-Host "Test executable not found at: $testPath" -ForegroundColor Red
-          }
-          
-          # Check dependencies with dumpbin if available
-          Write-Host "Checking dependencies of test executable..."
-          try {
-            & dumpbin /dependents $testPath 2>$null | Select-String -Pattern "\.dll"
-          } catch {
-            Write-Host "dumpbin not available or failed"
-          }
-          
-          Write-Host "=== End Debug Section ===" -ForegroundColor Cyan
           
           ctest -C Release --output-on-failure
           popd

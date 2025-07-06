@@ -140,7 +140,7 @@ add_library(image_analysis STATIC ${IMAGE_ANALYSIS_SOURCES})
 
 # Link libraries using modern CMake targets
 target_link_libraries(image_analysis 
-    PUBLIC opencv_core opencv_imgproc opencv_imgcodecs opencv_highgui
+    PUBLIC ${OpenCV_LIBS}  # Use OpenCV_LIBS for consistency
 )
 
 # Set include directories for the library
@@ -150,6 +150,12 @@ target_include_directories(image_analysis
         ${CMAKE_CURRENT_SOURCE_DIR}/..  # For access to existing headers
     PRIVATE
         ${OpenCV_INCLUDE_DIRS}
+)
+
+# Include approval framework headers for tests that need them
+target_include_directories(image_analysis 
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/approval  # For approval testing framework
 )
 
 # Compiler flags
@@ -172,7 +178,7 @@ function(configure_boost_test_target target_name)
     target_link_libraries(${target_name} PRIVATE 
         Boost::unit_test_framework 
         image_analysis 
-        opencv_core opencv_imgproc opencv_imgcodecs opencv_highgui
+        ${OpenCV_LIBS}  # Use OpenCV_LIBS variable for consistency
     )
     # Note: No BOOST_TEST_DYN_LINK definition needed for static linking
 endfunction()
@@ -228,28 +234,37 @@ install(FILES ${IMAGE_ANALYSIS_HEADERS}
     DESTINATION include/ImageAnalysis
 )
 
+# Install approval testing framework headers (for reuse in other projects)
+install(FILES ${APPROVAL_FRAMEWORK_HEADERS}
+    DESTINATION include/ImageAnalysis/approval
+)
+
 # Development convenience targets
 add_custom_target(run_tests
     COMMAND ctest --output-on-failure
     DEPENDS test_image_analysis_domain test_opencv_analyzer test_approval_with_pitrac_images
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running all image analysis tests"
 )
 
 add_custom_target(run_domain_tests
     COMMAND test_image_analysis_domain
     DEPENDS test_image_analysis_domain
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running domain tests only"
 )
 
 add_custom_target(run_integration_tests
     COMMAND test_opencv_analyzer
     DEPENDS test_opencv_analyzer
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running integration tests only"
 )
 
 add_custom_target(run_approval_tests
     COMMAND test_approval_with_pitrac_images
     DEPENDS test_approval_with_pitrac_images
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running approval tests with clean architecture framework"
 )
 

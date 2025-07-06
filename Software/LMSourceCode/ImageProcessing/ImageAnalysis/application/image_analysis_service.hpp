@@ -18,6 +18,8 @@
 #include "../domain/analysis_results.hpp"
 #include <memory>
 #include <map>
+#include <stdexcept>
+#include <algorithm>
 
 namespace golf_sim::image_analysis::application {
 
@@ -69,38 +71,39 @@ namespace golf_sim::image_analysis::application {
         );
         
         ~ImageAnalysisService() = default;
-        
-        // Configuration management
-        bool Configure(const AnalyzerConfig& config);
-        AnalyzerConfig GetCurrentConfig() const { return current_analyzer_config_; }
-        bool IsConfigured() const { return is_configured_; }
+          // Configuration management
+        [[nodiscard]] bool Configure(const AnalyzerConfig& config);
+        [[nodiscard]] AnalyzerConfig GetCurrentConfig() const { return current_analyzer_config_; }
+        [[nodiscard]] bool IsConfigured() const { return is_configured_; }
         
         // Analyzer management
-        bool SetAnalyzerType(const std::string& analyzer_type);
-        std::string GetCurrentAnalyzerType() const;
-        std::vector<std::string> GetAvailableAnalyzers() const;
-        std::string GetCurrentAnalyzerInfo() const;
+        [[nodiscard]] bool SetAnalyzerType(const std::string& analyzer_type);
+        [[nodiscard]] std::string GetCurrentAnalyzerType() const;
+        [[nodiscard]] std::vector<std::string> GetAvailableAnalyzers() const;
+        [[nodiscard]] std::string GetCurrentAnalyzerInfo() const;
 
         // Main analysis operations - delegate to configured analyzer
-        domain::TeedBallResult AnalyzeTeedBall(
+        [[nodiscard]] domain::TeedBallResult AnalyzeTeedBall(
             const domain::ImageBuffer& image,
             const std::optional<domain::BallPosition>& expected_position = std::nullopt
         );
         
-        domain::MovementResult DetectMovement(
+        [[nodiscard]] domain::MovementResult DetectMovement(
             const std::vector<domain::ImageBuffer>& image_sequence,
             const domain::BallPosition& reference_ball_position
         );
         
-        domain::FlightAnalysisResult AnalyzeBallFlight(
+        [[nodiscard]] domain::FlightAnalysisResult AnalyzeBallFlight(
             const domain::ImageBuffer& strobed_image,
             const domain::BallPosition& calibration_reference
         );
         
-        domain::TeedBallResult DetectBallReset(
+        [[nodiscard]] domain::TeedBallResult DetectBallReset(
             const domain::ImageBuffer& current_image,
             const domain::BallPosition& previous_ball_position
-        );        // Service-level operations
+        );
+        
+        // Service-level operations
         void SetConfidenceThreshold(double threshold);
         void SetDebugMode(bool enabled);
         void ClearResultCache();
@@ -111,11 +114,10 @@ namespace golf_sim::image_analysis::application {
             size_t successful_operations = 0;
             size_t failed_operations = 0;
             std::chrono::milliseconds total_processing_time{0};
-            std::chrono::milliseconds average_processing_time{0};
-        };
+            std::chrono::milliseconds average_processing_time{0};        };
         
-        ServiceStats GetServiceStats() const { return stats_; }
-        void ResetServiceStats();    private:
+        [[nodiscard]] ServiceStats GetServiceStats() const { return stats_; }
+        void ResetServiceStats();private:
         // Dependencies
         std::unique_ptr<domain::IImageAnalyzerFactory> factory_;
         std::unique_ptr<domain::IAnalyzerConfigRepository> config_repo_;

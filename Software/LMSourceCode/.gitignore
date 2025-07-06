@@ -365,17 +365,11 @@ FodyWeavers.xsd
 # DS_Store files
 .DS_Store
 
-# Approval test received files
-**/.received.*
+# Approval test artifacts
+*.received.*
+**/approval_artifacts/
 
-# CMake build artifacts
-**/build/
-**/CMakeFiles/
-**/CMakeCache.txt
-**/cmake_install.cmake
-**/CTestTestfile.cmake
-**/*.cmake
-!**/CMakeLists.txt
-!**/cmake/*.cmake
-
-rec
+# CMake artifacts
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake

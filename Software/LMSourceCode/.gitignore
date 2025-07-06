@@ -375,3 +375,7 @@ FodyWeavers.xsd
 CMakeCache.txt
 cmake_install.cmake
 CTestTestfile.cmake
+
+# CTest generated files and directories
+**/Testing/
+**/CTestCostData.txt

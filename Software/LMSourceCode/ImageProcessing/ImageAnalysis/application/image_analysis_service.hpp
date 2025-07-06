@@ -37,21 +37,6 @@ namespace golf_sim::image_analysis::application {
     };
 
     /**
-     * @brief Factory interface for creating analyzers in the application layer
-     */
-    class IImageAnalyzerFactory {
-    public:
-        virtual ~IImageAnalyzerFactory() = default;
-        
-        virtual std::unique_ptr<domain::IImageAnalyzer> CreateAnalyzer(
-            const std::string& analyzer_type = "opencv"
-        ) = 0;
-        
-        virtual std::vector<std::string> GetAvailableAnalyzers() const = 0;
-        virtual bool IsAnalyzerAvailable(const std::string& analyzer_type) const = 0;
-    };
-
-    /**
      * @brief Configuration for the image analysis service
      */
     struct ServiceConfig {
@@ -69,22 +54,23 @@ namespace golf_sim::image_analysis::application {
         // Quality settings
         bool enable_result_validation = true;
         double min_acceptable_confidence = 0.3;
-    };
-
-    /**
+    };    /**
      * @brief Main application service for image analysis
      * 
      * Provides a high-level interface for image analysis operations
      * with configuration management, error handling, and logging.
-     */    class ImageAnalysisService {
+     */
+    class ImageAnalysisService {
     public:
         ImageAnalysisService(
-            std::unique_ptr<IImageAnalyzerFactory> factory,
+            std::unique_ptr<domain::IImageAnalyzerFactory> factory,
             std::unique_ptr<domain::IAnalyzerConfigRepository> config_repo = nullptr,
             std::unique_ptr<domain::IAnalysisResultRepository> result_repo = nullptr
         );
         
-        ~ImageAnalysisService() = default;        // Configuration management
+        ~ImageAnalysisService() = default;
+        
+        // Configuration management
         bool Configure(const AnalyzerConfig& config);
         AnalyzerConfig GetCurrentConfig() const { return current_analyzer_config_; }
         bool IsConfigured() const { return is_configured_; }
@@ -114,9 +100,7 @@ namespace golf_sim::image_analysis::application {
         domain::TeedBallResult DetectBallReset(
             const domain::ImageBuffer& current_image,
             const domain::BallPosition& previous_ball_position
-        );
-
-        // Service-level operations
+        );        // Service-level operations
         void SetConfidenceThreshold(double threshold);
         void SetDebugMode(bool enabled);
         void ClearResultCache();
@@ -133,7 +117,7 @@ namespace golf_sim::image_analysis::application {
         ServiceStats GetServiceStats() const { return stats_; }
         void ResetServiceStats();    private:
         // Dependencies
-        std::unique_ptr<IImageAnalyzerFactory> factory_;
+        std::unique_ptr<domain::IImageAnalyzerFactory> factory_;
         std::unique_ptr<domain::IAnalyzerConfigRepository> config_repo_;
         std::unique_ptr<domain::IAnalysisResultRepository> result_repo_;
         

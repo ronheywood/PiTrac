@@ -165,6 +165,44 @@ BOOST_FIXTURE_TEST_CASE(test_movement_analysis_with_strobed_images_clean, CleanA
     RunMovementAnalysisTest(strobed_sequence, "movement_analysis_strobed_sequence");
 }
 
+// Demonstration of framework extensibility - fuzzy comparison strategy
+BOOST_FIXTURE_TEST_CASE(test_with_fuzzy_comparison_strategy, CleanApprovalTestFixture) {
+    // Create orchestrator with fuzzy comparison for tolerance testing
+    auto fuzzy_orchestrator = ApprovalTestOrchestratorFactory::CreateWithFuzzyComparison(0.02); // 2% tolerance
+    
+    auto result = fuzzy_orchestrator->RunImageApprovalTest(
+        "log_ball_final_found_ball_img.png", 
+        "fuzzy_comparison_test", 
+        *analyzer, 
+        test_timestamp
+    );
+    
+    if (!result.passed) {
+        BOOST_FAIL(result.failure_message);
+    } else {
+        BOOST_TEST_MESSAGE("Fuzzy comparison strategy test passed");
+    }
+}
+
+// Demonstration of framework extensibility - compact formatting strategy  
+BOOST_FIXTURE_TEST_CASE(test_with_compact_formatting_strategy, CleanApprovalTestFixture) {
+    // Create orchestrator with compact formatting for minimal output
+    auto compact_orchestrator = ApprovalTestOrchestratorFactory::CreateCompact();
+    
+    auto result = compact_orchestrator->RunImageApprovalTest(
+        "spin_ball_1_gray_image1.png", 
+        "compact_format_test", 
+        *analyzer, 
+        test_timestamp
+    );
+    
+    if (!result.passed) {
+        BOOST_FAIL(result.failure_message);
+    } else {
+        BOOST_TEST_MESSAGE("Compact formatting strategy test passed");
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 /**

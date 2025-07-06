@@ -62,8 +62,10 @@ public:
      */
     void EnsureDirectoriesExist() const;
 
-private:    ApprovalTestConfig();
-      // Directory paths (relative from build directory)
+private:    
+    ApprovalTestConfig();
+    
+    // Directory paths (relative from build directory)
     const std::string pitrac_images_dir_ = "../../../Images/";
     const std::string approval_artifacts_dir_ = "../tests/approval_artifacts/";
     

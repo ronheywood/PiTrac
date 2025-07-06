@@ -143,8 +143,7 @@ namespace golf_sim::image_analysis::application {
         };
         
         mutable std::map<CacheKey, std::string> result_cache_;  // JSON serialized results
-        
-        // Helper methods
+          // Helper methods
         bool InitializeAnalyzer();
         void UpdateStats(bool success, std::chrono::milliseconds processing_time) const;
         void LogOperation(const std::string& operation, bool success, 
@@ -152,6 +151,12 @@ namespace golf_sim::image_analysis::application {
         void StoreResultIfEnabled(const std::string& operation, 
                                  const std::string& result_json,
                                  const domain::ImageBuffer& image) const;
+        
+        // Input validation methods
+        void ValidateConfidenceThreshold(double threshold) const;
+        void ValidateAnalyzerConfig(const AnalyzerConfig& config) const;
+        void ValidateAnalyzerType(const std::string& analyzer_type) const;
+        void ValidateServiceConfigured() const;
         
         // Cache helpers
         CacheKey CreateCacheKey(const domain::ImageBuffer& image, 

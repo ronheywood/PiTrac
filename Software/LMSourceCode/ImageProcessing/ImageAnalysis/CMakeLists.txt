@@ -199,6 +199,11 @@ add_executable(test_opencv_analyzer tests/test_opencv_analyzer.cpp)
 configure_boost_test_target(test_opencv_analyzer)
 add_test(NAME OpenCVTests COMMAND test_opencv_analyzer)
 
+# Application service tests (input validation, configuration)
+add_executable(test_image_analysis_service tests/test_image_analysis_service.cpp)
+configure_boost_test_target(test_image_analysis_service)
+add_test(NAME ApplicationServiceTests COMMAND test_image_analysis_service)
+
 # Approval tests using clean architecture framework
 add_executable(test_approval_with_pitrac_images 
     tests/test_approval_with_pitrac_images.cpp
@@ -216,6 +221,11 @@ set_tests_properties(DomainTests PROPERTIES
 set_tests_properties(OpenCVTests PROPERTIES
     TIMEOUT 60
     LABELS "integration;opencv"
+)
+
+set_tests_properties(ApplicationServiceTests PROPERTIES
+    TIMEOUT 30
+    LABELS "unit;application;validation"
 )
 
 set_tests_properties(ApprovalTests PROPERTIES
@@ -242,7 +252,7 @@ install(FILES ${APPROVAL_FRAMEWORK_HEADERS}
 # Development convenience targets
 add_custom_target(run_tests
     COMMAND ctest --output-on-failure
-    DEPENDS test_image_analysis_domain test_opencv_analyzer test_approval_with_pitrac_images
+    DEPENDS test_image_analysis_domain test_opencv_analyzer test_image_analysis_service test_approval_with_pitrac_images
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running all image analysis tests"
 )

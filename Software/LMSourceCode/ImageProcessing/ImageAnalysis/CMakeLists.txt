@@ -69,8 +69,24 @@ endif()
 set(Boost_NO_SYSTEM_PATHS ON)
 set(Boost_NO_BOOST_CMAKE ON)  # Use traditional FindBoost for consistency
 
-list(APPEND CMAKE_PREFIX_PATH "${BOOST_ROOT}")
-set(Boost_LIBRARY_DIRS "${BOOST_ROOT}/lib")
+# Add Boost library directory to help CMake find the libraries
+if(BOOST_ROOT)
+    list(APPEND CMAKE_PREFIX_PATH "${BOOST_ROOT}")
+    
+    # Check for different possible library directories
+    set(POSSIBLE_LIB_DIRS "lib" "lib64-msvc-14.3" "stage/lib")
+    foreach(LIB_DIR ${POSSIBLE_LIB_DIRS})
+        if(EXISTS "${BOOST_ROOT}/${LIB_DIR}")
+            set(Boost_LIBRARY_DIRS "${BOOST_ROOT}/${LIB_DIR}")
+            message(STATUS "Found Boost library directory: ${Boost_LIBRARY_DIRS}")
+            break()
+        endif()
+    endforeach()
+    
+    if(NOT Boost_LIBRARY_DIRS)
+        message(WARNING "No Boost library directory found in ${BOOST_ROOT}")
+    endif()
+endif()
 
 # Find Boost with unit test framework
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)

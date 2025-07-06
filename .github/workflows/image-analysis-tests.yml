@@ -8,7 +8,7 @@ on:
     branches:
       - "**"
 env:
-  BOOST_VERSION: 1.84.0
+  BOOST_VERSION: 1.87.0
   BOOST_ROOT: C:\Dev_Env\boost\boost
   OPENCV_DIR: C:\tools\opencv
 jobs:
@@ -58,8 +58,8 @@ jobs:
           boost_version: ${{ env.BOOST_VERSION }}
           boost_install_dir: C:\Dev_Env\
           platform_version: 2022
-          toolset: msvc
-
+          toolset: msvc      
+      
       - name: Debug Boost Installation
         run: |
           Write-Host "=== Boost Installation Debug ===" -ForegroundColor Cyan
@@ -70,31 +70,47 @@ jobs:
             Write-Host "Contents of BOOST_ROOT ($env:BOOST_ROOT):"
             Get-ChildItem -Path "$env:BOOST_ROOT" | Select-Object Name, Length, LastWriteTime
             
+            # Check Boost version from header file
+            $versionFile = "$env:BOOST_ROOT\boost\version.hpp"
+            if (Test-Path $versionFile) {
+              Write-Host "✓ Found version.hpp" -ForegroundColor Green
+              $versionLine = Get-Content $versionFile | Select-String "BOOST_VERSION \d+"
+              if ($versionLine) {
+                Write-Host "Boost version info: $versionLine" -ForegroundColor Cyan
+              }
+            } else {
+              Write-Host "✗ version.hpp NOT found at $versionFile" -ForegroundColor Red
+            }
+            
+            # Check for different possible lib directories
+            $possibleLibDirs = @("lib", "lib64-msvc-14.3", "stage\lib")
+            foreach ($libDir in $possibleLibDirs) {
+              $libPath = "$env:BOOST_ROOT\$libDir"
+              if (Test-Path $libPath) {
+                Write-Host "✓ Found lib directory: $libDir" -ForegroundColor Green
+                Write-Host "Library files in $libDir (first 10):"
+                Get-ChildItem -Path $libPath -Filter "*.lib" | Select-Object Name -First 10
+                
+                # Look specifically for unit_test_framework
+                $utf_libs = Get-ChildItem -Path $libPath -Filter "*unit_test_framework*"
+                if ($utf_libs.Count -gt 0) {
+                  Write-Host "✓ unit_test_framework libraries found in $libDir :" -ForegroundColor Green
+                  $utf_libs | Select-Object Name
+                } else {
+                  Write-Host "✗ unit_test_framework libraries NOT found in $libDir" -ForegroundColor Red
+                }
+              } else {
+                Write-Host "✗ No lib directory found at: $libDir" -ForegroundColor Yellow
+              }
+            }
+            
             # Check for include directory
             if (Test-Path "$env:BOOST_ROOT\include") {
               Write-Host "✓ include directory found" -ForegroundColor Green
-              Write-Host "Contents of include directory:"
-              Get-ChildItem -Path "$env:BOOST_ROOT\include" -Depth 1 | Select-Object FullName
+            } elseif (Test-Path "$env:BOOST_ROOT\boost") {
+              Write-Host "✓ boost headers directory found (direct)" -ForegroundColor Green
             } else {
-              Write-Host "✗ include directory NOT found" -ForegroundColor Red
-            }
-            
-            # Check for lib directory
-            if (Test-Path "$env:BOOST_ROOT\lib") {
-              Write-Host "✓ lib directory found" -ForegroundColor Green
-              Write-Host "Library files (first 10):"
-              Get-ChildItem -Path "$env:BOOST_ROOT\lib" -Filter "*.lib" | Select-Object Name -First 10
-              
-              # Look specifically for unit_test_framework
-              $utf_libs = Get-ChildItem -Path "$env:BOOST_ROOT\lib" -Filter "*unit_test_framework*"
-              if ($utf_libs.Count -gt 0) {
-                Write-Host "✓ unit_test_framework libraries found:" -ForegroundColor Green
-                $utf_libs | Select-Object Name
-              } else {
-                Write-Host "✗ unit_test_framework libraries NOT found" -ForegroundColor Red
-              }
-            } else {
-              Write-Host "✗ lib directory NOT found" -ForegroundColor Red
+              Write-Host "✗ include/boost directory NOT found" -ForegroundColor Red
             }
           } else {
             Write-Host "✗ BOOST_ROOT directory does NOT exist: $env:BOOST_ROOT" -ForegroundColor Red

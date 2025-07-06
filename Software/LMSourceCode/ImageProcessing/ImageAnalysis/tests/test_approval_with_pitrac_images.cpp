@@ -231,25 +231,32 @@ struct ApprovalTestFixture {
             std::ifstream approved_file(approved_path);
             std::string approved_content((std::istreambuf_iterator<char>(approved_file)),
                                         std::istreambuf_iterator<char>());
-            
-            // Compare received vs approved text
+              // Compare received vs approved text
             bool text_matches = (summary == approved_content);
             
             // Compare received vs approved images
             std::string viz_received_path = APPROVAL_ARTIFACTS_DIR + viz_filename;
             bool images_match = CompareImages(approved_viz_path, viz_received_path);
             
-            if (!text_matches || !images_match) {
-                // Launch VS Code diff for review
-                LaunchVSCodeDiff(received_path, approved_path, test_name, false);
-                
+            BOOST_TEST_MESSAGE("🔍 COMPARISON TRACE: " + test_name);
+            BOOST_TEST_MESSAGE("🔍 COMPARISON TRACE: Text matches: " + std::string(text_matches ? "YES" : "NO"));
+            BOOST_TEST_MESSAGE("🔍 COMPARISON TRACE: Images match: " + std::string(images_match ? "YES" : "NO"));
+              if (!text_matches || !images_match) {
                 std::string failure_msg = "Approval test failed for " + test_name + "\n";
+                
+                // Launch appropriate diff tools based on what actually differs
                 if (!text_matches) {
+                    BOOST_TEST_MESSAGE("🔍 DIFF TRACE: Text differs - launching text diff");
+                    LaunchVSCodeDiff(received_path, approved_path, test_name + "_text", false);
                     failure_msg += "Text content differs between approved and received files.\n";
                 }
+                
                 if (!images_match) {
+                    BOOST_TEST_MESSAGE("🔍 DIFF TRACE: Images differ - launching image diff");
+                    LaunchImageDiff(approved_viz_path, viz_received_path, test_name + "_image");
                     failure_msg += "Image content differs between approved and received files.\n";
                 }
+                
                 failure_msg += "Received file: " + received_path + "\n";
                 failure_msg += "Approved file: " + approved_path + "\n";
                 failure_msg += "VS Code diff launched for review. Check the differences and approve if intended.";
@@ -258,7 +265,9 @@ struct ApprovalTestFixture {
             } else {
                 // Test passed - optionally clean up received files
                 BOOST_TEST_MESSAGE("Approval test passed for " + test_name);
-            }} else {            // Check for partial baseline (missing files)
+            }
+        } else {
+            // Check for partial baseline (missing files)
             if (fs::exists(approved_path) && !fs::exists(approved_viz_path)) {
                 // Load received image to get proper dimensions for empty baseline
                 std::string viz_received_path = APPROVAL_ARTIFACTS_DIR + viz_filename;
@@ -279,9 +288,10 @@ struct ApprovalTestFixture {
                 
                 BOOST_FAIL("Missing approved visualization file created as empty baseline: " + approved_viz_path + 
                           "\nText baseline exists but image baseline was missing." +
-                          "\nVS Code opened to compare empty approved vs received image." +
-                          "\nTo approve: copy \"" + viz_received_path + "\" \"" + approved_viz_path + "\"");
-            }if (!fs::exists(approved_path) && fs::exists(approved_viz_path)) {
+                          "\nVS Code opened to compare empty approved vs received image." +                          "\nTo approve: copy \"" + viz_received_path + "\" \"" + approved_viz_path + "\"");
+            }
+            
+            if (!fs::exists(approved_path) && fs::exists(approved_viz_path)) {
                 // Create empty approved text file for comparison
                 std::ofstream empty_file(approved_path);
                 empty_file << "# Empty baseline - no text analysis result exists yet\n";
@@ -324,8 +334,7 @@ struct ApprovalTestFixture {
                           "\nReview the received content and use approve_changes.ps1 to approve if correct.");
             }
         }}
-    
-    // Launch VS Code diff tool for approval workflow
+      // Launch VS Code diff tool for approval workflow
     void LaunchVSCodeDiff(const std::string& received_path, const std::string& approved_path, 
                          const std::string& test_name, bool is_baseline_missing = false) {
         // Check if we're in a CI environment (skip interactive diff)
@@ -334,7 +343,9 @@ struct ApprovalTestFixture {
             return;
         }
         
-        BOOST_TEST_MESSAGE("Launching VS Code diff for " + test_name + "...");
+        BOOST_TEST_MESSAGE("🔍 DIFF TRACE: Launching VS Code diff for " + test_name + "...");
+        BOOST_TEST_MESSAGE("🔍 DIFF TRACE: Text diff - Approved: " + approved_path);
+        BOOST_TEST_MESSAGE("🔍 DIFF TRACE: Text diff - Received: " + received_path);
         
         if (is_baseline_missing) {
             // Create empty baseline file for comparison
@@ -346,6 +357,7 @@ struct ApprovalTestFixture {
             
             // Launch diff with empty baseline
             std::string diff_command = "code --diff \"" + empty_baseline + "\" \"" + received_path + "\"";
+            BOOST_TEST_MESSAGE("🔍 DIFF TRACE: Executing text diff command: " + diff_command);
             system(diff_command.c_str());
             
             BOOST_TEST_MESSAGE("To approve this baseline, run:");
@@ -353,31 +365,37 @@ struct ApprovalTestFixture {
         } else {
             // Launch diff between approved and received
             std::string diff_command = "code --diff \"" + approved_path + "\" \"" + received_path + "\"";
+            BOOST_TEST_MESSAGE("🔍 DIFF TRACE: Executing text diff command: " + diff_command);
             system(diff_command.c_str());
             
             BOOST_TEST_MESSAGE("To approve changes, run:");
             BOOST_TEST_MESSAGE("  copy \"" + received_path + "\" \"" + approved_path + "\"");
         }
-        
-        // Also open image files if they exist
-        std::string received_img = received_path;
-        std::string approved_img = approved_path;
-        
-        // Replace .txt with .png for image paths
-        size_t txt_pos = received_img.find(".txt");
-        if (txt_pos != std::string::npos) {
-            received_img.replace(txt_pos, 4, ".png");
-            approved_img.replace(approved_img.find(".txt"), 4, ".png");
-            
-            if (fs::exists(received_img)) {
-                std::string img_command = "code \"" + received_img + "\"";
-                system(img_command.c_str());
-                
-                if (!is_baseline_missing && fs::exists(approved_img)) {
-                    std::string approved_img_command = "code \"" + approved_img + "\"";
-                    system(approved_img_command.c_str());
-                }            }
+          // ❌ REMOVED: Automatic image opening - this was causing unnecessary diff launches
+        // Images should only be opened when there are actual image differences, not text differences
+        BOOST_TEST_MESSAGE("🔍 DIFF TRACE: Text diff completed for " + test_name);
+    }
+    
+    // Launch image diff tool for approval workflow
+    void LaunchImageDiff(const std::string& approved_image_path, const std::string& received_image_path, 
+                        const std::string& test_name) {
+        // Check if we're in a CI environment (skip interactive diff)
+        if (std::getenv("CI") || std::getenv("GITHUB_ACTIONS") || std::getenv("TF_BUILD")) {
+            BOOST_TEST_MESSAGE("CI environment detected - skipping interactive image diff for " + test_name);
+            return;
         }
+        
+        BOOST_TEST_MESSAGE("🔍 IMAGE DIFF TRACE: Launching image comparison for " + test_name);
+        BOOST_TEST_MESSAGE("🔍 IMAGE DIFF TRACE: Approved: " + approved_image_path);
+        BOOST_TEST_MESSAGE("🔍 IMAGE DIFF TRACE: Received: " + received_image_path);
+        
+        // Open both images in VS Code for side-by-side comparison
+        std::string img_command = "code \"" + approved_image_path + "\" \"" + received_image_path + "\"";
+        BOOST_TEST_MESSAGE("🔍 IMAGE DIFF TRACE: Executing image command: " + img_command);
+        system(img_command.c_str());
+        
+        BOOST_TEST_MESSAGE("To approve image changes, run:");
+        BOOST_TEST_MESSAGE("  copy \"" + received_image_path + "\" \"" + approved_image_path + "\"");
     }
     
     std::unique_ptr<infrastructure::OpenCVImageAnalyzer> analyzer;

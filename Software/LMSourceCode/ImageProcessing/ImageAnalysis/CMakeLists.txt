@@ -66,117 +66,24 @@ else()
 endif()
 
 # Configure Boost detection
-# Try to detect if we have dynamic libraries available first, fallback to static
+set(Boost_USE_STATIC_LIBS ON)   # Use static libraries (consistent across environments)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-
-# Check what libraries are available to decide on static vs dynamic
-set(Boost_USE_STATIC_LIBS OFF)  # Default to dynamic
-set(FOUND_DYNAMIC_BOOST FALSE)
-set(FOUND_STATIC_BOOST FALSE)
-
-if(BOOST_ROOT AND EXISTS "${BOOST_ROOT}")
-    # Check for different possible library directories
-    set(LIB_SEARCH_PATHS "${BOOST_ROOT}/lib" "${BOOST_ROOT}/lib64-msvc-14.3" "${BOOST_ROOT}/stage/lib")
-    
-    foreach(LIB_PATH ${LIB_SEARCH_PATHS})
-        if(EXISTS "${LIB_PATH}")
-            message(STATUS "Checking library directory: ${LIB_PATH}")
-            
-            # Look for dynamic libraries (DLL + import lib pairs)
-            file(GLOB BOOST_DLLS "${LIB_PATH}/boost_unit_test_framework*-mt-*-x64-*.dll")
-            file(GLOB BOOST_IMPORT_LIBS "${LIB_PATH}/boost_unit_test_framework*-mt-*-x64-*.lib")
-            
-            # Filter out static libraries (those starting with "lib")
-            set(FILTERED_IMPORT_LIBS "")
-            foreach(LIB_FILE ${BOOST_IMPORT_LIBS})
-                get_filename_component(LIB_NAME ${LIB_FILE} NAME)
-                if(NOT LIB_NAME MATCHES "^lib.*")
-                    list(APPEND FILTERED_IMPORT_LIBS ${LIB_FILE})
-                endif()
-            endforeach()
-            
-            if(BOOST_DLLS AND FILTERED_IMPORT_LIBS)
-                message(STATUS "Found dynamic Boost libraries in ${LIB_PATH}:")
-                message(STATUS "  DLLs: ${BOOST_DLLS}")
-                message(STATUS "  Import libs: ${FILTERED_IMPORT_LIBS}")
-                set(FOUND_DYNAMIC_BOOST TRUE)
-                # Don't break yet, continue checking for completeness
-            endif()
-            
-            # Look for static libraries (those starting with "lib")
-            file(GLOB BOOST_STATIC_LIBS "${LIB_PATH}/libboost_unit_test_framework*-mt-*-x64-*.lib")
-            if(BOOST_STATIC_LIBS)
-                message(STATUS "Found static Boost libraries in ${LIB_PATH}: ${BOOST_STATIC_LIBS}")
-                set(FOUND_STATIC_BOOST TRUE)
-            endif()
-        endif()
-    endforeach()
-    
-    # Prioritize dynamic libraries if available
-    if(FOUND_DYNAMIC_BOOST)
-        message(STATUS "Using dynamic linking (found DLLs and import libraries)")
-        set(Boost_USE_STATIC_LIBS OFF)
-    elseif(FOUND_STATIC_BOOST)
-        message(STATUS "Using static linking (only static libraries found)")
-        set(Boost_USE_STATIC_LIBS ON)
-    else()
-        message(WARNING "No suitable Boost unit_test_framework libraries found")
-    endif()
-    
-    message(STATUS "Final Boost_USE_STATIC_LIBS setting: ${Boost_USE_STATIC_LIBS}")
-endif()
-
-# For CMake 4.0+, use modern Boost detection
-if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
-    set(Boost_NO_BOOST_CMAKE OFF)  # Allow BoostConfig.cmake for newer CMake
-else()
-    set(Boost_NO_BOOST_CMAKE ON)   # Use traditional FindBoost for older CMake
-endif()
-
+set(Boost_NO_BOOST_CMAKE OFF)   # Use modern BoostConfig.cmake
 set(Boost_NO_SYSTEM_PATHS ON)
 
 # Add Boost library directory to help CMake find the libraries
 if(BOOST_ROOT)
     list(APPEND CMAKE_PREFIX_PATH "${BOOST_ROOT}")
     
-    # Check for different possible library directories
-    set(POSSIBLE_LIB_DIRS "lib" "lib64-msvc-14.3" "stage/lib")
-    foreach(LIB_DIR ${POSSIBLE_LIB_DIRS})
-        if(EXISTS "${BOOST_ROOT}/${LIB_DIR}")
-            set(Boost_LIBRARY_DIRS "${BOOST_ROOT}/${LIB_DIR}")
-            message(STATUS "Found Boost library directory: ${Boost_LIBRARY_DIRS}")
-            break()
-        endif()
-    endforeach()
-    
-    if(NOT Boost_LIBRARY_DIRS)
-        message(WARNING "No Boost library directory found in ${BOOST_ROOT}")
-    endif()
-    
-    # Additional hints for newer Boost versions
-    set(Boost_INCLUDE_DIRS "${BOOST_ROOT}/include")
-    if(NOT EXISTS "${Boost_INCLUDE_DIRS}")
-        set(Boost_INCLUDE_DIRS "${BOOST_ROOT}")
-    endif()
-    
     # Set additional hints for modern CMake
-    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
-        set(Boost_ROOT "${BOOST_ROOT}")
-        if(Boost_LIBRARY_DIRS)
-            set(BOOST_LIBRARYDIR "${Boost_LIBRARY_DIRS}")
-        endif()
-        if(Boost_INCLUDE_DIRS)
-            set(BOOST_INCLUDEDIR "${Boost_INCLUDE_DIRS}")
-        endif()
-    endif()
+    set(Boost_ROOT "${BOOST_ROOT}")
+    set(BOOST_LIBRARYDIR "${BOOST_ROOT}/lib")
+    set(BOOST_INCLUDEDIR "${BOOST_ROOT}/include")
     
-    # Try to help CMake find the specific component
-    if(EXISTS "${Boost_LIBRARY_DIRS}")
-        file(GLOB UNIT_TEST_LIBS "${Boost_LIBRARY_DIRS}/libboost_unit_test_framework*.lib")
-        if(UNIT_TEST_LIBS)
-            message(STATUS "Found unit_test_framework libraries: ${UNIT_TEST_LIBS}")
-        endif()
+    # Fallback if include is in root directory
+    if(NOT EXISTS "${BOOST_INCLUDEDIR}")
+        set(BOOST_INCLUDEDIR "${BOOST_ROOT}")
     endif()
 endif()
 
@@ -236,50 +143,41 @@ function(configure_boost_test_target target_name)
         image_analysis 
         ${OpenCV_LIBS}
     )
-    # Only use BOOST_TEST_DYN_LINK for dynamic libraries
-    if(NOT Boost_USE_STATIC_LIBS)
-        target_compile_definitions(${target_name} PRIVATE BOOST_TEST_DYN_LINK)
-    endif()
+    # Static linking - no BOOST_TEST_DYN_LINK needed
 endfunction()
 
-# Add tests if Boost is available
-if(Boost_FOUND)
-    enable_testing()
-    
-    # Domain tests (no external dependencies)
-    add_executable(test_image_analysis_domain tests/test_image_analysis_domain.cpp)
-    configure_boost_test_target(test_image_analysis_domain)
-    add_test(NAME DomainTests COMMAND test_image_analysis_domain)
-    
-    # OpenCV integration tests
-    add_executable(test_opencv_analyzer tests/test_opencv_analyzer.cpp)
-    configure_boost_test_target(test_opencv_analyzer)
-    add_test(NAME OpenCVTests COMMAND test_opencv_analyzer)
-    
-    # Approval tests with real PiTrac images
-    add_executable(test_approval_with_pitrac_images tests/test_approval_with_pitrac_images.cpp)
-    configure_boost_test_target(test_approval_with_pitrac_images)
-    add_test(NAME ApprovalTests COMMAND test_approval_with_pitrac_images)
-    
-    # Set test properties
-    set_tests_properties(DomainTests PROPERTIES
-        TIMEOUT 30
-        LABELS "unit;domain"
-    )
-    
-    set_tests_properties(OpenCVTests PROPERTIES
-        TIMEOUT 60
-        LABELS "integration;opencv"
-    )
-    
-    set_tests_properties(ApprovalTests PROPERTIES
-        TIMEOUT 120
-        LABELS "approval;pitrac;images"
-    )
-    
-else()
-    message(WARNING "Boost not found. Tests will not be built.")
-endif()
+enable_testing()
+
+# Domain tests (no external dependencies)
+add_executable(test_image_analysis_domain tests/test_image_analysis_domain.cpp)
+configure_boost_test_target(test_image_analysis_domain)
+add_test(NAME DomainTests COMMAND test_image_analysis_domain)
+
+# OpenCV integration tests
+add_executable(test_opencv_analyzer tests/test_opencv_analyzer.cpp)
+configure_boost_test_target(test_opencv_analyzer)
+add_test(NAME OpenCVTests COMMAND test_opencv_analyzer)
+
+# Approval tests with real PiTrac images
+add_executable(test_approval_with_pitrac_images tests/test_approval_with_pitrac_images.cpp)
+configure_boost_test_target(test_approval_with_pitrac_images)
+add_test(NAME ApprovalTests COMMAND test_approval_with_pitrac_images)
+
+# Set test properties
+set_tests_properties(DomainTests PROPERTIES
+    TIMEOUT 30
+    LABELS "unit;domain"
+)
+
+set_tests_properties(OpenCVTests PROPERTIES
+    TIMEOUT 60
+    LABELS "integration;opencv"
+)
+
+set_tests_properties(ApprovalTests PROPERTIES
+    TIMEOUT 120
+    LABELS "approval;pitrac;images"
+)
 
 # Install rules
 install(TARGETS image_analysis

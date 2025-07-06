@@ -35,11 +35,6 @@ jobs:
         with:
           cmake-version: "4.0.3"
 
-      - name: Verify CMake Version
-        run: |
-          cmake --version
-          Write-Host "CMake version verified" -ForegroundColor Green
-
       - name: Install OpenCV
         run: |
           if (-not (Test-Path "$env:OPENCV_DIR")) {
@@ -63,71 +58,8 @@ jobs:
           boost_version: ${{ env.BOOST_VERSION }}
           boost_install_dir: C:\Dev_Env\
           platform_version: 2022
-          toolset: msvc      
-      
-      - name: Debug Boost Installation
-        run: |
-          Write-Host "=== Boost Installation Debug ===" -ForegroundColor Cyan
-          Write-Host "BOOST_ROOT environment variable: $env:BOOST_ROOT"
-          
-          if (Test-Path "$env:BOOST_ROOT") {
-            Write-Host "✓ BOOST_ROOT directory exists" -ForegroundColor Green
-            Write-Host "Contents of BOOST_ROOT ($env:BOOST_ROOT):"
-            Get-ChildItem -Path "$env:BOOST_ROOT" | Select-Object Name, Length, LastWriteTime
-            
-            # Check Boost version from header file
-            $versionFile = "$env:BOOST_ROOT\boost\version.hpp"
-            if (Test-Path $versionFile) {
-              Write-Host "✓ Found version.hpp" -ForegroundColor Green
-              $versionLine = Get-Content $versionFile | Select-String "BOOST_VERSION \d+"
-              if ($versionLine) {
-                Write-Host "Boost version info: $versionLine" -ForegroundColor Cyan
-              }
-            } else {
-              Write-Host "✗ version.hpp NOT found at $versionFile" -ForegroundColor Red
-            }
-            
-            # Check for different possible lib directories
-            $possibleLibDirs = @("lib", "lib64-msvc-14.3", "stage\lib")
-            foreach ($libDir in $possibleLibDirs) {
-              $libPath = "$env:BOOST_ROOT\$libDir"
-              if (Test-Path $libPath) {
-                Write-Host "✓ Found lib directory: $libDir" -ForegroundColor Green
-                Write-Host "Library files in $libDir (first 10):"
-                Get-ChildItem -Path $libPath -Filter "*.lib" | Select-Object Name -First 10
-                
-                # Look specifically for unit_test_framework
-                $utf_libs = Get-ChildItem -Path $libPath -Filter "*unit_test_framework*"
-                if ($utf_libs.Count -gt 0) {
-                  Write-Host "✓ unit_test_framework libraries found in $libDir :" -ForegroundColor Green
-                  $utf_libs | Select-Object Name
-                } else {
-                  Write-Host "✗ unit_test_framework libraries NOT found in $libDir" -ForegroundColor Red
-                }
-              } else {
-                Write-Host "✗ No lib directory found at: $libDir" -ForegroundColor Yellow
-              }
-            }
-            
-            # Check for include directory
-            if (Test-Path "$env:BOOST_ROOT\include") {
-              Write-Host "✓ include directory found" -ForegroundColor Green
-            } elseif (Test-Path "$env:BOOST_ROOT\boost") {
-              Write-Host "✓ boost headers directory found (direct)" -ForegroundColor Green
-            } else {
-              Write-Host "✗ include/boost directory NOT found" -ForegroundColor Red
-            }
-          } else {
-            Write-Host "✗ BOOST_ROOT directory does NOT exist: $env:BOOST_ROOT" -ForegroundColor Red
-            Write-Host "Contents of C:\Dev_Env\:"
-            if (Test-Path "C:\Dev_Env\") {
-              Get-ChildItem -Path "C:\Dev_Env\" | Select-Object Name, Length, LastWriteTime
-            } else {
-              Write-Host "C:\Dev_Env\ does not exist"
-            }
-          }
-        shell: pwsh
-          
+          toolset: msvc
+
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -137,27 +69,8 @@ jobs:
         run: |
           if (Test-Path build) { Remove-Item build -Recurse -Force }
           mkdir build
-          Write-Host "Configuring CMake..."
           
-          # Set the correct OpenCV configuration path with build subdirectory
-          # This should be the directory that contains OpenCVConfig.cmake
           $OpenCVConfigPath = "$env:OPENCV_DIR\build"
-          Write-Host "Setting OPENCV_DIR to: $OpenCVConfigPath"
-          
-          # Check if OpenCVConfig.cmake exists and list directory contents if it doesn't
-          $ConfigFile = Join-Path $OpenCVConfigPath "OpenCVConfig.cmake"
-          if (-not (Test-Path $ConfigFile)) {
-            Write-Host "⚠️ WARNING: OpenCVConfig.cmake not found at $ConfigFile" -ForegroundColor Yellow
-            Write-Host "Listing contents of $env:OPENCV_DIR..."
-            Get-ChildItem -Path $env:OPENCV_DIR -Recurse -Depth 1 | Select-Object FullName
-            
-            if (Test-Path "$env:OPENCV_DIR\build") {
-              Write-Host "Listing contents of $env:OPENCV_DIR\build..."
-              Get-ChildItem -Path "$env:OPENCV_DIR\build" -Recurse -Depth 1 | Select-Object FullName
-            }
-          } else {
-            Write-Host "✓ Found OpenCVConfig.cmake at $ConfigFile" -ForegroundColor Green
-          }
           
           cmake -B build -DCMAKE_BUILD_TYPE=Release -DOPENCV_DIR="$OpenCVConfigPath"
         shell: pwsh

@@ -66,9 +66,66 @@ else()
 endif()
 
 # Configure Boost detection
-set(Boost_USE_STATIC_LIBS OFF)
+# Try to detect if we have dynamic libraries available first, fallback to static
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
+
+# Check what libraries are available to decide on static vs dynamic
+set(Boost_USE_STATIC_LIBS OFF)  # Default to dynamic
+set(FOUND_DYNAMIC_BOOST FALSE)
+set(FOUND_STATIC_BOOST FALSE)
+
+if(BOOST_ROOT AND EXISTS "${BOOST_ROOT}")
+    # Check for different possible library directories
+    set(LIB_SEARCH_PATHS "${BOOST_ROOT}/lib" "${BOOST_ROOT}/lib64-msvc-14.3" "${BOOST_ROOT}/stage/lib")
+    
+    foreach(LIB_PATH ${LIB_SEARCH_PATHS})
+        if(EXISTS "${LIB_PATH}")
+            message(STATUS "Checking library directory: ${LIB_PATH}")
+            
+            # Look for dynamic libraries (DLL + import lib pairs)
+            file(GLOB BOOST_DLLS "${LIB_PATH}/boost_unit_test_framework*-mt-*-x64-*.dll")
+            file(GLOB BOOST_IMPORT_LIBS "${LIB_PATH}/boost_unit_test_framework*-mt-*-x64-*.lib")
+            
+            # Filter out static libraries (those starting with "lib")
+            set(FILTERED_IMPORT_LIBS "")
+            foreach(LIB_FILE ${BOOST_IMPORT_LIBS})
+                get_filename_component(LIB_NAME ${LIB_FILE} NAME)
+                if(NOT LIB_NAME MATCHES "^lib.*")
+                    list(APPEND FILTERED_IMPORT_LIBS ${LIB_FILE})
+                endif()
+            endforeach()
+            
+            if(BOOST_DLLS AND FILTERED_IMPORT_LIBS)
+                message(STATUS "Found dynamic Boost libraries in ${LIB_PATH}:")
+                message(STATUS "  DLLs: ${BOOST_DLLS}")
+                message(STATUS "  Import libs: ${FILTERED_IMPORT_LIBS}")
+                set(FOUND_DYNAMIC_BOOST TRUE)
+                # Don't break yet, continue checking for completeness
+            endif()
+            
+            # Look for static libraries (those starting with "lib")
+            file(GLOB BOOST_STATIC_LIBS "${LIB_PATH}/libboost_unit_test_framework*-mt-*-x64-*.lib")
+            if(BOOST_STATIC_LIBS)
+                message(STATUS "Found static Boost libraries in ${LIB_PATH}: ${BOOST_STATIC_LIBS}")
+                set(FOUND_STATIC_BOOST TRUE)
+            endif()
+        endif()
+    endforeach()
+    
+    # Prioritize dynamic libraries if available
+    if(FOUND_DYNAMIC_BOOST)
+        message(STATUS "Using dynamic linking (found DLLs and import libraries)")
+        set(Boost_USE_STATIC_LIBS OFF)
+    elseif(FOUND_STATIC_BOOST)
+        message(STATUS "Using static linking (only static libraries found)")
+        set(Boost_USE_STATIC_LIBS ON)
+    else()
+        message(WARNING "No suitable Boost unit_test_framework libraries found")
+    endif()
+    
+    message(STATUS "Final Boost_USE_STATIC_LIBS setting: ${Boost_USE_STATIC_LIBS}")
+endif()
 
 # For CMake 4.0+, use modern Boost detection
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
@@ -179,7 +236,10 @@ function(configure_boost_test_target target_name)
         image_analysis 
         ${OpenCV_LIBS}
     )
-    target_compile_definitions(${target_name} PRIVATE BOOST_TEST_DYN_LINK)
+    # Only use BOOST_TEST_DYN_LINK for dynamic libraries
+    if(NOT Boost_USE_STATIC_LIBS)
+        target_compile_definitions(${target_name} PRIVATE BOOST_TEST_DYN_LINK)
+    endif()
 endfunction()
 
 # Add tests if Boost is available

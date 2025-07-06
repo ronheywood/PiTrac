@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_SUITE(ApprovalTestsWithPiTracImages)
 
 // Test configuration - using relative paths from build directory
 const std::string PITRAC_IMAGES_DIR = "../../../Images/";
-const std::string APPROVAL_ARTIFACTS_DIR = "approval_artifacts/";
+const std::string APPROVAL_ARTIFACTS_DIR = "../tests/approval_artifacts/";
 
 // Approval test fixture
 struct ApprovalTestFixture {
@@ -295,24 +295,33 @@ struct ApprovalTestFixture {
                           "\nImage baseline exists but text baseline was missing." +
                           "\nVS Code diff launched to review the received content.");
             }
-            
-            // No approved files exist - this is the first run (new test)
+              // No approved files exist - this is the first run (new test)
             if (!fs::exists(approved_path) && !fs::exists(approved_viz_path)) {
+                // Create empty approved files for manual review
+                std::ofstream empty_text_file(approved_path);
+                empty_text_file << "# Empty baseline - no approved content exists yet\n";
+                empty_text_file << "# Review the received content and approve if correct\n";
+                empty_text_file << "# Use approve_changes.ps1 to approve this test\n";
+                empty_text_file.close();
+                
+                // Create empty approved image with same dimensions as received
+                std::string viz_received_path = APPROVAL_ARTIFACTS_DIR + viz_filename;
+                cv::Mat received_img = cv::imread(viz_received_path, cv::IMREAD_COLOR);
+                cv::Mat empty_image;
+                if (!received_img.empty()) {
+                    empty_image = cv::Mat::zeros(received_img.size(), CV_8UC3);
+                } else {
+                    empty_image = cv::Mat::zeros(480, 640, CV_8UC3); // Default size
+                }
+                cv::imwrite(approved_viz_path, empty_image);
+                
                 // Launch diff to review new baseline for text
                 LaunchVSCodeDiff(received_path, approved_path, test_name + "_new_baseline", true);
                 
-                // Copy received to approved to create baseline
-                std::string copy_command = "copy \"" + received_path + "\" \"" + approved_path + "\"";
-                system(copy_command.c_str());
-                
-                // Also copy visualization
-                std::string copy_viz_command = "copy \"" + APPROVAL_ARTIFACTS_DIR + viz_filename + "\" \"" + APPROVAL_ARTIFACTS_DIR + approved_viz_filename + "\"";
-                system(copy_viz_command.c_str());
-                
-                BOOST_TEST_MESSAGE("Created baseline approved files for " + test_name);
-                BOOST_TEST_MESSAGE("VS Code diff launched to review the new baseline.");
-                BOOST_TEST_MESSAGE("Received: " + received_path);
-                BOOST_TEST_MESSAGE("Approved: " + approved_path);
+                BOOST_FAIL("New test detected - approved files created as empty baselines for " + test_name + 
+                          "\nReceived file: " + received_path +
+                          "\nApproved file: " + approved_path + 
+                          "\nReview the received content and use approve_changes.ps1 to approve if correct.");
             }
         }}
     

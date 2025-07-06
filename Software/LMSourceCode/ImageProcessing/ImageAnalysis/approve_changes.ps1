@@ -11,16 +11,32 @@ param(
 Write-Host "Approval Testing Helper" -ForegroundColor Green
 Write-Host "=======================" -ForegroundColor Green
 
-$ArtifactsDir = "tests\approval_artifacts"
+# Look for approval artifacts in multiple possible locations
+$PossibleDirs = @(
+    "build\approval_artifacts",          # Run from ImageAnalysis directory (received files)
+    "tests\approval_artifacts",          # Run from ImageAnalysis directory (source files)
+    "approval_artifacts",                 # Run from build directory
+    "..\tests\approval_artifacts"        # Run from build directory
+)
 
-if (!(Test-Path $ArtifactsDir)) {
+$ArtifactsDirToUse = $null
+foreach ($dir in $PossibleDirs) {
+    if (Test-Path $dir) {
+        $ArtifactsDirToUse = $dir
+        Write-Host "Using artifacts from: $dir" -ForegroundColor Gray
+        break
+    }
+}
+
+if ($null -eq $ArtifactsDirToUse) {
     Write-Host "ERROR: Approval artifacts directory not found" -ForegroundColor Red
-    Write-Host "Make sure you're running this from the ImageAnalysis directory" -ForegroundColor Red
+    Write-Host "Looked in: $($PossibleDirs -join ', ')" -ForegroundColor Red
+    Write-Host "Make sure you're running this from the ImageAnalysis directory or build subdirectory" -ForegroundColor Red
     exit 1
 }
 
 # Find received files (indicating changes/failures)
-$receivedFiles = Get-ChildItem "$ArtifactsDir\*.received.*" -ErrorAction SilentlyContinue
+$receivedFiles = Get-ChildItem "$ArtifactsDirToUse\*.received.*" -ErrorAction SilentlyContinue
 
 if ($receivedFiles.Count -eq 0) {
     Write-Host "✅ No pending approval changes found" -ForegroundColor Green
@@ -51,9 +67,23 @@ if ($ViewImages) {
 if ($ApproveAll) {
     Write-Host "⚠️  Approving ALL changes..." -ForegroundColor Yellow
     foreach ($file in $receivedFiles) {
-        $approved = $file.FullName -replace '\.received\.', '.approved.'
+        # Determine target path: if we're looking at build files, copy to tests directory
+        if ($ArtifactsDirToUse -like "*build*") {
+            $targetDir = "tests\approval_artifacts"
+            $fileName = $file.Name -replace '\.received\.', '.approved.'
+            $approved = Join-Path $targetDir $fileName
+        } else {
+            $approved = $file.FullName -replace '\.received\.', '.approved.'
+        }
+        
+        # Ensure target directory exists
+        $targetDirPath = Split-Path $approved -Parent
+        if (!(Test-Path $targetDirPath)) {
+            New-Item -ItemType Directory -Path $targetDirPath -Force | Out-Null
+        }
+        
         Copy-Item $file.FullName $approved -Force
-        Write-Host "✅ Approved: $($file.BaseName)" -ForegroundColor Green
+        Write-Host "✅ Approved: $($file.BaseName) → $approved" -ForegroundColor Green
     }
     
     # Clean up received files
@@ -73,10 +103,24 @@ if ($TestName) {
     
     Write-Host "📝 Approving changes for: $TestName" -ForegroundColor Yellow
     foreach ($file in $testFiles) {
-        $approved = $file.FullName -replace '\.received\.', '.approved.'
+        # Determine target path: if we're looking at build files, copy to tests directory
+        if ($ArtifactsDirToUse -like "*build*") {
+            $targetDir = "tests\approval_artifacts"
+            $fileName = $file.Name -replace '\.received\.', '.approved.'
+            $approved = Join-Path $targetDir $fileName
+        } else {
+            $approved = $file.FullName -replace '\.received\.', '.approved.'
+        }
+        
+        # Ensure target directory exists
+        $targetDirPath = Split-Path $approved -Parent
+        if (!(Test-Path $targetDirPath)) {
+            New-Item -ItemType Directory -Path $targetDirPath -Force | Out-Null
+        }
+        
         Copy-Item $file.FullName $approved -Force
         Remove-Item $file.FullName -Force
-        Write-Host "✅ Approved: $($file.Name)" -ForegroundColor Green
+        Write-Host "✅ Approved: $($file.Name) → $approved" -ForegroundColor Green
     }
     exit 0
 }

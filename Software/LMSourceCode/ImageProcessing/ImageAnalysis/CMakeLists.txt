@@ -116,6 +116,25 @@ set(IMAGE_ANALYSIS_HEADERS
     infrastructure/ml_image_analyzer.hpp
 )
 
+# Approval testing framework sources
+set(APPROVAL_FRAMEWORK_SOURCES
+    tests/approval/approval_test_config.cpp
+    tests/approval/result_formatter.cpp
+    tests/approval/visualization_service.cpp
+    tests/approval/comparison_service.cpp
+    tests/approval/diff_launcher.cpp
+    tests/approval/approval_test_orchestrator.cpp
+)
+
+set(APPROVAL_FRAMEWORK_HEADERS
+    tests/approval/approval_test_config.hpp
+    tests/approval/result_formatter.hpp
+    tests/approval/visualization_service.hpp
+    tests/approval/comparison_service.hpp
+    tests/approval/diff_launcher.hpp
+    tests/approval/approval_test_orchestrator.hpp
+)
+
 # Create static library for the bounded context
 add_library(image_analysis STATIC ${IMAGE_ANALYSIS_SOURCES})
 
@@ -174,8 +193,11 @@ add_executable(test_opencv_analyzer tests/test_opencv_analyzer.cpp)
 configure_boost_test_target(test_opencv_analyzer)
 add_test(NAME OpenCVTests COMMAND test_opencv_analyzer)
 
-# Approval tests with real PiTrac images
-add_executable(test_approval_with_pitrac_images tests/test_approval_with_pitrac_images.cpp)
+# Approval tests using clean architecture framework
+add_executable(test_approval_with_pitrac_images 
+    tests/test_approval_with_pitrac_images.cpp
+    ${APPROVAL_FRAMEWORK_SOURCES}
+)
 configure_boost_test_target(test_approval_with_pitrac_images)
 add_test(NAME ApprovalTests COMMAND test_approval_with_pitrac_images)
 
@@ -192,7 +214,7 @@ set_tests_properties(OpenCVTests PROPERTIES
 
 set_tests_properties(ApprovalTests PROPERTIES
     TIMEOUT 120
-    LABELS "approval;pitrac;images"
+    LABELS "approval;pitrac;images;clean-architecture"
 )
 
 # Install rules
@@ -228,7 +250,7 @@ add_custom_target(run_integration_tests
 add_custom_target(run_approval_tests
     COMMAND test_approval_with_pitrac_images
     DEPENDS test_approval_with_pitrac_images
-    COMMENT "Running approval tests with real PiTrac images"
+    COMMENT "Running approval tests with clean architecture framework"
 )
 
 # Print configuration summary

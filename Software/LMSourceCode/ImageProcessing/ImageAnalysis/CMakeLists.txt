@@ -66,8 +66,18 @@ else()
 endif()
 
 # Configure Boost detection
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+
+# For CMake 4.0+, use modern Boost detection
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
+    set(Boost_NO_BOOST_CMAKE OFF)  # Allow BoostConfig.cmake for newer CMake
+else()
+    set(Boost_NO_BOOST_CMAKE ON)   # Use traditional FindBoost for older CMake
+endif()
+
 set(Boost_NO_SYSTEM_PATHS ON)
-set(Boost_NO_BOOST_CMAKE ON)  # Use traditional FindBoost for consistency
 
 # Add Boost library directory to help CMake find the libraries
 if(BOOST_ROOT)
@@ -85,6 +95,31 @@ if(BOOST_ROOT)
     
     if(NOT Boost_LIBRARY_DIRS)
         message(WARNING "No Boost library directory found in ${BOOST_ROOT}")
+    endif()
+    
+    # Additional hints for newer Boost versions
+    set(Boost_INCLUDE_DIRS "${BOOST_ROOT}/include")
+    if(NOT EXISTS "${Boost_INCLUDE_DIRS}")
+        set(Boost_INCLUDE_DIRS "${BOOST_ROOT}")
+    endif()
+    
+    # Set additional hints for modern CMake
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
+        set(Boost_ROOT "${BOOST_ROOT}")
+        if(Boost_LIBRARY_DIRS)
+            set(BOOST_LIBRARYDIR "${Boost_LIBRARY_DIRS}")
+        endif()
+        if(Boost_INCLUDE_DIRS)
+            set(BOOST_INCLUDEDIR "${Boost_INCLUDE_DIRS}")
+        endif()
+    endif()
+    
+    # Try to help CMake find the specific component
+    if(EXISTS "${Boost_LIBRARY_DIRS}")
+        file(GLOB UNIT_TEST_LIBS "${Boost_LIBRARY_DIRS}/libboost_unit_test_framework*.lib")
+        if(UNIT_TEST_LIBS)
+            message(STATUS "Found unit_test_framework libraries: ${UNIT_TEST_LIBS}")
+        endif()
     endif()
 endif()
 

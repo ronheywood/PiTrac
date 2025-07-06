@@ -159,14 +159,12 @@ BOOST_FIXTURE_TEST_CASE(ImageBufferConstruction, DomainTestFixture) {
 BOOST_FIXTURE_TEST_CASE(ImageBufferValidation, DomainTestFixture) {
     cv::Mat empty_image;
     
-    ImageBuffer invalid_buffer{
-        empty_image,
-        test_timestamp,
-        "camera_1",
-        "invalid"
-    };
-    
-    BOOST_CHECK(!invalid_buffer.IsValid());
+    // After domain improvements, ImageBuffer constructor validates input
+    // Empty images should throw an exception during construction
+    BOOST_CHECK_THROW(
+        ImageBuffer(empty_image, test_timestamp, "camera_1", "invalid"),
+        std::invalid_argument
+    );
 }
 
 // Test BallState enum

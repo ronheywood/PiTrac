@@ -29,12 +29,11 @@ namespace golf_sim::image_analysis::domain {
         double confidence = 0.0;         // Overall confidence in the analysis
         std::string analysis_method;     // e.g., "opencv_hough", "yolo_v5", etc.
         std::vector<std::string> debug_info;  // Debug information for troubleshooting
-        
-        bool HasBall() const { 
+          [[nodiscard]] bool HasBall() const { 
             return state == BallState::TEED || state == BallState::RESET; 
         }
         
-        ConfidenceLevel GetConfidenceLevel() const {
+        [[nodiscard]] ConfidenceLevel GetConfidenceLevel() const {
             return domain::GetConfidenceLevel(confidence);
         }
     };
@@ -51,8 +50,7 @@ namespace golf_sim::image_analysis::domain {
         std::chrono::microseconds time_since_first_movement{0};
         std::string analysis_method;
         std::vector<std::string> debug_info;
-        
-        ConfidenceLevel GetConfidenceLevel() const {
+          [[nodiscard]] ConfidenceLevel GetConfidenceLevel() const {
             return domain::GetConfidenceLevel(movement_confidence);
         }
     };
@@ -68,20 +66,19 @@ namespace golf_sim::image_analysis::domain {
         double confidence = 0.0;                   // Overall confidence in analysis
         std::string analysis_method;
         std::vector<std::string> debug_info;
-        
-        bool HasMultipleBalls() const { 
+          [[nodiscard]] bool HasMultipleBalls() const { 
             return detected_balls.size() >= 2; 
         }
         
-        bool HasValidSpinData() const {
+        [[nodiscard]] bool HasValidSpinData() const {
             return spin_rates.has_value() && confidence > 0.5;
         }
         
-        bool HasValidVelocityData() const {
+        [[nodiscard]] bool HasValidVelocityData() const {
             return velocity_vector.has_value() && confidence > 0.5;
         }
         
-        ConfidenceLevel GetConfidenceLevel() const {
+        [[nodiscard]] ConfidenceLevel GetConfidenceLevel() const {
             return domain::GetConfidenceLevel(confidence);
         }
     };
@@ -95,17 +92,16 @@ namespace golf_sim::image_analysis::domain {
         T data;
         std::string error_message;
         std::vector<std::string> debug_info;
-        
-        static AnalysisResult<T> Success(const T& result) {
+          [[nodiscard]] static AnalysisResult<T> Success(const T& result) {
             return {true, result, "", {}};
         }
         
-        static AnalysisResult<T> Failure(const std::string& error) {
+        [[nodiscard]] static AnalysisResult<T> Failure(const std::string& error) {
             return {false, T{}, error, {}};
         }
         
-        bool IsSuccess() const { return success; }
-        bool IsFailure() const { return !success; }
+        [[nodiscard]] bool IsSuccess() const { return success; }
+        [[nodiscard]] bool IsFailure() const { return !success; }
     };
 
 } // namespace golf_sim::image_analysis::domain

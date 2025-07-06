@@ -31,15 +31,13 @@ namespace golf_sim::image_analysis::domain {
      */
     class IImageAnalyzer {
     public:
-        virtual ~IImageAnalyzer() = default;
-
-        /**
+        virtual ~IImageAnalyzer() = default;        /**
          * @brief Analyze image to detect if ball is present on tee
          * @param image The image to analyze
          * @param expected_position Optional hint about where ball should be
          * @return Result indicating ball state and position
          */
-        virtual TeedBallResult AnalyzeTeedBall(
+        [[nodiscard]] virtual TeedBallResult AnalyzeTeedBall(
             const ImageBuffer& image,
             const std::optional<BallPosition>& expected_position = std::nullopt
         ) = 0;
@@ -50,7 +48,7 @@ namespace golf_sim::image_analysis::domain {
          * @param reference_ball_position Known position of ball before movement
          * @return Result indicating if movement was detected and its characteristics
          */
-        virtual MovementResult DetectMovement(
+        [[nodiscard]] virtual MovementResult DetectMovement(
             const std::vector<ImageBuffer>& image_sequence,
             const BallPosition& reference_ball_position
         ) = 0;
@@ -61,7 +59,7 @@ namespace golf_sim::image_analysis::domain {
          * @param calibration_reference Reference ball for size/distance calibration
          * @return Analysis of ball positions, velocity, and spin
          */
-        virtual FlightAnalysisResult AnalyzeBallFlight(
+        [[nodiscard]] virtual FlightAnalysisResult AnalyzeBallFlight(
             const ImageBuffer& strobed_image,
             const BallPosition& calibration_reference
         ) = 0;
@@ -72,15 +70,15 @@ namespace golf_sim::image_analysis::domain {
          * @param previous_ball_position Last known ball position
          * @return Result indicating if ball was reset
          */
-        virtual TeedBallResult DetectBallReset(
+        [[nodiscard]] virtual TeedBallResult DetectBallReset(
             const ImageBuffer& current_image,
             const BallPosition& previous_ball_position
         ) = 0;
 
         // Analyzer metadata and capabilities
-        virtual std::string GetAnalyzerName() const = 0;
-        virtual std::string GetVersion() const = 0;
-        virtual bool SupportsRealTime() const = 0;
+        [[nodiscard]] virtual std::string GetAnalyzerName() const = 0;
+        [[nodiscard]] virtual std::string GetVersion() const = 0;
+        [[nodiscard]] virtual bool SupportsRealTime() const = 0;
     };
 
     /**
@@ -91,18 +89,17 @@ namespace golf_sim::image_analysis::domain {
      * - "yolo_v5" - YOLO v5 machine learning detection  
      * - "tensorflow_lite" - TensorFlow Lite embedded models
      * - "hybrid" - Combination of multiple approaches
-     */
-    class IImageAnalyzerFactory {
+     */    class IImageAnalyzerFactory {
     public:
         virtual ~IImageAnalyzerFactory() = default;
         
-        virtual std::unique_ptr<IImageAnalyzer> CreateAnalyzer(
+        [[nodiscard]] virtual std::unique_ptr<IImageAnalyzer> CreateAnalyzer(
             const std::string& analyzer_type = "opencv"
         ) = 0;
         
-        virtual std::vector<std::string> GetAvailableAnalyzers() const = 0;
+        [[nodiscard]] virtual std::vector<std::string> GetAvailableAnalyzers() const = 0;
         
-        virtual bool IsAnalyzerAvailable(const std::string& analyzer_type) const = 0;
+        [[nodiscard]] virtual bool IsAnalyzerAvailable(const std::string& analyzer_type) const = 0;
     };
 
     /**
@@ -118,11 +115,10 @@ namespace golf_sim::image_analysis::domain {
         virtual void StoreTeedBallResult(const TeedBallResult& result, 
                                         const ImageBuffer& image) = 0;
         virtual void StoreMovementResult(const MovementResult& result,
-                                        const std::vector<ImageBuffer>& images) = 0;
-        virtual void StoreFlightAnalysisResult(const FlightAnalysisResult& result,
+                                        const std::vector<ImageBuffer>& images) = 0;        virtual void StoreFlightAnalysisResult(const FlightAnalysisResult& result,
                                               const ImageBuffer& image) = 0;
         
-        virtual std::vector<TeedBallResult> GetTeedBallResults(
+        [[nodiscard]] virtual std::vector<TeedBallResult> GetTeedBallResults(
             std::chrono::microseconds start_time,
             std::chrono::microseconds end_time) = 0;
     };
@@ -136,18 +132,17 @@ namespace golf_sim::image_analysis::domain {
     class IAnalyzerConfigRepository {
     public:
         virtual ~IAnalyzerConfigRepository() = default;
-        
-        virtual void SetAnalyzerType(const std::string& analyzer_type) = 0;
-        virtual std::string GetAnalyzerType() const = 0;
+          virtual void SetAnalyzerType(const std::string& analyzer_type) = 0;
+        [[nodiscard]] virtual std::string GetAnalyzerType() const = 0;
         
         virtual void SetConfidenceThreshold(double threshold) = 0;
-        virtual double GetConfidenceThreshold() const = 0;
+        [[nodiscard]] virtual double GetConfidenceThreshold() const = 0;
         
         virtual void SetDebugMode(bool enabled) = 0;
-        virtual bool IsDebugModeEnabled() const = 0;
+        [[nodiscard]] virtual bool IsDebugModeEnabled() const = 0;
         
         virtual void SetModelPath(const std::string& path) = 0;
-        virtual std::string GetModelPath() const = 0;
+        [[nodiscard]] virtual std::string GetModelPath() const = 0;
     };
 
 } // namespace golf_sim::image_analysis::domain

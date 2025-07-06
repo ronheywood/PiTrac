@@ -207,13 +207,19 @@ BOOST_FIXTURE_TEST_CASE(PerformanceTeedBallAnalysis, OpenCVAnalyzerFixture) {
 // Error handling tests
 BOOST_FIXTURE_TEST_CASE(HandlesEmptyImage, OpenCVAnalyzerFixture) {
     cv::Mat empty_image;
-    domain::ImageBuffer empty_buffer{
-        empty_image,
-        test_timestamp,
-        "empty_image"
-    };
     
-    auto result = analyzer->AnalyzeTeedBall(empty_buffer);
+    // After domain improvements, ImageBuffer constructor validates input
+    // Empty images should throw an exception during construction
+    BOOST_CHECK_THROW(
+        domain::ImageBuffer(empty_image, test_timestamp, "empty_image"),
+        std::invalid_argument
+    );
+    
+    // Test with a minimal valid image instead to test analyzer error handling
+    cv::Mat tiny_image = cv::Mat::zeros(1, 1, CV_8UC3);
+    domain::ImageBuffer tiny_buffer{tiny_image, test_timestamp, "tiny_image"};
+    
+    auto result = analyzer->AnalyzeTeedBall(tiny_buffer);
     
     BOOST_CHECK_EQUAL(result.state, domain::BallState::ABSENT);
     BOOST_CHECK(!result.position.has_value());

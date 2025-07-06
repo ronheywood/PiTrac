@@ -28,9 +28,9 @@ namespace fs = std::filesystem;
 
 BOOST_AUTO_TEST_SUITE(ApprovalTestsWithPiTracImages)
 
-// Test configuration
-const std::string PITRAC_IMAGES_DIR = "C:\\kata\\PiTrac\\Software\\LMSourceCode\\Images\\";
-const std::string APPROVAL_ARTIFACTS_DIR = "C:\\kata\\PiTrac\\Software\\LMSourceCode\\ImageProcessing\\ImageAnalysis\\tests\\approval_artifacts\\";
+// Test configuration - using relative paths from build directory
+const std::string PITRAC_IMAGES_DIR = "../../../Images/";
+const std::string APPROVAL_ARTIFACTS_DIR = "approval_artifacts/";
 
 // Approval test fixture
 struct ApprovalTestFixture {

@@ -69,6 +69,9 @@ endif()
 set(Boost_NO_SYSTEM_PATHS ON)
 set(Boost_NO_BOOST_CMAKE ON)  # Use traditional FindBoost for consistency
 
+list(APPEND CMAKE_PREFIX_PATH "${BOOST_ROOT}")
+set(Boost_LIBRARY_DIRS "${BOOST_ROOT}/lib")
+
 # Find Boost with unit test framework
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 

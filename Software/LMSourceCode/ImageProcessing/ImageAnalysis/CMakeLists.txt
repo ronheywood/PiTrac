@@ -7,6 +7,7 @@ project(ImageAnalysis)
 # Handle CMake policy for FindBoost module removal in newer CMake versions
 if(POLICY CMP0167)
     cmake_policy(SET CMP0167 OLD)  # Keep old behavior for compatibility
+    # TODO: Migrate to new Boost discovery when upgrading CMake
 endif()
 
 # Handle CMake policy for BOOST_ROOT variable
@@ -17,6 +18,12 @@ endif()
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Set default build type if not specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+    message(STATUS "Build type not specified, defaulting to Release")
+endif()
 
 # Find required packages
 # Configure OpenCV detection - require explicit OPENCV_DIR
@@ -32,8 +39,13 @@ endif()
 if(DEFINED ENV{OPENCV_DIR} AND NOT DEFINED OPENCV_DIR)
     set(OPENCV_DIR $ENV{OPENCV_DIR})
     message(STATUS "Using OPENCV_DIR from environment: ${OPENCV_DIR}")
-else()
+elseif(DEFINED OPENCV_DIR)
     message(STATUS "Using OPENCV_DIR from CMake: ${OPENCV_DIR}")
+endif()
+
+# Validate the path exists
+if(NOT EXISTS "${OPENCV_DIR}")
+    message(FATAL_ERROR "OPENCV_DIR path does not exist: ${OPENCV_DIR}")
 endif()
 
 # Add OpenCV directory to the prefix path so find_package can find it
@@ -44,11 +56,6 @@ message(STATUS "Looking for OpenCVConfig.cmake in: ${OPENCV_DIR}")
 find_package(OpenCV REQUIRED)
 
 # Configure Boost detection - require explicit BOOST_ROOT
-set(Boost_USE_STATIC_LIBS OFF)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-
-# Require BOOST_ROOT to be set (either environment variable or CMake variable)
 if(NOT DEFINED ENV{BOOST_ROOT} AND NOT DEFINED BOOST_ROOT)
     message(FATAL_ERROR 
         "BOOST_ROOT must be set. Please set environment variable or pass -DBOOST_ROOT=<path> to CMake.\n"
@@ -61,16 +68,21 @@ endif()
 if(DEFINED ENV{BOOST_ROOT} AND NOT DEFINED BOOST_ROOT)
     set(BOOST_ROOT $ENV{BOOST_ROOT})
     message(STATUS "Using BOOST_ROOT from environment: ${BOOST_ROOT}")
-else()
+elseif(DEFINED BOOST_ROOT)
     message(STATUS "Using BOOST_ROOT from CMake: ${BOOST_ROOT}")
 endif()
 
-# Configure Boost detection
-set(Boost_USE_STATIC_LIBS ON)   # Use static libraries (consistent across environments)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-set(Boost_NO_BOOST_CMAKE OFF)   # Use modern BoostConfig.cmake
-set(Boost_NO_SYSTEM_PATHS ON)
+# Validate the path exists
+if(NOT EXISTS "${BOOST_ROOT}")
+    message(FATAL_ERROR "BOOST_ROOT path does not exist: ${BOOST_ROOT}")
+endif()
+
+# Configure Boost detection - Traditional FindBoost for compatibility with static libraries
+set(Boost_USE_STATIC_LIBS ON)    # Use static libraries (consistent across environments)
+set(Boost_USE_MULTITHREADED ON)  # Enable multithreaded libraries
+set(Boost_USE_STATIC_RUNTIME OFF) # Don't use static runtime (avoids conflicts)
+set(Boost_NO_BOOST_CMAKE ON)     # Use traditional FindBoost module for better static lib support
+set(Boost_NO_SYSTEM_PATHS ON)    # Only look in specified paths
 
 # Add Boost library directory to help CMake find the libraries
 if(BOOST_ROOT)
@@ -90,9 +102,6 @@ endif()
 # Find Boost with unit test framework
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 
-# Include directories
-include_directories(${OpenCV_INCLUDE_DIRS})
-
 # Source files for the bounded context
 set(IMAGE_ANALYSIS_SOURCES
     infrastructure/opencv_image_analyzer.cpp
@@ -110,15 +119,18 @@ set(IMAGE_ANALYSIS_HEADERS
 # Create static library for the bounded context
 add_library(image_analysis STATIC ${IMAGE_ANALYSIS_SOURCES})
 
-# Link libraries
+# Link libraries using modern CMake targets
 target_link_libraries(image_analysis 
-    ${OpenCV_LIBS}
+    PUBLIC opencv_core opencv_imgproc opencv_imgcodecs opencv_highgui
 )
 
 # Set include directories for the library
-target_include_directories(image_analysis PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/..  # For access to existing headers
+target_include_directories(image_analysis 
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/..  # For access to existing headers
+    PRIVATE
+        ${OpenCV_INCLUDE_DIRS}
 )
 
 # Compiler flags
@@ -141,12 +153,16 @@ function(configure_boost_test_target target_name)
     target_link_libraries(${target_name} PRIVATE 
         Boost::unit_test_framework 
         image_analysis 
-        ${OpenCV_LIBS}
+        opencv_core opencv_imgproc opencv_imgcodecs opencv_highgui
     )
-    # Static linking - no BOOST_TEST_DYN_LINK needed
+    # Note: No BOOST_TEST_DYN_LINK definition needed for static linking
 endfunction()
 
 enable_testing()
+
+# =============================================================================
+# Test Executables and Configuration
+# =============================================================================
 
 # Domain tests (no external dependencies)
 add_executable(test_image_analysis_domain tests/test_image_analysis_domain.cpp)

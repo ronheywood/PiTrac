@@ -12,7 +12,6 @@
  * error handling for invalid inputs.
  */
 
-#define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE DomainValidationTests
 #include <boost/test/unit_test.hpp>
 #include "../domain/value_objects.hpp"

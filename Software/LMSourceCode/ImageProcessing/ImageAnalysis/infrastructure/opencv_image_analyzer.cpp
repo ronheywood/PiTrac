@@ -10,8 +10,9 @@
 
 #include "opencv_image_analyzer.hpp"
 #include <opencv2/imgproc.hpp>
-#include <iostream>
+#include <opencv2/video/tracking.hpp>  // For optical flow
 #include <algorithm>
+#include <iostream>
 
 namespace golf_sim::image_analysis::infrastructure {
 
@@ -77,9 +78,7 @@ MovementResult OpenCVImageAnalyzer::DetectMovement(
 
     try {
         MovementResult result;
-        result.analysis_method = "opencv_optical_flow";
-
-        // Simple movement detection using frame differencing
+        result.analysis_method = "opencv_optical_flow";        // Simple movement detection using frame differencing
         cv::Mat prev_frame = PreprocessImage(image_sequence[0].data);
         double max_movement = 0.0;
 
@@ -95,9 +94,10 @@ MovementResult OpenCVImageAnalyzer::DetectMovement(
             }
             
             prev_frame = curr_frame;
-        }        const double movement_threshold = 2.0;  // Lower threshold for better sensitivity
-        result.movement_detected = max_movement > movement_threshold;
-        result.movement_confidence = std::min(1.0, max_movement / 20.0);  // Adjusted scaling
+        }
+        
+        result.movement_detected = max_movement > MOVEMENT_THRESHOLD;
+        result.movement_confidence = std::min(1.0, max_movement / VELOCITY_SCALING_FACTOR);
         result.movement_magnitude = max_movement;
         result.last_known_position = reference_position;
 
@@ -137,11 +137,9 @@ FlightAnalysisResult OpenCVImageAnalyzer::AnalyzeBallFlight(
         std::sort(result.detected_balls.begin(), result.detected_balls.end(),
                   [](const BallPosition& a, const BallPosition& b) {
                       return a.x_pixels < b.x_pixels;
-                  });
-
-        if (result.detected_balls.size() >= 2) {
+                  });        if (result.detected_balls.size() >= 2) {
             result.confidence = 0.8;
-            result.temporal_spacing_us = 5000.0; // 5ms assumption
+            result.temporal_spacing_us = TEMPORAL_SPACING_US;
             
             // Basic velocity calculation
             const auto& first = result.detected_balls.front();
@@ -170,11 +168,10 @@ TeedBallResult OpenCVImageAnalyzer::DetectBallReset(
     const BallPosition& previous_position
 ) {
     TeedBallResult result = AnalyzeTeedBall(current_image);
-    
-    if (result.position.has_value()) {
+      if (result.position.has_value()) {
         double distance = result.position->DistanceFrom(previous_position);
         
-        if (distance > 100.0) { // 100 pixel threshold
+        if (distance > RESET_DISTANCE_THRESHOLD) {
             result.state = BallState::RESET;
             result.debug_info.push_back("Ball position significantly changed - possible reset");
         }
@@ -185,13 +182,24 @@ TeedBallResult OpenCVImageAnalyzer::DetectBallReset(
 }
 
 void OpenCVImageAnalyzer::SetHoughParameters(double param1, double param2, double dp) {
+    if (param1 <= 0.0 || param2 <= 0.0 || dp <= 0.0) {
+        LogError("Invalid Hough parameters: all values must be positive");
+        return;
+    }
+    
     hough_param1_ = param1;
     hough_param2_ = param2;
     hough_dp_ = dp;
-    LogInfo("Hough parameters updated");
+    LogInfo("Hough parameters updated: param1=" + std::to_string(param1) + 
+            ", param2=" + std::to_string(param2) + ", dp=" + std::to_string(dp));
 }
 
 void OpenCVImageAnalyzer::SetRadiusLimits(int min_radius, int max_radius) {
+    if (min_radius <= 0 || max_radius <= 0 || min_radius >= max_radius) {
+        LogError("Invalid radius limits: min_radius must be positive and less than max_radius");
+        return;
+    }
+    
     min_radius_ = min_radius;
     max_radius_ = max_radius;
     LogInfo("Radius limits updated: " + std::to_string(min_radius) + "-" + std::to_string(max_radius));
@@ -199,32 +207,43 @@ void OpenCVImageAnalyzer::SetRadiusLimits(int min_radius, int max_radius) {
 
 // Private helper methods
 std::vector<BallPosition> OpenCVImageAnalyzer::DetectCircles(const cv::Mat& image) const {
-    std::vector<cv::Vec3f> circles;
-    cv::HoughCircles(
-        image,
-        circles,
-        cv::HOUGH_GRADIENT,
-        hough_dp_,
-        image.rows / 4,
-        hough_param1_,
-        hough_param2_,
-        min_radius_,
-        max_radius_
-    );
-
     std::vector<BallPosition> positions;
-    for (const auto& circle : circles) {
-        double confidence = CalculateConfidence(
-            BallPosition{circle[0], circle[1], circle[2]}, image);
-        
-        positions.emplace_back(
-            static_cast<double>(circle[0]),
-            static_cast<double>(circle[1]),
-            static_cast<double>(circle[2]),
-            confidence,
-            std::chrono::microseconds{0},
-            "opencv_hough"
+    
+    try {
+        std::vector<cv::Vec3f> circles;
+        cv::HoughCircles(
+            image,
+            circles,
+            cv::HOUGH_GRADIENT,
+            hough_dp_,
+            image.rows / 4,
+            hough_param1_,
+            hough_param2_,
+            min_radius_,
+            max_radius_
         );
+
+        positions.reserve(circles.size());  // Preallocate for efficiency
+        
+        for (const auto& circle : circles) {
+            BallPosition position{
+                static_cast<double>(circle[0]),
+                static_cast<double>(circle[1]),
+                static_cast<double>(circle[2]),
+                0.0,  // Will be calculated next
+                std::chrono::microseconds{0},
+                "opencv_hough"
+            };
+            
+            position.confidence = CalculateConfidence(position, image);
+            positions.push_back(position);
+        }
+    } catch (const cv::Exception& e) {
+        LogError("OpenCV exception in DetectCircles: " + std::string(e.what()));
+        // Return empty vector on OpenCV errors
+    } catch (const std::exception& e) {
+        LogError("Standard exception in DetectCircles: " + std::string(e.what()));
+        // Return empty vector on other errors
     }
 
     return positions;
@@ -232,7 +251,8 @@ std::vector<BallPosition> OpenCVImageAnalyzer::DetectCircles(const cv::Mat& imag
 
 BallPosition OpenCVImageAnalyzer::SelectBestCandidate(
     const std::vector<BallPosition>& candidates,
-    const std::optional<BallPosition>& expected_position) const {
+    const std::optional<BallPosition>& expected_position)
+{
     
     if (candidates.empty()) {
         return BallPosition{}; // Default constructed
@@ -264,64 +284,106 @@ BallPosition OpenCVImageAnalyzer::SelectBestCandidate(
 }
 
 double OpenCVImageAnalyzer::CalculateConfidence(const BallPosition& position, const cv::Mat& image) const {
-    // Basic confidence calculation
+    // Validate inputs
+    if (image.empty()) {
+        return 0.0;
+    }
+    
     double x = position.x_pixels;
     double y = position.y_pixels;
     double radius = position.radius_pixels;
     
-    // Check bounds
+    // Check bounds - ball must be fully within image
     if (x - radius < 0 || x + radius >= image.cols ||
         y - radius < 0 || y + radius >= image.rows) {
-        return 0.1;
+        return 0.1;  // Low confidence for partially out-of-bounds balls
     }
     
-    // Basic confidence based on radius
+    // Radius confidence - prefer balls within expected size range
     double radius_confidence = 1.0;
-    if (radius < min_radius_ || radius > max_radius_) {
-        radius_confidence = 0.5;
+    if (radius < min_radius_) {
+        radius_confidence = static_cast<double>(radius) / min_radius_;
+    } else if (radius > max_radius_) {
+        radius_confidence = static_cast<double>(max_radius_) / radius;
     }
     
-    return std::min(1.0, radius_confidence * 0.8);
+    // Position confidence - prefer balls not too close to edges
+    double edge_margin = std::min(image.cols, image.rows) * 0.1;  // 10% margin
+    double edge_confidence = 1.0;
+    if (x < edge_margin || x > image.cols - edge_margin ||
+        y < edge_margin || y > image.rows - edge_margin) {
+        edge_confidence = 0.8;  // Slightly lower confidence near edges
+    }
+    
+    // Combined confidence
+    double confidence = radius_confidence * edge_confidence * 0.8;  // Base confidence factor
+    return std::min(1.0, std::max(0.0, confidence));  // Clamp to [0, 1]
 }
 
-bool OpenCVImageAnalyzer::IsValidBallPosition(const BallPosition& position, const cv::Mat& image) const {
+bool OpenCVImageAnalyzer::IsValidBallPosition(const BallPosition& position, const cv::Mat& image) {
     return position.x_pixels >= 0 && position.x_pixels < image.cols &&
            position.y_pixels >= 0 && position.y_pixels < image.rows &&
            position.radius_pixels > 0 && position.confidence > 0.0;
 }
 
-cv::Mat OpenCVImageAnalyzer::PreprocessImage(const cv::Mat& input) const {
-    cv::Mat gray, blurred;
-    
-    if (input.channels() == 3) {
-        cv::cvtColor(input, gray, cv::COLOR_BGR2GRAY);
-    } else {
-        gray = input.clone();
+cv::Mat OpenCVImageAnalyzer::PreprocessImage(const cv::Mat& input) {
+    if (input.empty()) {
+        LogError("Empty input image in PreprocessImage");
+        return cv::Mat();
     }
-    
-    cv::GaussianBlur(gray, blurred, cv::Size(9, 9), 2, 2);
-    return blurred;
+
+    try {
+        cv::Mat blurred;
+        cv::Mat gray;
+        if (input.channels() == 3) {
+            cv::cvtColor(input, gray, cv::COLOR_BGR2GRAY);
+        } else if (input.channels() == 1) {
+            gray = input.clone();
+        } else {
+            LogError("Unsupported number of channels: " + std::to_string(input.channels()));
+            return cv::Mat();
+        }
+        
+        cv::GaussianBlur(gray, blurred, cv::Size(9, 9), 2, 2);
+        return blurred;
+        
+    } catch (const cv::Exception& e) {
+        LogError("OpenCV exception in PreprocessImage: " + std::string(e.what()));
+        return cv::Mat();
+    }
 }
 
 std::vector<cv::Point2f> OpenCVImageAnalyzer::CalculateOpticalFlow(
-    const cv::Mat& prev_frame, const cv::Mat& curr_frame) const {
+    const cv::Mat& prev_frame, const cv::Mat& curr_frame) {
     
     std::vector<cv::Point2f> flow;
     
+    if (prev_frame.empty() || curr_frame.empty()) {
+        LogError("Empty frames in CalculateOpticalFlow");
+        return flow;
+    }
+    
+    if (prev_frame.size() != curr_frame.size()) {
+        LogError("Frame size mismatch in CalculateOpticalFlow");
+        return flow;
+    }
+    
     try {
         // Use Lucas-Kanade optical flow
-        std::vector<cv::Point2f> prev_points, next_points;
-        std::vector<uchar> status;
-        std::vector<float> error;
-        
+        std::vector<cv::Point2f> prev_points;
+
         // Find corner points in previous frame
         cv::goodFeaturesToTrack(prev_frame, prev_points, 100, 0.3, 7, cv::Mat(), 7, false, 0.04);
         
         if (!prev_points.empty()) {
+            std::vector<float> error;
+            std::vector<uchar> status;
+            std::vector<cv::Point2f> next_points;
             // Calculate optical flow
             cv::calcOpticalFlowPyrLK(prev_frame, curr_frame, prev_points, next_points, status, error);
             
             // Extract valid flow vectors
+            flow.reserve(prev_points.size());  // Preallocate for efficiency
             for (size_t i = 0; i < prev_points.size(); ++i) {
                 if (status[i] && error[i] < 50) {
                     cv::Point2f flow_vector = next_points[i] - prev_points[i];
@@ -337,27 +399,31 @@ std::vector<cv::Point2f> OpenCVImageAnalyzer::CalculateOpticalFlow(
             cv::Scalar mean_diff = cv::mean(diff);
             
             // Generate representative flow vectors based on mean difference
-            if (mean_diff[0] > 1.0) {  // Lower threshold for better sensitivity
+            if (mean_diff[0] > 1.0) {  // Sensitivity threshold
                 flow.push_back(cv::Point2f{static_cast<float>(mean_diff[0]), 0.0f});
-            }        }
+            }
+        }
     } catch (const cv::Exception& e) {
-        // Log exception details if needed in debug builds
-        (void)e;  // Suppress unused parameter warning
+        LogError("OpenCV exception in CalculateOpticalFlow: " + std::string(e.what()));
         
         // Fallback to simple difference
-        cv::Mat diff;
-        cv::absdiff(prev_frame, curr_frame, diff);
-        cv::Scalar mean_diff = cv::mean(diff);
-        
-        if (mean_diff[0] > 1.0) {
-            flow.push_back(cv::Point2f{static_cast<float>(mean_diff[0]), 0.0f});
+        try {
+            cv::Mat diff;
+            cv::absdiff(prev_frame, curr_frame, diff);
+            cv::Scalar mean_diff = cv::mean(diff);
+            
+            if (mean_diff[0] > 1.0) {
+                flow.push_back(cv::Point2f{static_cast<float>(mean_diff[0]), 0.0f});
+            }
+        } catch (const cv::Exception& e2) {
+            LogError("Fallback calculation also failed: " + std::string(e2.what()));
         }
     }
     
     return flow;
 }
 
-double OpenCVImageAnalyzer::CalculateMovementMagnitude(const std::vector<cv::Point2f>& flow) const {
+double OpenCVImageAnalyzer::CalculateMovementMagnitude(const std::vector<cv::Point2f>& flow) {
     if (flow.empty()) return 0.0;
     
     double total = 0.0;
@@ -368,7 +434,7 @@ double OpenCVImageAnalyzer::CalculateMovementMagnitude(const std::vector<cv::Poi
     return total / flow.size();
 }
 
-TeedBallResult OpenCVImageAnalyzer::CreateErrorResult(const std::string& error_message) const {
+TeedBallResult OpenCVImageAnalyzer::CreateErrorResult(const std::string& error_message) {
     TeedBallResult result;
     result.state = BallState::ABSENT;
     result.confidence = 0.0;
@@ -378,7 +444,7 @@ TeedBallResult OpenCVImageAnalyzer::CreateErrorResult(const std::string& error_m
     return result;
 }
 
-MovementResult OpenCVImageAnalyzer::CreateMovementErrorResult(const std::string& error_message) const {
+MovementResult OpenCVImageAnalyzer::CreateMovementErrorResult(const std::string& error_message) {
     MovementResult result;
     result.movement_detected = false;
     result.movement_confidence = 0.0;
@@ -388,7 +454,7 @@ MovementResult OpenCVImageAnalyzer::CreateMovementErrorResult(const std::string&
     return result;
 }
 
-FlightAnalysisResult OpenCVImageAnalyzer::CreateFlightErrorResult(const std::string& error_message) const {
+FlightAnalysisResult OpenCVImageAnalyzer::CreateFlightErrorResult(const std::string& error_message) {
     FlightAnalysisResult result;
     result.confidence = 0.0;
     result.analysis_method = "opencv_error";

@@ -19,9 +19,6 @@
 #include "../domain/interfaces.hpp"
 #include "../domain/analysis_results.hpp"
 #include <opencv2/opencv.hpp>
-// #include "../../ball_image_proc.h"    // Existing OpenCV implementation - temporarily disabled
-// #include "../../golf_ball.h"          // Existing GolfBall class - temporarily disabled  
-// #include "../../gs_camera.h"          // Existing camera implementation - temporarily disabled
 
 namespace golf_sim::image_analysis::infrastructure {
 
@@ -66,36 +63,43 @@ namespace golf_sim::image_analysis::infrastructure {
 
         // OpenCV-specific configuration
         void SetHoughParameters(double param1, double param2, double dp = 1.0);
-        void SetRadiusLimits(int min_radius, int max_radius);
-
-    private:
+        void SetRadiusLimits(int min_radius, int max_radius);    private:
         // Configuration parameters for Hough Circle detection
-        double hough_param1_ = 100.0;
-        double hough_param2_ = 30.0;
-        double hough_dp_ = 1.0;
-        int min_radius_ = 10;
-        int max_radius_ = 100;
+        static constexpr double DEFAULT_HOUGH_PARAM1 = 100.0;
+        static constexpr double DEFAULT_HOUGH_PARAM2 = 30.0;
+        static constexpr double DEFAULT_HOUGH_DP = 1.0;
+        static constexpr int DEFAULT_MIN_RADIUS = 10;
+        static constexpr int DEFAULT_MAX_RADIUS = 100;
+        static constexpr double MOVEMENT_THRESHOLD = 2.0;
+        static constexpr double VELOCITY_SCALING_FACTOR = 20.0;
+        static constexpr double RESET_DISTANCE_THRESHOLD = 100.0;
+        static constexpr double TEMPORAL_SPACING_US = 5000.0;  // 5ms assumption
+        
+        double hough_param1_ = DEFAULT_HOUGH_PARAM1;
+        double hough_param2_ = DEFAULT_HOUGH_PARAM2;
+        double hough_dp_ = DEFAULT_HOUGH_DP;
+        int min_radius_ = DEFAULT_MIN_RADIUS;
+        int max_radius_ = DEFAULT_MAX_RADIUS;
         
         // Core detection methods
         std::vector<domain::BallPosition> DetectCircles(const cv::Mat& image) const;
-        domain::BallPosition SelectBestCandidate(
+        static domain::BallPosition SelectBestCandidate(
             const std::vector<domain::BallPosition>& candidates,
-            const std::optional<domain::BallPosition>& expected_position) const;
-        
-        // Helper methods
+            const std::optional<domain::BallPosition>& expected_position);
+          // Helper methods
         double CalculateConfidence(const domain::BallPosition& position, const cv::Mat& image) const;
-        bool IsValidBallPosition(const domain::BallPosition& position, const cv::Mat& image) const;
-        cv::Mat PreprocessImage(const cv::Mat& input) const;
+        static bool IsValidBallPosition(const domain::BallPosition& position, const cv::Mat& image);
+        static cv::Mat PreprocessImage(const cv::Mat& input);
         
         // Movement detection helpers
-        std::vector<cv::Point2f> CalculateOpticalFlow(
-            const cv::Mat& prev_frame, const cv::Mat& curr_frame) const;
-        double CalculateMovementMagnitude(const std::vector<cv::Point2f>& flow) const;
+        static std::vector<cv::Point2f> CalculateOpticalFlow(
+            const cv::Mat& prev_frame, const cv::Mat& curr_frame);
+        static double CalculateMovementMagnitude(const std::vector<cv::Point2f>& flow);
         
         // Error result creators
-        domain::TeedBallResult CreateErrorResult(const std::string& error_message) const;
-        domain::MovementResult CreateMovementErrorResult(const std::string& error_message) const;
-        domain::FlightAnalysisResult CreateFlightErrorResult(const std::string& error_message) const;
+        static domain::TeedBallResult CreateErrorResult(const std::string& error_message);
+        static domain::MovementResult CreateMovementErrorResult(const std::string& error_message);
+        static domain::FlightAnalysisResult CreateFlightErrorResult(const std::string& error_message);
     };
 
 } // namespace golf_sim::image_analysis::infrastructure

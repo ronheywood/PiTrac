@@ -37,15 +37,23 @@ namespace golf_sim::image_analysis::infrastructure::ml {
      */
     class MLImageAnalyzer : public domain::IImageAnalyzer {
     public:
-        enum class ModelType {
-            YOLO_V5,
-            YOLO_V8,
-            TENSORFLOW_LITE,
-            PYTORCH_MOBILE,
-            ONNX_RUNTIME
-        };
+    /**
+     * @brief Model types supported by the ML analyzer
+     */
+    enum class ModelType {
+        YOLO_V5,        ///< YOLOv5 object detection model
+        YOLO_V8,        ///< YOLOv8 object detection model  
+        TENSORFLOW_LITE,///< TensorFlow Lite mobile model
+        PYTORCH_MOBILE, ///< PyTorch Mobile optimized model
+        ONNX_RUNTIME    ///< ONNX Runtime cross-platform model
+    };
 
-        explicit MLImageAnalyzer(ModelType model_type, const std::string& model_path);
+    /**
+     * @brief Constructor for ML-based image analyzer
+     * @param model_type Type of ML model to use
+     * @param model_path Path to the model file
+     */
+    explicit MLImageAnalyzer(ModelType model_type, const std::string& model_path);
         ~MLImageAnalyzer() override;
 
         // Domain interface implementation
@@ -72,13 +80,38 @@ namespace golf_sim::image_analysis::infrastructure::ml {
         // Analyzer metadata
         std::string GetAnalyzerName() const override;
         std::string GetVersion() const override { return "2.0.0-ml"; }
-        bool SupportsRealTime() const override;
-
-        // ML-specific configuration
+        bool SupportsRealTime() const override;        // ML-specific configuration
+        
+        /**
+         * @brief Load ML model from file
+         * @param model_path Path to the model file
+         * @return true if model loaded successfully, false otherwise
+         */
         bool LoadModel(const std::string& model_path);
+        
+        /**
+         * @brief Set confidence threshold for detections
+         * @param threshold Minimum confidence (0.0-1.0) for valid detections
+         */
         void SetConfidenceThreshold(double threshold);
-        void SetNMSThreshold(double threshold);  // Non-Maximum Suppression
+        
+        /**
+         * @brief Set Non-Maximum Suppression threshold
+         * @param threshold NMS threshold (0.0-1.0) for overlapping detections
+         */
+        void SetNMSThreshold(double threshold);
+        
+        /**
+         * @brief Set input image size for model inference
+         * @param width Target width in pixels
+         * @param height Target height in pixels
+         */
         void SetInputSize(int width, int height);
+        
+        /**
+         * @brief Enable or disable GPU acceleration if available
+         * @param enabled true to enable GPU acceleration, false for CPU only
+         */
         void SetGPUAcceleration(bool enabled);
 
     private:
@@ -131,7 +164,7 @@ namespace golf_sim::image_analysis::infrastructure::ml {
         std::unique_ptr<domain::IImageAnalyzer> CreateAnalyzer(
             const std::string& analyzer_type = "yolo_v5"
         ) override;
-        
+
         std::vector<std::string> GetAvailableAnalyzers() const override;
         bool IsAnalyzerAvailable(const std::string& analyzer_type) const override;
 

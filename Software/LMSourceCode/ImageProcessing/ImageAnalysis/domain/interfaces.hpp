@@ -20,8 +20,8 @@
 #include <string>
 #include <vector>
 
-namespace golf_sim::image_analysis::domain {
-
+namespace golf_sim::image_analysis::domain
+{
     /**
      * @brief Core interface for golf ball image analysis capabilities
      * 
@@ -29,9 +29,12 @@ namespace golf_sim::image_analysis::domain {
      * needed for golf ball tracking, independent of the underlying
      * implementation technology (OpenCV, YOLO, TensorFlow, etc.).
      */
-    class IImageAnalyzer {
+    class IImageAnalyzer
+    {
     public:
-        virtual ~IImageAnalyzer() = default;        /**
+        virtual ~IImageAnalyzer() = default;
+
+        /**
          * @brief Analyze image to detect if ball is present on tee
          * @param image The image to analyze
          * @param expected_position Optional hint about where ball should be
@@ -89,16 +92,18 @@ namespace golf_sim::image_analysis::domain {
      * - "yolo_v5" - YOLO v5 machine learning detection  
      * - "tensorflow_lite" - TensorFlow Lite embedded models
      * - "hybrid" - Combination of multiple approaches
-     */    class IImageAnalyzerFactory {
+     */
+    class IImageAnalyzerFactory
+    {
     public:
         virtual ~IImageAnalyzerFactory() = default;
-        
+
         [[nodiscard]] virtual std::unique_ptr<IImageAnalyzer> CreateAnalyzer(
             const std::string& analyzer_type = "opencv"
         ) = 0;
-        
+
         [[nodiscard]] virtual std::vector<std::string> GetAvailableAnalyzers() const = 0;
-        
+
         [[nodiscard]] virtual bool IsAnalyzerAvailable(const std::string& analyzer_type) const = 0;
     };
 
@@ -108,16 +113,17 @@ namespace golf_sim::image_analysis::domain {
      * Allows persisting analysis results for debugging, training data
      * collection, or performance analysis.
      */
-    class IAnalysisResultRepository {
+    class IAnalysisResultRepository
+    {
     public:
         virtual ~IAnalysisResultRepository() = default;
-        
-        virtual void StoreTeedBallResult(const TeedBallResult& result, 
-                                        const ImageBuffer& image) = 0;
+        virtual void StoreTeedBallResult(const TeedBallResult& result,
+                                         const ImageBuffer& image) = 0;
         virtual void StoreMovementResult(const MovementResult& result,
-                                        const std::vector<ImageBuffer>& images) = 0;        virtual void StoreFlightAnalysisResult(const FlightAnalysisResult& result,
-                                              const ImageBuffer& image) = 0;
-        
+                                         const std::vector<ImageBuffer>& images) = 0;
+        virtual void StoreFlightAnalysisResult(const FlightAnalysisResult& result,
+                                               const ImageBuffer& image) = 0;
+
         [[nodiscard]] virtual std::vector<TeedBallResult> GetTeedBallResults(
             std::chrono::microseconds start_time,
             std::chrono::microseconds end_time) = 0;
@@ -129,20 +135,21 @@ namespace golf_sim::image_analysis::domain {
      * Manages analyzer configuration settings that can be persisted
      * and modified at runtime.
      */
-    class IAnalyzerConfigRepository {
+    class IAnalyzerConfigRepository
+    {
     public:
         virtual ~IAnalyzerConfigRepository() = default;
-          virtual void SetAnalyzerType(const std::string& analyzer_type) = 0;
+
+        virtual void SetAnalyzerType(const std::string& analyzer_type) = 0;
         [[nodiscard]] virtual std::string GetAnalyzerType() const = 0;
-        
-        virtual void SetConfidenceThreshold(double threshold) = 0;
+
+        virtual void SetConfidenceThreshold(double threshold) = 0; // Should be 0.0-1.0
         [[nodiscard]] virtual double GetConfidenceThreshold() const = 0;
-        
+
         virtual void SetDebugMode(bool enabled) = 0;
         [[nodiscard]] virtual bool IsDebugModeEnabled() const = 0;
-        
+
         virtual void SetModelPath(const std::string& path) = 0;
         [[nodiscard]] virtual std::string GetModelPath() const = 0;
     };
-
 } // namespace golf_sim::image_analysis::domain

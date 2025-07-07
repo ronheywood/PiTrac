@@ -18,8 +18,6 @@
 #include "../domain/analysis_results.hpp"
 #include <memory>
 #include <map>
-#include <stdexcept>
-#include <algorithm>
 
 namespace golf_sim::image_analysis::application {
 

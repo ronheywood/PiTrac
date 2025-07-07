@@ -90,7 +90,7 @@ if(BOOST_ROOT)
     
     # Set additional hints for modern CMake
     set(Boost_ROOT "${BOOST_ROOT}")
-    set(BOOST_LIBRARYDIR "${BOOST_ROOT}/lib")
+    set(BOOST_LIBRARYDIR "${BOOST_ROOT}/lib64-msvc-14.3")
     set(BOOST_INCLUDEDIR "${BOOST_ROOT}/include")
     
     # Fallback if include is in root directory

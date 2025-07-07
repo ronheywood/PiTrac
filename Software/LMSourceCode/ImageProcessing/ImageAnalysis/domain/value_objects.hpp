@@ -30,7 +30,8 @@ namespace golf_sim::image_analysis::domain {
      * 
      * Immutable value object representing the position of a golf ball
      * in an image with associated confidence and detection metadata.
-     */    struct BallPosition {
+     */    
+    struct BallPosition {
         double x_pixels;
         double y_pixels;
         double radius_pixels;
@@ -98,7 +99,9 @@ namespace golf_sim::image_analysis::domain {
         std::string camera_id;                  // Which camera captured this
         std::string metadata;                   // Additional metadata (exposure, etc.)
         
-        ImageBuffer() = default;        ImageBuffer(const cv::Mat& image, 
+        ImageBuffer() = default;        
+        
+        ImageBuffer(const cv::Mat& image, 
                    std::chrono::microseconds ts = std::chrono::microseconds{0},
                    const std::string& cam_id = "",
                    const std::string& meta = "")

@@ -195,10 +195,9 @@ configure_boost_test_target(test_image_analysis_domain)
 add_test(NAME DomainTests COMMAND test_image_analysis_domain)
 
 # Domain validation tests (input validation and invariant enforcement)
-# TEMPORARILY DISABLED due to Boost linking issue - will fix in separate task
-# add_executable(test_domain_validation tests/test_domain_validation.cpp)
-# configure_boost_test_target(test_domain_validation)
-# add_test(NAME DomainValidationTests COMMAND test_domain_validation)
+add_executable(test_domain_validation tests/test_domain_validation.cpp)
+configure_boost_test_target(test_domain_validation)
+add_test(NAME DomainValidationTests COMMAND test_domain_validation)
 
 # OpenCV integration tests
 add_executable(test_opencv_analyzer tests/test_opencv_analyzer.cpp)
@@ -224,11 +223,10 @@ set_tests_properties(DomainTests PROPERTIES
     LABELS "unit;domain"
 )
 
-# TEMPORARILY DISABLED: DomainValidationTests properties (Boost linking issue)
-# set_tests_properties(DomainValidationTests PROPERTIES
-#     TIMEOUT 30
-#     LABELS "unit;domain;validation"
-# )
+set_tests_properties(DomainValidationTests PROPERTIES
+    TIMEOUT 30
+    LABELS "unit;domain;validation"
+)
 
 set_tests_properties(OpenCVTests PROPERTIES
     TIMEOUT 60

@@ -18,7 +18,6 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include <iostream>
 #include <stdexcept>
 #include <cmath>
 #include <opencv2/core.hpp>  // Only for cv::Mat, cv::Point2f, cv::Vec3d - consider abstracting later
@@ -97,10 +96,8 @@ namespace golf_sim::image_analysis::domain {
         cv::Mat data;                           // The actual image data
         std::chrono::microseconds timestamp;    // When image was captured
         std::string camera_id;                  // Which camera captured this
-        std::string metadata;                   // Additional metadata (exposure, etc.)
-        
+        std::string metadata;                   // Additional metadata (exposure, etc.)        
         ImageBuffer() = default;        
-        
         ImageBuffer(const cv::Mat& image, 
                    std::chrono::microseconds ts = std::chrono::microseconds{0},
                    const std::string& cam_id = "",
@@ -118,8 +115,7 @@ namespace golf_sim::image_analysis::domain {
             return timestamp - other.timestamp;
         }
 
-    private:
-        void ValidateImage() const {
+    private:        void ValidateImage() const {
             if (data.empty()) {
                 throw std::invalid_argument("Image data cannot be empty");
             }

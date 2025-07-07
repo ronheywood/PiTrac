@@ -18,6 +18,7 @@
 #include "../domain/analysis_results.hpp"
 #include <opencv2/opencv.hpp>
 #include <limits>
+#include <iostream>
 
 using namespace golf_sim::image_analysis::domain;
 
@@ -116,25 +117,34 @@ BOOST_AUTO_TEST_CASE(ImageBufferValidImageDoesNotThrow) {
 BOOST_AUTO_TEST_CASE(ImageBufferEmptyImageThrowsException) {
     cv::Mat empty_image;
     
-    BOOST_CHECK_THROW(
-        ImageBuffer(empty_image),
-        std::invalid_argument
-    );
+    // Test that empty image throws exception
+    try {
+        ImageBuffer buffer(empty_image);
+        BOOST_FAIL("Expected std::invalid_argument exception was not thrown");
+    } catch (const std::invalid_argument&) {
+        // This is what we expect
+    }
 }
 
 BOOST_AUTO_TEST_CASE(ImageBufferZeroDimensionImageThrowsException) {
     cv::Mat zero_width_image = cv::Mat::ones(100, 0, CV_8UC3);
     cv::Mat zero_height_image = cv::Mat::ones(0, 100, CV_8UC3);
     
-    BOOST_CHECK_THROW(
-        ImageBuffer(zero_width_image),
-        std::invalid_argument
-    );
+    // Test zero-width image
+    try {
+        ImageBuffer buffer1(zero_width_image);
+        BOOST_FAIL("Expected std::invalid_argument exception was not thrown for zero-width image");
+    } catch (const std::invalid_argument&) {
+        // This is what we expect
+    }
     
-    BOOST_CHECK_THROW(
-        ImageBuffer(zero_height_image),
-        std::invalid_argument
-    );
+    // Test zero-height image
+    try {
+        ImageBuffer buffer2(zero_height_image);
+        BOOST_FAIL("Expected std::invalid_argument exception was not thrown for zero-height image");
+    } catch (const std::invalid_argument&) {
+        // This is what we expect
+    }
 }
 
 // GetConfidenceLevel Validation Tests

@@ -188,6 +188,14 @@ namespace golf_sim {
             expected_ball_radius_pixels_at_40cm_ = 87;
         }
 
+        if (model == PiGSCam3_6mmLens) {
+            focal_length_ = 3.6f;
+            horizontalFoV_ = 70.0f;
+            verticalFoV_ = 70.0f;
+            is_mono_camera_ = false;
+            expected_ball_radius_pixels_at_40cm_ = 57;
+        }
+
         if (model == InnoMakerIMX296GS3_6mmM12Lens) {
             focal_length_ = 3.6f;
             horizontalFoV_ = 70.0f;
@@ -197,7 +205,9 @@ namespace golf_sim {
         }
 
         // This section deals with the common characteristics of some of the cameras
-        if (model == PiGSCam6mmWideLens || model == InnoMakerIMX296GS3_6mmM12Lens) {
+        if (model == PiGSCam6mmWideLens || 
+            model == InnoMakerIMX296GS3_6mmM12Lens ||
+            model == PiGSCam3_6mmLens) {
 
             // Sensor pixel width is 3.45uM square?  No - 6.33mm diagonal.  It appears that
             // the actual width is the full resolution (1456)  * 3.4uM = 4.95mm,

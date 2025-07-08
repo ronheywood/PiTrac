@@ -331,6 +331,10 @@ namespace golf_sim {
         //      cv::Vec2d angles_camera_perspective,
         //      douible velocity
 
+        bool DetermineHandedness(const std::vector<GolfBall>& input_balls,
+                                GolferOrientation& handedness);
+
+
         bool analyzeShotImages( const GolfSimCamera& camera, 
                                 const cv::Mat& rgbImg1,
                                 const cv::Mat& rgbImg2,

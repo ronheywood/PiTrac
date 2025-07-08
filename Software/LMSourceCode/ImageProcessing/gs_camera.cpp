@@ -220,6 +220,45 @@ namespace golf_sim {
     GolfSimCamera::~GolfSimCamera() {
     }
 
+    bool GolfSimCamera::DetermineHandedness(const std::vector<GolfBall>& input_balls,
+                                            GolferOrientation& handedness) {
+
+        GS_LOG_TRACE_MSG(trace, "DetermineHandedness called with " + std::to_string(input_balls.size()) + " balls.");
+
+        if (input_balls.size() < 2) {
+            GS_LOG_TRACE_MSG(warning, "DetermineHandedness - balls vector was empty.Exiting function.");
+            return false;
+        }
+
+        // Get a copy of the input balls so that we can sort it ourselves.
+        std::vector<GolfBall> balls = input_balls;
+
+        // Sort by x-position, with the first balls being the left-most
+        std::sort(balls.begin(), balls.end(), [](const GolfBall& a, const GolfBall& b)
+            { return (a.x() < b.x()); });
+
+        // Counts the pairs of balls where the left ball is lower than the right ball
+        int positive_slope_count = 0;
+
+        for (int i = 0; i < (int)balls.size() - 1; i++) {
+            const GolfBall& ball1 = balls[i];
+            const GolfBall& ball2 = balls[i + 1];
+
+            if (ball1.y() >= ball2.y()) {
+                positive_slope_count++;
+            }
+            else {
+                positive_slope_count--;
+            }
+        }
+
+        handedness = (positive_slope_count >= 0) ? GolferOrientation::kRightHanded : GolferOrientation::kLeftHanded;
+        std::string handedness_string = (handedness == GolferOrientation::kRightHanded) ? "right_handed" : "left_handed";
+        GS_LOG_TRACE_MSG(trace, "DetermineHandedness result: " + handedness_string + ", with positive_slope_count = " + std::to_string(positive_slope_count));
+
+        return true;
+    }
+
     int GolfSimCamera::getExpectedBallRadiusPixels(const CameraHardware& camera_hardware, const int resolution_x_, const double distance) {
 
         if (!camera_hardware.cameraInitialized || resolution_x_ <= 0) {
@@ -2108,6 +2147,17 @@ namespace golf_sim {
             }
 
             ShowAndLogBalls("AnalyzeStrobedBall_Initial_Candidate_Balls", strobed_balls_color_image, initial_balls, kLogIntermediateExposureImagesToFile);
+
+            GolferOrientation handedness;
+
+            if (!DetermineHandedness(initial_balls, handedness)) {
+                GS_LOG_MSG(warning, "Could not determine player handedness from shot.");
+                return false;
+            }
+
+            // Override the handedness that was sent in from the command line.  
+            // The command-line is going to be deprecated - TBD
+            GolfSimOptions::GetCommandLineOptions().golfer_orientation_ = handedness;
 
             // Save the best and 2nd-best balls based on the GetBall's sorting
             // Do this here after we've gotten rid of any low-quality/angle balls above

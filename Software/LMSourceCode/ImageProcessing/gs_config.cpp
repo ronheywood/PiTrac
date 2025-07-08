@@ -205,6 +205,10 @@ bool GolfSimConfiguration::ReadValues() {
     if (slot1_env.empty()) {
         GS_LOG_TRACE_MSG(info, "GolfSimConfiguration - PITRAC_SLOT1_CAMERA_TYPE environment variable was not set.  Assuming default of: " + std::to_string(GolfSimCamera::kSystemSlot1CameraType));
     } else {
+#ifndef __unix__  // Ignore in Windows environment
+		// Ensure we don't have any trailing spaces.  Visual Studio seems to add them?
+		slot1_env = slot1_env.substr(0,1);
+#endif
         GolfSimCamera::kSystemSlot1CameraType = CameraHardware::string_to_camera_model(slot1_env);
     }
 
@@ -215,7 +219,11 @@ bool GolfSimConfiguration::ReadValues() {
             GS_LOG_TRACE_MSG(error, "GolfSimConfiguration - PITRAC_SLOT2_CAMERA_TYPE environment variable must be set when running in single-pi mode, but was not.  Exiting.");
             return false;
         } else {
-            GS_LOG_TRACE_MSG(info, "GolfSimConfiguration - PITRAC_SLOT2_CAMERA_TYPE environment variable was not set.  Assuming default of: " + std::to_string(GolfSimCamera::kSystemSlot2CameraType));
+#ifndef __unix__  // Ignore in Windows environment
+			// Ensure we don't have any trailing spaces
+			slot2_env = slot2_env.substr(0, 1);
+#endif
+			GS_LOG_TRACE_MSG(info, "GolfSimConfiguration - PITRAC_SLOT2_CAMERA_TYPE environment variable was not set.  Assuming default of: " + std::to_string(GolfSimCamera::kSystemSlot2CameraType));
         }
     } else {
         GolfSimCamera::kSystemSlot2CameraType = CameraHardware::string_to_camera_model(slot2_env);

@@ -1,15 +1,29 @@
 # Image Analysis Bounded Context
 
-This bounded context provides clean abstractions for golf ball image analysis capabilities, enabling the system to detect teed balls, movement, ball flight analysis, and ball reset detection.
+This bounded context provides clean abstractions for golf ball image analysis capabilities, enabling the system to detect teed balls, movement, ball flight analysis, and ball reset detection. It follows Domain-Driven Design principles with a roadmap for porting over the physics-based speed detection.
+
+### Requires Camera Calibration Integration
+
+Once merged - the Camera bounded context can be used to create the calibration parameters. This will enable the 3D coordinate transformations found in gs_camera.cpp
+  
+**Files to modify**: `domain/value_objects.hpp`, `domain/analysis_results.hpp`  
+
+**Next Steps**: See [Implementation Roadmap](#implementation-roadmap) below for the complete TODO action plan.
 
 ## Architecture
 
-The implementation follows Clean Architecture principles with clear separation of concerns:
+---
+
+## Architecture Detail
+
+### Clean Architecture Implementation
+
+The implementation follows Clean Architecture principles with layers for abstracting implementation details:
 
 ```
 ImageAnalysis/
 ├── domain/              # Business rules and entities (technology-agnostic)
-│   ├── value_objects.hpp    # BallPosition, ImageBuffer, BallState
+│   ├── value_objects.hpp    # BallPosition, ImageBuffer, BallState, CameraCalibrationRef
 │   ├── analysis_results.hpp # TeedBallResult, MovementResult, FlightAnalysisResult  
 │   └── interfaces.hpp       # IImageAnalyzer interface
 ├── application/         # Use cases and application services
@@ -19,7 +33,28 @@ ImageAnalysis/
 │   └── ml_image_analyzer.hpp          # ML/AI framework (YOLO, TensorFlow, etc.)
 ├── image_analysis.hpp   # Public API (main entry point)
 └── image_analysis.cpp   # API implementation
+
+External Dependencies:
+├── Camera/              # Camera bounded context (separate PR)
+│   └── calibration_service.hpp # Provides CameraCalibration objects
 ```
+
+### Current Speed Detection Architecture
+
+**Current Implementation** (DDD Phase - Placeholder Algorithms):
+> **Note**: These are simplified placeholder algorithms designed to validate the approval test framework and clean DDD architecture. They provide example functionality until the existing 3D physics implementation is ported over.
+
+- **2D pixel-space calculations**: Simple x/y displacement over time (placeholder for 3D world coordinates)
+- **Fixed timing**: Hardcoded 1ms intervals (`TEMPORAL_SPACING_US = 1000`) (placeholder for dynamic hardware timing)
+- **No camera correction**: Direct pixel-to-meter conversion without perspective adjustment (placeholder for full 3D calibration)
+- **Basic physics**: Linear velocity calculation without spin (placeholder)
+
+**Target Implementation** (After Physics Integration):
+- **3D world coordinates**: Uses `gs_camera.cpp` coordinate transformation algorithms
+- **Dynamic timing**: Hardware strobe interval synchronization from `GetStrobeInterval()`
+- **Camera calibration**: 3D perspective correction using focal length and sensor dimensions
+- **Physics**: 3D Euclidean distance with air resistance compensation from gs_camera.cpp
+`GolfSimCamera::CalculateBallVelocity()`
 
 ## Usage
 
@@ -74,42 +109,29 @@ if (movement_result.movement_detected) {
 }
 ```
 
-### Ball Flight Analysis
+### Current Ball Flight Analysis (2D Approach)
 
-```cpp
-// Analyze strobed high-speed image for ball flight
-domain::ImageBuffer strobed_image = ...;
-domain::BallPosition calibration_ref = ...;
-
-auto flight_result = service->AnalyzeBallFlight(strobed_image, calibration_ref);
-if (!flight_result.detected_balls.empty()) {
-    std::cout << "Detected " << flight_result.detected_balls.size() 
-              << " ball positions in flight" << std::endl;
-              
-    if (flight_result.velocity_vector) {
-        auto vel = *flight_result.velocity_vector;
-        std::cout << "Velocity: (" << vel[0] << ", " << vel[1] << ", " << vel[2] << ") m/s" << std::endl;
-    }
-}
-```
+**Current State**: Basic 2D pixel-space velocity calculation with fixed timing
+- Returns velocity vector in m/s with ±10-20% accuracy
+- Uses hardcoded temporal spacing assumptions
+- No camera perspective correction applied
+- Suitable for development and testing phases
 
 ## Available Implementations
 
 ### OpenCV Implementation (`opencv`)
 - **Technology**: OpenCV Hough Circle Detection
-- **Strengths**: Sophisticated algorithm tuned for golf ball physics, handles complex lighting
-- **Use Cases**: Production-ready, handles most golf ball detection scenarios
 - **Dependencies**: Existing `BallImageProc` and `GolfSimCamera` classes
 
-### ML Implementation (`ml` - Future)
+### Example of a theoretical alternative Implementation (`machine learning` )
 - **Technology**: YOLO v5/v8, TensorFlow Lite, PyTorch Mobile
-- **Strengths**: Modern AI approaches, potentially better accuracy in difficult conditions  
 - **Use Cases**: Experimentation, challenging lighting/backgrounds
 - **Dependencies**: Model files, ML framework libraries
 
-## Extending with New Implementations
+## Adding or Testing New Implementations
 
-To add a new analyzer implementation:
+If you wanted to add a new analyzer implementation, but still keep existing logic working:
+For example using a trained model built from Machine Learning frameworks like TensorFlow:
 
 1. Create a class implementing `domain::IImageAnalyzer`
 2. Place it in `infrastructure/` folder
@@ -137,7 +159,7 @@ namespace golf_sim::image_analysis::infrastructure {
 
 ## Integration with Existing Code
 
-This bounded context is designed to integrate seamlessly with the existing PiTrac system:
+This bounded context is designed to integrate with the existing PiTrac system:
 
 - **OpenCV Implementation**: Wraps existing `BallImageProc` logic
 - **Camera Integration**: Compatible with `GolfSimCamera` strobed analysis
@@ -167,27 +189,75 @@ TEST(OpenCVAnalyzerTest, DetectsTeedBall) {
 
 ## Performance Considerations
 
-- **OpenCV Implementation**: ~5-15ms per frame (depending on image size and parameters)
-- **ML Implementation**: ~10-50ms per frame (depending on model complexity)
 - **Memory Usage**: Minimal overhead beyond underlying implementations
 - **Threading**: All implementations are thread-safe for read operations
 
-## Migration from Existing Code
+## Migration Guide
 
-Existing code using `BallImageProc` directly can be migrated gradually:
+### Migration Steps
 
-```cpp
-// Old approach
-golf_sim::BallImageProc processor;
-golf_sim::GolfBall ball = processor.FindBall(cv_image);
+**Phase 1: Current Migration (Basic DDD)**
+- Replace `BallImageProc` direct usage with DDD service interface
+- Maintain existing algorithms during architectural transition
+- Clean separation of concerns with immutable value objects
 
-// New approach  
-auto service = CreateAnalysisService("opencv");
-domain::ImageBuffer image{cv_image, std::chrono::microseconds{0}};
-auto result = service->AnalyzeTeedBall(image);
+**Phase 2: Enhanced Migration (3D Physics Integration)**
+- Integrate Camera bounded context for calibration parameters
+- Port 3D coordinate transformation logic from `gs_camera.cpp`
+- Implement physics-based velocity calculations
+- Target: Preserve legacy system behavior
 
-// Convert back if needed
-if (result.position) {
-    golf_sim::GolfBall ball = ConvertToDomainObject(*result.position);
-}
-```
+### Migration Timeline
+
+1. **Immediate** (Current): Create DDD interface with enough logic to get automated tests running in pipelines
+2. **Phase 2**: Camera calibration integration after Camera bounded context PR
+3. **Phase 3**: Port existing behavior to Bounded Context
+4. **Phase 3a** Add Feature switching to divert code to new BC logic in NonProd or for UAT Testing
+5. **Phase 3b** Complete migration deprecating `gs_camera.cpp`
+
+---
+
+## Additional Resources
+
+### Related Documentation
+- **Camera Bounded Context**: 
+[Pull Request](https://github.com/jamespilgrim/PiTrac/pull/87) Provides camera abstractions and calibration data.
+
+## Camera Bounded Context Integration
+
+### Architecture Decision: Separation of Concerns
+
+The Camera bounded context (separate PR) will handle:
+- **Camera hardware management** (initialization, configuration)
+- **Calibration parameters** (focal length, sensor dimensions, distortion coefficients)
+- **Camera-specific operations** (frame capture, timing synchronization)
+
+ImageAnalysis bounded context will:
+- **Consume calibration data** from Camera context via dependency injection
+- **Focus on ball detection and tracking** algorithms
+- **Perform coordinate transformations** using Camera-provided parameters
+- **Calculate velocities and trajectories** in world coordinates
+
+### Integration Pattern
+
+**Clean separation between bounded contexts:**
+- ImageAnalysis focuses on ball detection and velocity calculation algorithms
+- Camera context provides calibration data via dependency injection
+- Hardware timing integration through service interfaces
+- No duplication of camera management logic across contexts
+- No requirement for physical cameras or strobe capture of real ball flight when working on the code
+
+**Key Benefits:**
+1. **Single Responsibility**: Each context handles its domain expertise
+2. **Reduced Coupling**: Clean dependency direction (ImageAnalysis → Camera)
+3. **Reusability**: Camera calibration shared across multiple contexts
+4. **Testability**: Mock camera services for isolated testing
+
+### Success Criteria
+
+#### ✅ Phase 1 Complete When:
+- [ ] **Behavior maintained** algorithms in the legacy implementation can be duplicated
+- [ ] **Automated tests passing** Approval tests and unit tests give developer feedback to protect against regression
+- [ ] **Camera BC integrated** into analysis pipeline - no physical camera required in the build agents
+
+---

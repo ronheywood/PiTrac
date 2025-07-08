@@ -154,10 +154,10 @@ namespace golf_sim {
 			GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2AutoCalibrate ||
 			GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2BallLocation) {
 
-			// Double the pulse length, because we are only going to send one pulse
-			number_bits_for_on_pulse *= 3;
+			// Double the basic "on" pulse length, because we are only going to send one pulse
+			number_bits_for_on_pulse *= 2;
 			// Ensure the pulse is not so long that the ball will be over-saturated
-			number_bits_for_on_pulse = std::max(15, number_bits_for_on_pulse);
+			number_bits_for_on_pulse = std::min(15, number_bits_for_on_pulse);
 			GS_LOG_TRACE_MSG(trace, "Due to still/calibration/locate mode, will send a pulse of length: " + std::to_string(number_bits_for_on_pulse));
 		}
 

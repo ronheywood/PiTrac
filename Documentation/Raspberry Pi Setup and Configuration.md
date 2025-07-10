@@ -705,8 +705,8 @@ export PITRAC_SLOT2_CAMERA_TYPE=4
 
 #### Setup PiTrac GUI
 
-26. First, make sure you’ve setup the required IP and directory values in the golf\_sim\_config.json file.  Instructions are [here](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20configuration%20and%20the%20golf_sim_config.json%20file.md).  
-    1. The value tells the web-based PiTrac GUI where to look for the .json configuration file, which the GUI in turn uses to know where to look for certain shared image files.  
+26. First, make sure you’ve setup the required environment variables (especially PITRAC_ROOT and PITRAC_WEBSERVER_SHARE_DIR) and the directory values in the golf\_sim\_config.json file.  Instructions are [here](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20configuration%20and%20the%20golf_sim_config.json%20file.md).  
+    1. These values tell the web-based PiTrac GUI where to look for the .json configuration file, which the GUI in turn uses to know where to look for certain shared image files.  
 27. Setup the PiTrac-specific code package for the PiTrac GUI on the Tomee server  
     1. Log into the Pi 2 computer where the Tomee instance is running and make sure that $PITRAC_ROOT and other PITRAC_xxxx environment variables are set correctly as described above (can run "env | grep PITRAC") 
     2. Make sure Tomee is running:  
@@ -729,7 +729,7 @@ sed -i 's@PITRAC_WEBSERVER_SHARE_DIR@'`cat webserver_name.tmp.txt`'@g' ./src/mai
 
 rm webserver_name.tmp.txt
 ```
-    2. Run the refresh script to bring over the java and other web-based GUI files:   
+    2. Run that refresh script to bring over the java and other web-based GUI files:   
        1. You can ignore and errors from the 'sed' program regarding file permissions.
        2. `chmod 755 refresh_from_dev.sh;./refresh_from_dev.sh`  
        3. NOTE that the above script will also move a copy of the golf\_sim\_config.json file into the shared directory that the GUI can access in order to get information about its run-time environment.  The PiTrac GUI in particular needs the "kWebServerTomcatShareDirectory" value in order to know where to find diagnostic images.  
@@ -754,7 +754,7 @@ rm webserver_name.tmp.txt
           2. `sudo chmod -R 777 golfsim`  
           3. `sudo systemctl restart tomee`  (the first error will ‘stick’ otherwise)  
        10. However you deploy the app, confirm you can see the PiTrac GUI by entering the following into your browser:  
-           1. `http://<The-Pi-2-name-or-IP>:8080/golfsim/monitor?config_filename=%2Fhome%2F<Whatever-your-PiTrac-User-is-and-no-<>'s >y%2FLM_Shares%2FWebShare%2Fgolf_sim_config.json`  
+           1. `http://<The-Pi-2-name-or-IP-address>:8080/golfsim/monitor?config_filename=%2Fhome%2F<Whatever-your-PiTrac-User-is-and-no-<>'s >y%2FLM_Shares%2FWebShare%2Fgolf_sim_config.json`  
        11. You should see the PiTrac GUI
 
 **CONGRATULATIONS\!** \- At this point, you’ve (hopefully) built the PiTrac software.  Please see the [Startup Documentation](https://github.com/jamespilgrim/PiTrac/blob/main/Documentation/PiTrac%20Start-Up%20Documentation.md) for how to get PiTrac working\!

@@ -291,6 +291,8 @@ public:
 
     static void GetRotatedImage(const cv::Mat& gray_2D_input_image, const GolfBall& ball, const cv::Vec3i rotation, cv::Mat& outputGrayImg);
 
+    static bool RemoveSmallestConcentricCircles(std::vector<GsCircle>& circles);
+
     // Img would be a constant reference, but we need to perform sub-imaging on it, so keep non-const for now
     // reference_ball_circle is the circle around where the best approximation of where the ball is
     static cv::RotatedRect FindLargestEllipse(cv::Mat& img, const GsCircle& reference_ball_circle, int mask_radius);

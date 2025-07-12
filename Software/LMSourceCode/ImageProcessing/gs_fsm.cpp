@@ -205,19 +205,23 @@ namespace golf_sim {
             return state::WaitingForBallStabilization{ lastBallAcquisitionTime, std::chrono::steady_clock::now(), ball, img };
         }
 
-        // The ball was not found.  Report it and then get back into the event loop so 
+
+        // The ball was NOT found.  Report it and then get back into the event loop so 
         // we can check again asap.
         if (GolfSimOptions::GetCommandLineOptions().artifact_save_level_ == ArtifactSaveLevel::kAll) {
             LoggingTools::LogImage("", img, std::vector < cv::Point >{}, true, "log_last_no_ball_img");
         }
 
         // Create an image that the monitor can show the player in order to see where the LM is looking
-        // for the ball.
+        // for the ball, if there is a search area set.
         // TBD - Figure out a clearer way to pass back the search-area information
-        cv::Scalar c1(255, 255, 255);
-        cv::circle(img, cv::Point(ball.search_area_center_[0], ball.search_area_center_[1]), ball.search_area_radius_, c1, 2);
 
-        // TBD -Make a low-res JPEG out of this so it doesn't take up so much space
+        if (ball.search_area_radius_ > 0.01) {
+            cv::Scalar c1(255, 255, 255);
+            cv::circle(img, cv::Point(ball.search_area_center_[0], ball.search_area_center_[1]), ball.search_area_radius_, c1, 2);
+        }
+
+        // TBD -Make a low-res JPEG out of this so it doesn't take up so much space to store
         GsUISystem::SaveWebserverImage(GsUISystem::kWebServerBallSearchAreaImage, img, true);
 
         // Queue up another event to get back here (after processing any other waiting events)

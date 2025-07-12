@@ -75,6 +75,9 @@ namespace golf_sim {
     float GolfSimCamera::kMinMovedBallRadiusRatio = 0.50f;
     double GolfSimCamera::kMinRadiusRatio = 0.7;
     double GolfSimCamera::kMaxRadiusRatio = 1.2;
+    // Fixed amount to subtract or add to an expected radius to produce a reasonable range
+    int GolfSimCamera::kMinRadiusOffset = 10;
+    int GolfSimCamera::kMaxRadiusOffset = 10;
 
     double GolfSimCamera::kUnlikelyAngleMinimumDistancePixels = 40;
     double GolfSimCamera::kMaxQualityExposureLaunchAngle = 45.0;
@@ -183,6 +186,8 @@ namespace golf_sim {
         GolfSimConfiguration::SetConstant("gs_config.ball_position.kMinMovedBallRadiusRatio", kMinMovedBallRadiusRatio);
         GolfSimConfiguration::SetConstant("gs_config.ball_position.kMinRadiusRatio", kMinRadiusRatio);
         GolfSimConfiguration::SetConstant("gs_config.ball_position.kMaxRadiusRatio", kMaxRadiusRatio);
+        GolfSimConfiguration::SetConstant("gs_config.ball_position.kMinRadiusOffset", kMinRadiusOffset);
+        GolfSimConfiguration::SetConstant("gs_config.ball_position.kMaxRadiusOffset", kMaxRadiusOffset);
 
         
         GolfSimConfiguration::SetConstant("gs_config.ball_exposure_selection.kUnlikelyAngleMinimumDistancePixels", kUnlikelyAngleMinimumDistancePixels);
@@ -224,6 +229,7 @@ namespace golf_sim {
                                             GolferOrientation& handedness) {
 
         GS_LOG_TRACE_MSG(trace, "DetermineHandedness called with " + std::to_string(input_balls.size()) + " balls.");
+        LoggingTools::Trace("Input Balls: ", input_balls);
 
         if (input_balls.size() < 2) {
             GS_LOG_TRACE_MSG(warning, "DetermineHandedness - balls vector was empty.Exiting function.");
@@ -231,11 +237,13 @@ namespace golf_sim {
         }
 
         // Get a copy of the input balls so that we can sort it ourselves.
-        std::vector<GolfBall> balls = input_balls;
+        std::vector<GolfBall> balls(input_balls);
 
         // Sort by x-position, with the first balls being the left-most
         std::sort(balls.begin(), balls.end(), [](const GolfBall& a, const GolfBall& b)
             { return (a.x() < b.x()); });
+
+        LoggingTools::Trace("Sorted Balls: ", balls);
 
         // Counts the pairs of balls where the left ball is lower than the right ball
         int positive_slope_count = 0;
@@ -243,6 +251,11 @@ namespace golf_sim {
         for (int i = 0; i < (int)balls.size() - 1; i++) {
             const GolfBall& ball1 = balls[i];
             const GolfBall& ball2 = balls[i + 1];
+
+            // Don't compare concentric balls
+            if (ball1.x() == ball2.x() && ball1.y() == ball2.y()) {
+                continue;
+            }
 
             if (ball1.y() >= ball2.y()) {
                 positive_slope_count++;
@@ -332,11 +345,11 @@ namespace golf_sim {
     // Expects a single ball to be placed near the expectedBallCenter at a certain
     // distance from the camera.
     // Returns true iff the input ball was successfully calibrated
-    bool GolfSimCamera::GetCalibratedBall(const GolfSimCamera& camera, 
-                                          const cv::Mat& rgbImg,
-                                          GolfBall& b,
-                                          const cv::Vec2i& expectedBallCenter,
-                                          const bool expectBall) {
+    bool GolfSimCamera::GetCalibratedBall(const GolfSimCamera& camera,
+        const cv::Mat& rgbImg,
+        GolfBall& b,
+        const cv::Vec2i& expectedBallCenter,
+        const bool expectBall) {
 
         GS_LOG_TRACE_MSG(trace, "GetCalibratedBall");
 
@@ -381,7 +394,7 @@ namespace golf_sim {
             GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1BallLocation ||
             GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2BallLocation ||
             GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera1TestStandalone ||
-            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2TestStandalone ) {
+            GolfSimOptions::GetCommandLineOptions().system_mode_ == SystemMode::kCamera2TestStandalone) {
 
             if (kCamera1CalibrationDistanceToBall > 0.01) {
                 if (GolfSimOptions::GetCommandLineOptions().GetCameraNumber() == GsCameraNumber::kGsCamera1) {
@@ -393,13 +406,13 @@ namespace golf_sim {
                 GS_LOG_TRACE_MSG(trace, "GetCalibratedBall overriding expected_distance.  Setting to: " + std::to_string(expected_distance));
             }
         }
-        
+
         GS_LOG_TRACE_MSG(trace, "GetCalibratedBall using expected ball distance of: " + std::to_string(expected_distance));
 
         // TBD - Will want to be able to vary the calibration distance later
         double expectedRadius = getExpectedBallRadiusPixels(camera.camera_hardware_, rgbImg.cols, expected_distance);
-        int min = int(expectedRadius * kMinRadiusRatio);
-        int max = int(expectedRadius * kMaxRadiusRatio);
+        int min = std::max(0, (int)std::round(expectedRadius) - kMinRadiusOffset);
+        int max = int((int)expectedRadius + kMaxRadiusOffset);
 
         ip->min_ball_radius_ = min;
         ip->max_ball_radius_ = max;
@@ -421,11 +434,19 @@ namespace golf_sim {
                            (int)(2. * search_area_radius), (int)(2. * search_area_radius) };
         }
 
-        int mask_radius = int(expectedRadius * kTeedBallSearchAreaMaskRadiusRatio);
-        GS_LOG_TRACE_MSG(trace, "GetCalibratedBall using search mask_radius (computed using kTeedBallSearchAreaMaskRadiusRatio=" + std::to_string(kTeedBallSearchAreaMaskRadiusRatio) + " of: " + std::to_string(mask_radius));
+        int mask_radius = 0;
 
-        ip->area_mask_image_ = CvUtils::GetAreaMaskImage(rgbImg.cols, rgbImg.rows, expected_ball_X, expected_ball_Y, mask_radius, roi);
-        LoggingTools::DebugShowImage("AreaMaskImage Photo", ip->area_mask_image_);
+        if (kTeedBallSearchAreaMaskRadiusRatio > 0.01) {
+            mask_radius = int(expectedRadius * kTeedBallSearchAreaMaskRadiusRatio);
+            GS_LOG_TRACE_MSG(trace, "GetCalibratedBall using search mask_radius (computed using kTeedBallSearchAreaMaskRadiusRatio=" + std::to_string(kTeedBallSearchAreaMaskRadiusRatio) + " of: " + std::to_string(mask_radius));
+            ip->area_mask_image_ = CvUtils::GetAreaMaskImage(rgbImg.cols, rgbImg.rows, expected_ball_X, expected_ball_Y, mask_radius, roi);
+            LoggingTools::DebugShowImage("AreaMaskImage Photo", ip->area_mask_image_);
+        }
+        else {
+            cv::Mat nullAreaMaskImage;
+            ip->area_mask_image_ = nullAreaMaskImage;
+            GS_LOG_TRACE_MSG(trace, "GetCalibratedBall not using a search mask_radius (because kTeedBallSearchAreaMaskRadiusRatio was = " + std::to_string(kTeedBallSearchAreaMaskRadiusRatio));
+        }
 
         // The whole point here is that we don't know the color until we calibrate, so force a 
         // very broad color range mask
@@ -485,15 +506,6 @@ namespace golf_sim {
         ShowAndLogBalls("GetBallReturnedBalls Final Ball:", rgbImg, final_ball, kLogIntermediateExposureImagesToFile);
 
 
-
-
-        // TBD- Put the rest of this method into a different method
-        /*
-        if (!SetCalibrationInformation(b, )) {
-            GS_LOG_MSG(error, "Failed to SetCalibrationInformation.");
-            return false;
-        }
-        */
 
         // We were able to discern a circle that the system thinks is a ball - return the ball with the information corresponding to it inside
 
@@ -575,6 +587,13 @@ namespace golf_sim {
         b.ball_hsv_range_.max = hsvRange[1];
     }
 
+    bool GolfSimCamera::ReverseBallAngleDeltas(GolfBall& ball) {
+        // TBD - Just started work on this.  Not sure we need to negate ALL of the angles
+        // If this is wrong, it can scew up the spin analysis.
+        // ball.position_deltas_ball_perspective_ = -ball.position_deltas_ball_perspective_;
+        ball.angles_ball_perspective_ = -ball.angles_ball_perspective_;
+        return true;
+    }
 
     bool GolfSimCamera::ComputeBallDeltas(GolfBall& ball1, GolfBall& ball2, const GolfSimCamera& first_camera, const GolfSimCamera& second_camera) {
 
@@ -735,7 +754,7 @@ namespace golf_sim {
             double camera_height_above_ball = camera_positions_from_origin[1];
             double zDistanceToBall = camera_positions_from_origin[2];
 
-            if (camera_height_above_ball < 0.0 || zDistanceToBall <= 0.0) {
+            if (camera_height_above_ball < 0.0 || std::abs(zDistanceToBall) <= 0.001) {
                 LoggingTools::Warning("GolfSimCamera::computeCameraAnglesToBallPlane called, but camera_height_above_ball_ or zDistanceToBall <= 0 (and likely not set)");
             }
 
@@ -1043,7 +1062,7 @@ namespace golf_sim {
         // NOTE that the Z distance is the line-of-sight distance from the lens to the ball.
         bool GolfSimCamera::ComputeXyzDistanceFromOrthoCamPerspective(const GolfSimCamera& camera, const GolfBall& b1, cv::Vec3d& distances) {
 
-            if (b1.distance_to_z_plane_from_lens_ <= 0.0001) {
+            if (std::abs(b1.distance_to_z_plane_from_lens_) <= 0.0001) {
                 LoggingTools::Warning("ComputeXyzDistanceFromOrthoCamPerspective called without setting the ball line-of-sight-distance");
                 return false;
             }
@@ -1135,7 +1154,7 @@ namespace golf_sim {
 
             // Deal with case where the ball may not have moved (or some other problem occurred).  
             // In this case, just return 0's.
-            if (position_deltas_ball_perspective[2] <= 0.001) {
+            if (std::abs(position_deltas_ball_perspective[2]) <= 0.001) {
                 GS_LOG_MSG(error, "getXYDeltaAnglesBallPerspective:  b2.distance_to_z_plane_from_lens_ was 0!");
                 deltaAnglesBallPerspective = (0, 0);
                 return true;   // Don't error out on this
@@ -1859,6 +1878,10 @@ namespace golf_sim {
 
                     if (x_distance_pixels > kUnlikelyAngleMinimumDistancePixels) {
                         // The balls are too far apart to want to check for unlikely angles
+                        continue;
+                    }
+                    else if (x_distance_pixels == 0 && b.y() == current_ball.y()) {
+                        // The balls are concentric, so don't do anything
                         continue;
                     }
                     else if (x_distance_pixels < 0.001) {
@@ -3153,7 +3176,7 @@ namespace golf_sim {
             // Normalize the balls such that ball1 is to the left and ball2 is to the right
             // NOTE - This should still be the same for left-handed shots.  Although doing so
             // will mean that the spin analysis will essentially be backward, the shot is also 
-            // in a sense reversed, and TBD I think the two effects will cancel each other out.
+            // in a sense reversed, and TBD I think the two effects will cancel each other out with respect to spin.
             if (first_strobed_ball.x() > second_strobed_ball.x()) {
                 ball2 = first_strobed_ball;
                 ball1 = second_strobed_ball;
@@ -3175,8 +3198,14 @@ namespace golf_sim {
             }
 
             // The ball's position is useful for later analysis
-            GS_LOG_MSG(info, "Teed-up Ball:" + ball1.Format() + "\n");
+            GS_LOG_MSG(info, "'First' Ball After ComputeBallDeltas:" + ball1.Format() + "\n");
 
+            if (GolfSimOptions::GetCommandLineOptions().golfer_orientation_ == GolferOrientation::kLeftHanded) {
+                if (!ReverseBallAngleDeltas(ball2)) {
+                    GS_LOG_MSG(error, "ProcessReceivedCam2Image - failed to ReverseBallDeltas for ball2.");
+                    return false;
+                }
+            }
 
             GS_LOG_TRACE_MSG(trace, "ProcessReceivedCam2Image - ball2 (with delta information) is:\n" + ball2.Format());
 
@@ -3189,6 +3218,9 @@ namespace golf_sim {
             // the strobed images.  Given the distance from the initial ball and the later in-flight
             // exposures, the average angles should be pretty accurate, even if, for example, there is
             // some noisy calculations of the radius of the strobed ball exposures.
+            // TBD - Because the ball moves in a non-linear manner for the period of time that the ball
+            // is in contact with the club, we may want to compute the Ball Deltas using only the strobed 
+            // balls!  
 
             std::vector<GolfBall> camera1_average_ball_vector;
 
@@ -3199,6 +3231,13 @@ namespace golf_sim {
                 if (!camera_1.ComputeBallDeltas(calibrated_ball, ball2, camera_1, camera_2)) {
                     GS_LOG_MSG(error, "ProcessReceivedCam2Image - failed to ComputeBallLocation between initial ball and strobed ball.");
                     return false;
+                }
+
+                if (GolfSimOptions::GetCommandLineOptions().golfer_orientation_ == GolferOrientation::kLeftHanded) {
+                    if (!ReverseBallAngleDeltas(ball2)) {
+                        GS_LOG_MSG(error, "ProcessReceivedCam2Image - failed to ReverseBallDeltas for ball2.");
+                        return false;
+                    }
                 }
 
                 GS_LOG_TRACE_MSG(trace, "ProcessReceivedCam2Image - Strobed Ball (for averaging) is:\n" + ball2.Format());
@@ -3217,7 +3256,7 @@ namespace golf_sim {
 
             GS_LOG_TRACE_MSG(trace, "Averaged angles from the initial, stationary ball to each strobed ball:\n" + camera1_averaged_ball.Format());
 
-            // Overwrite the angle information with the (hopefully) more accurate angles formed by the
+            // Initially overwrite the angle information with the (hopefully) more accurate angles formed by the
             // initial ball to each of the strobed balls
             result_ball.angles_ball_perspective_ = camera1_averaged_ball.angles_ball_perspective_;
             result_ball.angles_camera_ortho_perspective_ = camera1_averaged_ball.angles_camera_ortho_perspective_;
@@ -3244,8 +3283,20 @@ namespace golf_sim {
                 GS_LOG_MSG(error, "ProcessReceivedCam2Image - failed to ComputeBallLocation between initial ball and strobed ball.");
                 return false;
             }
+
+            if (GolfSimOptions::GetCommandLineOptions().golfer_orientation_ == GolferOrientation::kLeftHanded) {
+                if (!ReverseBallAngleDeltas(average_of_strobed_ball_data)) {
+                    GS_LOG_MSG(error, "ProcessReceivedCam2Image - failed to ReverseBallDeltas for ball2.");
+                    return false;
+                }
+            }
+
             GS_LOG_TRACE_MSG(trace, "ComputeAveragedStrobedBallData returned ball=:" + average_of_strobed_ball_data.Format());
 
+
+
+            // Overwrite the VLA angle information with the (hopefully) more accurate angles formed by the angles between each of the strobed balls
+            result_ball.angles_ball_perspective_[1] = average_of_strobed_ball_data.angles_ball_perspective_[1];
 
             // Send a quick IPCResult message here to allow the user to quickly
             // see the angular and velocity information before we do the (lengthy) spin measurement.
@@ -3480,7 +3531,6 @@ namespace golf_sim {
                         GS_LOG_MSG(error, "ComputeAveragedStrobedBallData failed.");
                         return false;
                     }
-
 
                     delta_balls.push_back(ball2);
                 }
@@ -4131,8 +4181,11 @@ namespace golf_sim {
             // Because we know the exact distance to the ball, the expected radius ranges
             // should be pretty tight
             double expectedRadius = getExpectedBallRadiusPixels(camera.camera_hardware_, camera.camera_hardware_.resolution_x_, distance_direct_to_ball);
-            ip->min_ball_radius_ = int(expectedRadius * 0.9);
-            ip->max_ball_radius_ = int(expectedRadius * 1.2);
+
+            // The problem with calculating the min/max ball radii using a multiplicative ratio, 
+            // is that for smaller expected radii, the range ended up too small.
+            ip->min_ball_radius_ = std::max(0, (int)expectedRadius - kMinRadiusOffset);
+            ip->max_ball_radius_ = (int)expectedRadius + kMaxRadiusOffset;
 
             GS_LOG_TRACE_MSG(trace, "Min/Max expected ball radii are: " + std::to_string(ip->min_ball_radius_) + " / " + std::to_string(ip->max_ball_radius_));
 

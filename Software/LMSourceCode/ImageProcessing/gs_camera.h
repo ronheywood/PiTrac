@@ -144,6 +144,11 @@ namespace golf_sim {
         static double kMinRadiusRatio;
         static double kMaxRadiusRatio;
 
+        // Used generally to create a reasonable range around an expected or other radius
+        static int kMinRadiusOffset;
+        static int kMaxRadiusOffset;
+
+
         static double kUnlikelyAngleMinimumDistancePixels;
         static double kMaxQualityExposureLaunchAngle;
         static double kMinQualityExposureLaunchAngle;
@@ -224,6 +229,9 @@ namespace golf_sim {
 
         // In some cases, camera_1 will be the same as for camera_2 (such as comparing two strobed balls from camera 2).
         static bool ComputeBallDeltas(GolfBall& ball1, GolfBall& ball2, const GolfSimCamera& first_camera, const GolfSimCamera& second_camera);
+
+        // This will reverse whatever values are necessary to "correct" the processing for left-handed shots
+        static bool ReverseBallAngleDeltas(GolfBall& ball);
 
         static bool ComputeSingleBallXYZOrthoCamPerspective(const GolfSimCamera& camera, GolfBall& initial_ball);
 

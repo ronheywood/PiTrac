@@ -769,7 +769,7 @@ namespace golf_sim {
                 // Don't want to get too crazy loose too fast in order to find more balls
                 param2_increment = use_alt ? kStrobedBallsAltParam2Increment : kStrobedBallsParam2Increment;
 
-                minimum_distance = minimum_search_radius * 0.18;  // TBD - Parameterize this!
+                minimum_distance = minimum_search_radius * .3; // 0.18f;  // TBD - Parameterize this!
 
                 // We have to have at least two candidate balls to do spin analysis
                 // Try for more tp make sure we get all the overlapped balls.
@@ -896,7 +896,7 @@ namespace golf_sim {
                 else {
                     min_ratio = kStrobedNarrowingRadiiMinRatio;
                     max_ratio = kStrobedNarrowingRadiiMaxRatio;
-                    minimum_distance = minimum_search_radius * 0.7;
+                    minimum_distance = minimum_search_radius * 0.8;
                     narrowing_radii_param2 = kStrobedNarrowingRadiiParam2;
                     narrowing_dp_param = kStrobedNarrowingRadiiDpParam;
                 }
@@ -946,38 +946,9 @@ namespace golf_sim {
                         return false;
                     }
 
-                    // Remove any concentric (nested) circles that share the same center but have different radii
-                    // TBD - this shouldn't occur, but the HOUGH_ALT_GRADIENT mode does not seem to respect the minimum
-                    // distance setting
-
-                    for (int i = 0; i < (int)(test_circles.size()) - 1; i++) {
-                        GsCircle& circle_current = test_circles[i];
-
-                        for (int j = (int)test_circles.size() - 1; j > i; j--) {
-                            GsCircle& circle_other = test_circles[j];
-
-                            if (CvUtils::CircleXY(circle_current) == CvUtils::CircleXY(circle_other)) {
-                                // The two circles are concentric.  Remove the smaller circle
-                                int radius_current = (int)std::round(circle_current[2]);
-                                int radius_other = (int)std::round(circle_other[2]);
-
-                                if (radius_other <= radius_current) {
-                                    test_circles.erase(test_circles.begin() + j);
-                                }
-                                else {
-                                    test_circles.erase(test_circles.begin() + i);
-                                    // Skip over the circle we just erased
-                                    // NOTE - i could go negative for a moment before it's incremented
-                                    // above.  That's why we are using an int
-                                    i--;
-
-                                    // There should only be one concentric pair, so we can move onto the next
-                                    // outer loop circle.  If there are move pairs, we will deal with that on
-                                    // a later loop
-                                    break;
-                                }
-                            }
-                        }
+                    if (!RemoveSmallestConcentricCircles(test_circles)) {
+                        GS_LOG_TRACE_MSG(warning, "Failed to RemoveSmallestConcentricCircles.");
+                        return false;
                     }
 
                     for (auto& c : test_circles) {
@@ -1007,7 +978,7 @@ namespace golf_sim {
                 minimum_search_radius = CvUtils::RoundAndMakeEven(average * min_ratio);
                 maximum_search_radius = CvUtils::RoundAndMakeEven(average * max_ratio);
 
-                minimum_distance = minimum_search_radius * 0.5;
+                minimum_distance = minimum_search_radius * 0.6;
 
                 /* TBD - REMOVE - Not necessary for GRADIENT_ALT now
                 if (kUseDynamicRadiiAdjustment && (search_mode == kFindPlacedBall)) {
@@ -1063,6 +1034,11 @@ namespace golf_sim {
             }
             else {
                 numCircles = 0;
+            }
+
+            if (!RemoveSmallestConcentricCircles(test_circles)) {
+                GS_LOG_TRACE_MSG(warning, "Failed to RemoveSmallestConcentricCircles.");
+                return false;
             }
 
             // If we find only a small number of circles, that may be ok.
@@ -2455,7 +2431,45 @@ namespace golf_sim {
         brightness_cutoff = i + 1;
     }
 
+    bool BallImageProc::RemoveSmallestConcentricCircles(std::vector<GsCircle> &circles) {
+        // Remove any concentric (nested) circles that share the same center but have different radii
+        // TBD - this shouldn't occur, but the HOUGH_ALT_GRADIENT mode does not seem to respect the minimum
+        // distance setting
 
+        // The incoming circles may be in any order, so have to check all pairs.
+
+        for (int i = 0; i < (int)(circles.size()) - 1; i++) {
+            GsCircle& circle_current = circles[i];
+
+            for (int j = (int)circles.size() - 1; j > i; j--) {
+                GsCircle& circle_other = circles[j];
+
+                if (CvUtils::CircleXY(circle_current) == CvUtils::CircleXY(circle_other)) {
+                    // The two circles are concentric.  Remove the smaller circle
+                    int radius_current = (int)std::round(circle_current[2]);
+                    int radius_other = (int)std::round(circle_other[2]);
+
+                    if (radius_other <= radius_current) {
+                        circles.erase(circles.begin() + j);
+                    }
+                    else {
+                        circles.erase(circles.begin() + i);
+                        // Skip over the circle we just erased
+                        // NOTE - i could go negative for a moment before it's incremented
+                        // above.  That's why we are using an int
+                        i--;
+
+                        // There should only be one concentric pair, so we can move onto the next
+                        // outer loop circle.  If there are more pairs, we will deal with that on
+                        // a later loop
+                        break;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
 
     const int kReflectionMinimumRGBValue = 245;  // Nominal is 235.  TBD - Not used - remove?
 
@@ -2778,7 +2792,11 @@ namespace golf_sim {
         // angleOffsetDeltas1 (and the floating-point version) are the angles that ball 1 must be rotated in
         // order to take it halfway to where ball 2 is
         cv::Vec3f angleOffsetDeltas1Float = (angleOffset2 - angleOffset1) / 2.0;
-        angleOffsetDeltas1Float[1] *= -1.0;  // Account for how our rotations are signed
+
+        // For left-handed shots, the first ball will be higher (and have a larger y angle), than the first, so account for that here
+        if (GolfSimOptions::GetCommandLineOptions().golfer_orientation_ == GolferOrientation::kLeftHanded) {
+            angleOffsetDeltas1Float[1] = -angleOffsetDeltas1Float[1];  // Account for how our rotations are signed
+        }
         cv::Vec3i angleOffsetDeltas1 = CvUtils::Round(angleOffsetDeltas1Float);
 
 
@@ -2790,7 +2808,9 @@ namespace golf_sim {
         
         // The second rotation deltas will be the remainder of (approximately) the other half of the necessary degrees to get everything to be the same perspective
         cv::Vec3i angleOffsetDeltas2 = CvUtils::Round(  -(( angleOffset2 - angleOffset1) - angleOffsetDeltas1Float) );
-        angleOffsetDeltas2[1] = -angleOffsetDeltas2[1];
+        if (GolfSimOptions::GetCommandLineOptions().golfer_orientation_ == GolferOrientation::kLeftHanded) {
+            angleOffsetDeltas2[1] = std::round( - ((angleOffset1[1] - angleOffset2[1]) - angleOffsetDeltas1Float[1]) );
+        }
 
 
         cv::Mat unrotatedBallImg2DimpleEdges = ball_image2DimpleEdges.clone();
@@ -2962,7 +2982,7 @@ namespace golf_sim {
         double spin_offset_angle_radians_Y = CvUtils::DegreesToRadians(spin_offset_angle[1]);
         double spin_offset_angle_radians_Z = CvUtils::DegreesToRadians(spin_offset_angle[2]);
 
-        // Peform the normalization to the real-world axes
+        // Perform the normalization to the real-world axes
         int normalized_rot_x = (int)round( (double)best_rot_x * cos(spin_offset_angle_radians_Y) + (double)best_rot_z * sin(spin_offset_angle_radians_Y) );
         int normalized_rot_y = (int)round( (double)best_rot_y * cos(spin_offset_angle_radians_X) - (double)best_rot_z * sin(spin_offset_angle_radians_X) );
 

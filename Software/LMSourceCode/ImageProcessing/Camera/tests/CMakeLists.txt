@@ -47,6 +47,7 @@ add_executable(camera_tests
     test_main.cpp
     domain/test_camera_domain.cpp
     domain/test_advanced_domain.cpp
+    domain/test_camera_discovery.cpp
     infrastructure/test_platform_selection.cpp
 )
 

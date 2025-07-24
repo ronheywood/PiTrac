@@ -7,17 +7,10 @@
 
 #include <boost/test/unit_test.hpp>
 #include "../../infrastructure/windows/windows_camera.hpp"
+#include "../../domain/camera_discovery.hpp"
 #include <opencv2/opencv.hpp>
 #include <filesystem>
 #include <fstream>
-
-// Additional includes for diagnostics
-#include <Windows.h>
-#include <mfapi.h>
-#include <mfidl.h>
-#include <mfreadwrite.h>
-#include <wrl/client.h>
-#include <string>
 
 BOOST_AUTO_TEST_SUITE(WindowsCameraTests)
 
@@ -137,108 +130,82 @@ BOOST_AUTO_TEST_CASE(capture_single_frame_for_review) {
 }
 
 BOOST_AUTO_TEST_CASE(enumerate_available_cameras) {
-    // This test helps debug camera detection issues
-    BOOST_TEST_MESSAGE("=== Camera Detection Diagnostics ===");
+    // Test the camera discovery service
+    BOOST_TEST_MESSAGE("=== Camera Discovery Service Test ===");
     
-    // Initialize Media Foundation
-    HRESULT hr = MFStartup(MF_VERSION);
-    if (FAILED(hr)) {
-        BOOST_TEST_MESSAGE("FAILED: Could not initialize Media Foundation: " << std::hex << hr);
+    // Create discovery service using factory
+    auto discovery_service = golf_sim::camera::domain::CameraDiscoveryServiceFactory::CreateDiscoveryService();
+    
+    if (!discovery_service) {
+        BOOST_TEST_MESSAGE("FAILED: Could not create camera discovery service");
         return;
     }
     
-    BOOST_TEST_MESSAGE("SUCCESS: Media Foundation initialized");
+    BOOST_TEST_MESSAGE("SUCCESS: Camera discovery service created");
     
-    // Create attributes for device enumeration
-    Microsoft::WRL::ComPtr<IMFAttributes> attributes;
-    hr = MFCreateAttributes(&attributes, 1);
-    if (FAILED(hr)) {
-        BOOST_TEST_MESSAGE("FAILED: Could not create attributes: " << std::hex << hr);
-        MFShutdown();
-        return;
-    }
+    // Discover available cameras
+    auto discovered_cameras = discovery_service->DiscoverCameras();
     
-    // Set attribute to enumerate video capture devices
-    hr = attributes->SetGUID(
-        MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE,
-        MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID
-    );
-    if (FAILED(hr)) {
-        BOOST_TEST_MESSAGE("FAILED: Could not set device type attribute: " << std::hex << hr);
-        MFShutdown();
-        return;
-    }
+    BOOST_TEST_MESSAGE("Found " << discovered_cameras.size() << " camera device(s)");
     
-    // Enumerate devices
-    IMFActivate** devices = nullptr;
-    UINT32 device_count = 0;
-    hr = MFEnumDeviceSources(attributes.Get(), &devices, &device_count);
-    
-    if (FAILED(hr)) {
-        BOOST_TEST_MESSAGE("FAILED: Device enumeration failed: " << std::hex << hr);
-        MFShutdown();
-        return;
-    }
-    
-    BOOST_TEST_MESSAGE("Found " << device_count << " camera device(s)");
-    
-    if (device_count == 0) {
+    if (discovered_cameras.empty()) {
         BOOST_TEST_MESSAGE("No cameras detected. Possible causes:");
         BOOST_TEST_MESSAGE("  - No camera hardware connected");
         BOOST_TEST_MESSAGE("  - Camera drivers not installed");
         BOOST_TEST_MESSAGE("  - Camera disabled in Device Manager");
         BOOST_TEST_MESSAGE("  - Camera blocked by privacy settings");
-        CoTaskMemFree(devices);
-        MFShutdown();
         return;
     }
     
-    // List details about each camera
-    for (UINT32 i = 0; i < device_count; i++) {
+    // Display information about each discovered camera
+    for (size_t i = 0; i < discovered_cameras.size(); ++i) {
+        const auto& camera = discovered_cameras[i];
+        
         BOOST_TEST_MESSAGE("Camera " << i << ":");
+        BOOST_TEST_MESSAGE("  ID: " << camera.id);
+        BOOST_TEST_MESSAGE("  Name: " << camera.name);
+        BOOST_TEST_MESSAGE("  Path: " << camera.device_path);
+        BOOST_TEST_MESSAGE("  Status: " << (camera.is_accessible ? "ACCESSIBLE" : "NOT ACCESSIBLE"));
         
-        // Get friendly name
-        WCHAR* friendly_name = nullptr;
-        UINT32 name_length = 0;
-        hr = devices[i]->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME, &friendly_name, &name_length);
-        if (SUCCEEDED(hr) && friendly_name) {
-            std::wstring ws(friendly_name);
-            std::string name(ws.begin(), ws.end());
-            BOOST_TEST_MESSAGE("  Name: " << name);
-            CoTaskMemFree(friendly_name);
-        }
-        
-        // Get symbolic link (device path)
-        WCHAR* symbolic_link = nullptr;
-        UINT32 link_length = 0;
-        hr = devices[i]->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, &symbolic_link, &link_length);
-        if (SUCCEEDED(hr) && symbolic_link) {
-            std::wstring ws(symbolic_link);
-            std::string link(ws.begin(), ws.end());
-            BOOST_TEST_MESSAGE("  Path: " << link);
-            CoTaskMemFree(symbolic_link);
-        }
-        
-        // Try to activate this camera to see if it's accessible
-        Microsoft::WRL::ComPtr<IMFMediaSource> media_source;
-        hr = devices[i]->ActivateObject(IID_PPV_ARGS(&media_source));
-        if (SUCCEEDED(hr)) {
-            BOOST_TEST_MESSAGE("  Status: ACCESSIBLE");
-            media_source.Reset();
+        if (camera.is_accessible) {
+            BOOST_TEST_MESSAGE("  Supported Resolutions:");
+            for (const auto& res : camera.supported_resolutions) {
+                BOOST_TEST_MESSAGE("    " << res.width << "x" << res.height);
+            }
+            
+            BOOST_TEST_MESSAGE("  Supported Frame Rates:");
+            for (const auto& fps : camera.supported_fps) {
+                BOOST_TEST_MESSAGE("    " << fps << " fps");
+            }
+            
+            BOOST_TEST_MESSAGE("  Supported Formats:");
+            for (const auto& format : camera.supported_formats) {
+                BOOST_TEST_MESSAGE("    " << format);
+            }
+            
+            // Test individual camera info retrieval
+            auto camera_info = discovery_service->GetCameraInfo(camera.id);
+            if (camera_info.has_value()) {
+                BOOST_TEST_MESSAGE("  ✓ Individual camera info retrieval works");
+            } else {
+                BOOST_TEST_MESSAGE("  ✗ Individual camera info retrieval failed");
+            }
+            
+            // Test accessibility check
+            bool is_accessible = discovery_service->IsCameraAccessible(camera.id);
+            BOOST_TEST_MESSAGE("  ✓ Accessibility check: " << (is_accessible ? "ACCESSIBLE" : "NOT ACCESSIBLE"));
         } else {
-            BOOST_TEST_MESSAGE("  Status: NOT ACCESSIBLE (error: " << std::hex << hr << ")");
-            BOOST_TEST_MESSAGE("    This camera may be in use by another application");
+            BOOST_TEST_MESSAGE("    Camera may be in use by another application");
         }
     }
     
-    // Clean up
-    for (UINT32 i = 0; i < device_count; i++) {
-        devices[i]->Release();
-    }
-    CoTaskMemFree(devices);
-    MFShutdown();
+    // Test refresh functionality
+    BOOST_TEST_MESSAGE("Testing device refresh...");
+    discovery_service->RefreshDevices();
+    auto refreshed_cameras = discovery_service->DiscoverCameras();
+    BOOST_TEST_MESSAGE("After refresh: " << refreshed_cameras.size() << " camera device(s)");
     
-    BOOST_TEST_MESSAGE("=== End Camera Diagnostics ===");
+    BOOST_TEST_MESSAGE("=== End Camera Discovery Test ===");
 }
 
 BOOST_AUTO_TEST_CASE(camera_configuration_test) {

@@ -14,7 +14,13 @@ if(WIN32)
 endif()
 
 # Find OpenCV for image processing in tests
-find_package(OpenCV QUIET)
+# Add OpenCV directory to the prefix path so find_package can find it
+if(OPENCV_DIR)
+    list(APPEND CMAKE_PREFIX_PATH "${OPENCV_DIR}")
+    message(STATUS "Looking for OpenCVConfig.cmake in: ${OPENCV_DIR}")
+endif()
+
+find_package(OpenCV REQUIRED)
 
 # Platform-specific source files
 set(PLATFORM_SOURCES "")
@@ -23,6 +29,8 @@ set(PLATFORM_LIBS "")
 if(WIN32)
     set(PLATFORM_SOURCES
         infrastructure/windows/windows_camera.cpp
+        infrastructure/windows/windows_camera_discovery.cpp
+        domain/camera_discovery.cpp
     )
     set(PLATFORM_LIBS
         mf

@@ -69,7 +69,8 @@ jobs:
         run: |
           if (Test-Path build) { Remove-Item build -Recurse -Force }
           mkdir build
-          cmake . -DCMAKE_BUILD_TYPE=Debug -B build -DBoost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include -DBoost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib
+          $OpenCVConfigPath = "$env:OPENCV_DIR\build"
+          cmake . -DCMAKE_BUILD_TYPE=Debug -B build -DBoost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include -DBoost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib -DOPENCV_DIR="$OpenCVConfigPath"
         env:
           BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
         shell: pwsh
@@ -84,6 +85,12 @@ jobs:
       - name: Run Camera Tests
         working-directory: Software/LMSourceCode/ImageProcessing/Camera
         run: |
+          # Add OpenCV DLLs to PATH for test execution
+          $opencvBinPath = "$env:OPENCV_DIR\build\x64\vc16\bin"
+          if (Test-Path $opencvBinPath) {
+            $env:PATH = "$opencvBinPath;$env:PATH"
+          }
+          
           Write-Host "=== Running Camera Bounded Context Tests ==="
           ./build/tests/Debug/camera_tests.exe
           

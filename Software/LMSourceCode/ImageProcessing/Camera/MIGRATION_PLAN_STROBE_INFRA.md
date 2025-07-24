@@ -72,20 +72,32 @@
   - Validate pulse sequence logic, timing calculations, and protocol compliance
   - Provide test harnesses that simulate strobe/camera events and verify system response
 
-### 7. Example: Headless Pulse/Serial Bus Test
-```cpp
-TEST_CASE("PulseStrobeController generates correct pulse sequence") {
-    MockStrobeController strobe;
-    strobe.ConfigurePattern({5, 10, 5}); // ms
-    strobe.Start();
-    REQUIRE(strobe.GetPulseLog() == std::vector<int>{5, 10, 5});
-}
 
-TEST_CASE("SerialBusAdapter transmits and receives data correctly") {
-    MockSerialBusAdapter bus;
-    bus.Send({0xA5, 0x5A});
-    auto received = bus.Receive();
-    REQUIRE(received == std::vector<uint8_t>{0xA5, 0x5A});
+### 7. Example: Headless and End-to-End Testing
+
+
+#### a. Headless (CI/CD, Unit/Integration) Tests
+
+These tests use mocks/stubs and are suitable for CI and local development. They verify logic, protocol, and error handling, but do not exercise real hardware timing or signal integrity.
+
+#### b. End-to-End (Hardware) Tests
+Full end-to-end tests (timing, pulse accuracy, hardware bus communication) require real hardware and cannot be run in headless CI. These should be run on a development or staging system with the actual strobe and camera hardware attached. Such tests should:
+
+- Verify actual pulse timing and signal integrity on the GPIO/SPI bus (e.g., using an oscilloscope or logic analyzer).
+- Confirm that the real strobe hardware responds as expected to pulse patterns.
+- Validate that the camera hardware is triggered and synchronized correctly.
+- Be clearly separated from headless/CI tests and documented as requiring hardware.
+
+**Example (pseudo-code):**
+```cpp
+// Only run if hardware is detected
+if (IsHardwareAvailable()) {
+    PulseStrobeController realStrobe(/* hardware config */);
+    realStrobe.ConfigurePattern({5, 10, 5});
+    realStrobe.Start();
+    // Use external measurement (oscilloscope, logic analyzer) to verify timing
+    // Optionally, use hardware feedback (GPIO readback, camera event) for automated checks
+    REQUIRE(HardwarePulseTimingIsAccurate());
 }
 ```
 

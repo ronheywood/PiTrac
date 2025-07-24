@@ -208,8 +208,21 @@ namespace golf_sim::camera::infrastructure::windows {
 
         // Enumerate devices
         hr = MFEnumDeviceSources(attributes.Get(), &devices, &device_count);
-        if (FAILED(hr) || device_count == 0) {
+        if (FAILED(hr)) {
             std::cerr << "No camera devices found or enumeration failed: " << std::hex << hr << std::endl;
+            // Clean up devices array even if enumeration failed
+            if (devices) {
+                CoTaskMemFree(devices);
+            }
+            return nullptr;
+        }
+        
+        if (device_count == 0) {
+            std::cerr << "No camera devices found" << std::endl;
+            // Clean up devices array
+            if (devices) {
+                CoTaskMemFree(devices);
+            }
             return nullptr;
         }
 

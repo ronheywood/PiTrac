@@ -120,6 +120,10 @@ namespace golf_sim::camera::infrastructure::windows {
         hr = MFEnumDeviceSources(attributes.Get(), &devices, &device_count);
         if (FAILED(hr)) {
             std::cerr << "Device enumeration failed: " << std::hex << hr << std::endl;
+            // Clean up devices array even if enumeration failed
+            if (devices) {
+                CoTaskMemFree(devices);
+            }
             return activators;
         }
 

@@ -50,6 +50,13 @@ add_executable(camera_tests
     infrastructure/test_platform_selection.cpp
 )
 
+# Add platform-specific tests
+if(WIN32)
+    target_sources(camera_tests PRIVATE
+        infrastructure/test_windows_camera.cpp
+    )
+endif()
+
 # Configure linking based on what we found
 if(BOOST_TEST_HEADER_ONLY)
     # Header-only mode - no linking required
@@ -86,6 +93,23 @@ target_include_directories(camera_tests
     ${CMAKE_CURRENT_SOURCE_DIR}/..  # Camera bounded context root
     ${CMAKE_CURRENT_SOURCE_DIR}     # Test directory
 )
+
+# Link with camera implementations and OpenCV (if available)
+target_link_libraries(camera_tests 
+    PRIVATE 
+    camera_abstractions
+    camera_implementations
+)
+
+# Add OpenCV if available (for JPEG encoding in tests)
+if(OpenCV_FOUND)
+    target_link_libraries(camera_tests PRIVATE ${OpenCV_LIBS})
+    target_include_directories(camera_tests PRIVATE ${OpenCV_INCLUDE_DIRS})
+    target_compile_definitions(camera_tests PRIVATE HAVE_OPENCV)
+    message(STATUS "OpenCV found for camera tests: ${OpenCV_VERSION}")
+else()
+    message(STATUS "OpenCV not found - camera image tests will be limited")
+endif()
 
 # Enable testing for this directory
 enable_testing()

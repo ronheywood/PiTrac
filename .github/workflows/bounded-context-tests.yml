@@ -1,5 +1,5 @@
 ---
-name: Image Analysis Tests
+name: Combined Tests
 on:
   push:
     branches:
@@ -12,15 +12,12 @@ env:
   BOOST_ROOT: C:\Dev_Env\boost\boost
   OPENCV_DIR: C:\tools\opencv
 jobs:
-  camera-tests:
-    name: Image Analysis Tests
+  combined-tests:
+    name: Camera and Image Analysis Tests
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: Software/LMSourceCode/ImageProcessing/ImageAnalysis
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4   
+        uses: actions/checkout@v4
 
       - name: Cache OpenCV
         uses: actions/cache@v3
@@ -54,6 +51,7 @@ jobs:
         
       - name: Install boost
         uses: MarkusJx/install-boost@v2
+        id: install-boost
         with:
           boost_version: ${{ env.BOOST_VERSION }}
           boost_install_dir: C:\Dev_Env\
@@ -65,16 +63,47 @@ jobs:
         with:
           arch: x64      
 
-      - name: Configure CMake
+      # Camera Bounded Context Tests
+      - name: Configure Camera Tests
+        working-directory: Software/LMSourceCode/ImageProcessing/Camera
         run: |
           if (Test-Path build) { Remove-Item build -Recurse -Force }
           mkdir build
-            $OpenCVConfigPath = "$env:OPENCV_DIR\build"
+          cmake . -DCMAKE_BUILD_TYPE=Debug -B build -DBoost_INCLUDE_DIR=${{steps.install-boost.outputs.BOOST_ROOT}}/include -DBoost_LIBRARY_DIRS=${{steps.install-boost.outputs.BOOST_ROOT}}/lib
+        env:
+          BOOST_ROOT: ${{ steps.install-boost.outputs.BOOST_ROOT }}
+        shell: pwsh
+
+      - name: Build Camera Tests
+        working-directory: Software/LMSourceCode/ImageProcessing/Camera
+        run: |
+          cd build
+          cmake --build . --config Debug
+        shell: pwsh
+
+      - name: Run Camera Tests
+        working-directory: Software/LMSourceCode/ImageProcessing/Camera
+        run: |
+          Write-Host "=== Running Camera Bounded Context Tests ==="
+          ./build/tests/Debug/camera_tests.exe
           
+          Write-Host "=== Running Camera CTest ==="
+          cd build/tests/Debug
+          ctest -C Debug --verbose --output-on-failure
+        shell: pwsh
+
+      # Image Analysis Tests
+      - name: Configure Image Analysis Tests
+        working-directory: Software/LMSourceCode/ImageProcessing/ImageAnalysis
+        run: |
+          if (Test-Path build) { Remove-Item build -Recurse -Force }
+          mkdir build
+          $OpenCVConfigPath = "$env:OPENCV_DIR\build"
           cmake -B build -DCMAKE_BUILD_TYPE=Release -DOPENCV_DIR="$OpenCVConfigPath"
         shell: pwsh      
         
-      - name: Build and Test
+      - name: Build and Run Image Analysis Tests
+        working-directory: Software/LMSourceCode/ImageProcessing/ImageAnalysis
         run: |
           pushd build
           cmake --build . --config Release
@@ -85,6 +114,7 @@ jobs:
             $env:PATH = "$opencvBinPath;$env:PATH"
           }
           
+          Write-Host "=== Running Image Analysis Tests ==="
           ctest -C Release --output-on-failure
           popd
         shell: pwsh

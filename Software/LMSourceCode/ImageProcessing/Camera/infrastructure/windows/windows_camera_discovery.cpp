@@ -220,41 +220,46 @@ namespace golf_sim::camera::infrastructure::windows {
         HRESULT hr = device_activator->ActivateObject(IID_PPV_ARGS(&media_source));
         
         if (FAILED(hr) || !media_source) {
-            // Can't even activate the device
+            // Can't even activate the device - definitely not accessible
             return false;
         }
         
-        // Try to create a source reader to test if we can actually use the camera
+        // Try to create a source reader - this will fail if camera is actively being used
         Microsoft::WRL::ComPtr<IMFSourceReader> source_reader;
         hr = MFCreateSourceReaderFromMediaSource(media_source.Get(), nullptr, &source_reader);
         
         if (FAILED(hr) || !source_reader) {
-            // Can activate but can't create reader - likely in use
+            // Can activate but can't create reader - camera is in use
             media_source.Reset();
             return false;
         }
         
-        // Try to configure the reader for a simple format
-        Microsoft::WRL::ComPtr<IMFMediaType> output_type;
-        hr = MFCreateMediaType(&output_type);
-        if (SUCCEEDED(hr)) {
-            output_type->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
-            output_type->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32);
-            
-            // Try to set the output type - this will fail if camera is busy
-            hr = source_reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, output_type.Get());
-            
-            if (FAILED(hr)) {
-                // Can't configure reader - camera is likely in use
-                source_reader.Reset();
-                media_source.Reset();
-                return false;
-            }
-        }
+        // Try to read one sample to test if camera is actually accessible
+        // This is the true test - if another app is using the camera, this will fail
+        Microsoft::WRL::ComPtr<IMFSample> sample;
+        DWORD stream_index = 0;
+        DWORD flags = 0;
+        LONGLONG timestamp = 0;
         
-        // Successfully activated and configured, camera appears available
+        hr = source_reader->ReadSample(
+            MF_SOURCE_READER_FIRST_VIDEO_STREAM, 
+            0,
+            &stream_index,
+            &flags,
+            &timestamp,
+            &sample
+        );
+        
+        // Clean up before checking result
         source_reader.Reset();
         media_source.Reset();
+        
+        // If ReadSample failed, camera is likely in use
+        if (FAILED(hr)) {
+            return false;
+        }
+        
+        // Successfully read a sample - camera is truly accessible
         return true;
     }
 

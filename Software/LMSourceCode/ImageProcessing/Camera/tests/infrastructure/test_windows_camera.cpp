@@ -49,10 +49,17 @@ BOOST_AUTO_TEST_CASE(capture_single_frame_for_review) {
         for (const auto& res : supported_resolutions) {
             BOOST_TEST_MESSAGE("  " << res.width << "x" << res.height);
         }
+    }
+    
+    // Always check initialization result - test will fail if camera unavailable
+    BOOST_CHECK(initialized);
+    
+    // If initialization failed, we can't continue with camera operations
+    if (!initialized) {
+        BOOST_TEST_MESSAGE("Skipping camera operations due to initialization failure");
         return;
     }
     
-    BOOST_CHECK(initialized);
     BOOST_TEST_MESSAGE("Camera initialized successfully");
     BOOST_TEST_MESSAGE("Device info: " << camera.GetDeviceInfo());
     
@@ -242,6 +249,104 @@ BOOST_AUTO_TEST_CASE(camera_configuration_test) {
     BOOST_CHECK_EQUAL(retrieved_config.resolution.height, config.resolution.height);
     BOOST_CHECK_EQUAL(retrieved_config.fps, config.fps);
     BOOST_CHECK_EQUAL(retrieved_config.buffer_count, config.buffer_count);
+}
+
+BOOST_AUTO_TEST_CASE(detect_cameras_in_use_by_other_processes) {
+    // Arrange
+    BOOST_TEST_MESSAGE("=== Camera In-Use Detection Test ===");
+    
+    // Create camera discovery service
+    auto discovery_service = golf_sim::camera::domain::CameraDiscoveryServiceFactory::CreateDiscoveryService();
+    BOOST_REQUIRE(discovery_service != nullptr);
+    BOOST_TEST_MESSAGE("SUCCESS: Camera discovery service created");
+    
+    // Act - Discover all cameras on the system
+    auto cameras = discovery_service->DiscoverCameras();
+    
+    BOOST_TEST_MESSAGE("Found " << cameras.size() << " camera device(s)");
+    
+    // Assert - We should find at least one camera (since user mentioned they have 1)
+    BOOST_CHECK_GE(cameras.size(), 1);
+    
+    if (cameras.empty()) {
+        BOOST_TEST_MESSAGE("WARNING: No cameras detected on system");
+        BOOST_TEST_MESSAGE("Please ensure:");
+        BOOST_TEST_MESSAGE("  1. Camera is properly connected");
+        BOOST_TEST_MESSAGE("  2. Camera drivers are installed");
+        BOOST_TEST_MESSAGE("  3. Camera is visible in Device Manager");
+        return;
+    }
+    
+    // Test each discovered camera for accessibility
+    for (size_t i = 0; i < cameras.size(); ++i) {
+        const auto& camera = cameras[i];
+        
+        BOOST_TEST_MESSAGE("Camera " << i << ":");
+        BOOST_TEST_MESSAGE("  ID: " << camera.id);
+        BOOST_TEST_MESSAGE("  Name: " << camera.name);
+        BOOST_TEST_MESSAGE("  Path: " << camera.device_path);
+        BOOST_TEST_MESSAGE("  Initial Status: " << (camera.is_accessible ? "ACCESSIBLE" : "IN USE / UNAVAILABLE"));
+        
+        // Test the IsCameraAccessible method as well
+        bool accessible_check = discovery_service->IsCameraAccessible(camera.id);
+        BOOST_TEST_MESSAGE("  Accessibility check: " << (accessible_check ? "ACCESSIBLE" : "IN USE / UNAVAILABLE"));
+        
+        // The is_accessible field should match the IsCameraAccessible() result
+        BOOST_CHECK_EQUAL(camera.is_accessible, accessible_check);
+        
+        // If camera is in use by another process, this should be detected
+        if (!camera.is_accessible) {
+            BOOST_TEST_MESSAGE("  ✓ Camera correctly detected as IN USE by another process");
+        } else {
+            BOOST_TEST_MESSAGE("  ✓ Camera is available for use");
+        }
+        
+        // Print capability information even for in-use cameras
+        BOOST_TEST_MESSAGE("  Supported Resolutions:");
+        for (const auto& res : camera.supported_resolutions) {
+            BOOST_TEST_MESSAGE("    " << res.width << "x" << res.height);
+        }
+        BOOST_TEST_MESSAGE("  Supported Frame Rates:");
+        for (const auto& fps : camera.supported_fps) {
+            BOOST_TEST_MESSAGE("    " << fps << " fps");
+        }
+        BOOST_TEST_MESSAGE("  Supported Formats:");
+        for (const auto& format : camera.supported_formats) {
+            BOOST_TEST_MESSAGE("    " << format);
+        }
+    }
+    
+    BOOST_TEST_MESSAGE("=== Camera In-Use Detection Test Results ===");
+    
+    // Count accessible vs in-use cameras
+    size_t accessible_count = 0;
+    size_t in_use_count = 0;
+    
+    for (const auto& camera : cameras) {
+        if (camera.is_accessible) {
+            accessible_count++;
+        } else {
+            in_use_count++;
+        }
+    }
+    
+    BOOST_TEST_MESSAGE("Summary:");
+    BOOST_TEST_MESSAGE("  Total cameras detected: " << cameras.size());
+    BOOST_TEST_MESSAGE("  Accessible cameras: " << accessible_count);
+    BOOST_TEST_MESSAGE("  In-use cameras: " << in_use_count);
+    
+    // Since user mentioned their camera is in use, we expect at least one to be inaccessible
+    if (in_use_count > 0) {
+        BOOST_TEST_MESSAGE("✓ SUCCESS: Camera discovery correctly detected " << in_use_count << " camera(s) in use");
+    } else {
+        BOOST_TEST_MESSAGE("ℹ INFO: All cameras are currently accessible");
+        BOOST_TEST_MESSAGE("      To test in-use detection:");
+        BOOST_TEST_MESSAGE("      1. Open Windows Camera app or another camera application");
+        BOOST_TEST_MESSAGE("      2. Re-run this test");
+        BOOST_TEST_MESSAGE("      3. You should see cameras marked as 'IN USE'");
+    }
+    
+    BOOST_TEST_MESSAGE("=== End Camera In-Use Detection Test ===");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

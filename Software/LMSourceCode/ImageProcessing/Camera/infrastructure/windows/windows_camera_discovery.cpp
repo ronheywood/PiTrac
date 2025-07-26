@@ -219,14 +219,43 @@ namespace golf_sim::camera::infrastructure::windows {
         Microsoft::WRL::ComPtr<IMFMediaSource> media_source;
         HRESULT hr = device_activator->ActivateObject(IID_PPV_ARGS(&media_source));
         
-        if (SUCCEEDED(hr) && media_source) {
-            // Successfully activated, camera is accessible
-            media_source.Reset();
-            return true;
+        if (FAILED(hr) || !media_source) {
+            // Can't even activate the device
+            return false;
         }
         
-        // Failed to activate, camera may be in use or have issues
-        return false;
+        // Try to create a source reader to test if we can actually use the camera
+        Microsoft::WRL::ComPtr<IMFSourceReader> source_reader;
+        hr = MFCreateSourceReaderFromMediaSource(media_source.Get(), nullptr, &source_reader);
+        
+        if (FAILED(hr) || !source_reader) {
+            // Can activate but can't create reader - likely in use
+            media_source.Reset();
+            return false;
+        }
+        
+        // Try to configure the reader for a simple format
+        Microsoft::WRL::ComPtr<IMFMediaType> output_type;
+        hr = MFCreateMediaType(&output_type);
+        if (SUCCEEDED(hr)) {
+            output_type->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
+            output_type->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_RGB32);
+            
+            // Try to set the output type - this will fail if camera is busy
+            hr = source_reader->SetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, output_type.Get());
+            
+            if (FAILED(hr)) {
+                // Can't configure reader - camera is likely in use
+                source_reader.Reset();
+                media_source.Reset();
+                return false;
+            }
+        }
+        
+        // Successfully activated and configured, camera appears available
+        source_reader.Reset();
+        media_source.Reset();
+        return true;
     }
 
 } // namespace golf_sim::camera::infrastructure::windows

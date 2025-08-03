@@ -60,6 +60,7 @@ add_executable(camera_tests
     domain/test_camera_discovery.cpp
     domain/test_independent_camera.cpp
     infrastructure/test_platform_selection.cpp
+    application/test_camera_image_service.cpp
 )
 
 # Add platform-specific tests

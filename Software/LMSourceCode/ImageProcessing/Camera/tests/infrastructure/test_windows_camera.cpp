@@ -9,7 +9,7 @@
 #include "../../infrastructure/windows/windows_camera.hpp"
 #include "../../domain/camera_discovery.hpp"
 #include "../../domain/camera_exceptions.hpp"
-#include <opencv2/opencv.hpp>
+#include "../../application/camera_image_service.hpp"
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -100,30 +100,27 @@ BOOST_AUTO_TEST_CASE(capture_single_frame_for_review) {
     BOOST_TEST_MESSAGE("  Sequence: " << frame.sequence_number);
     
     // Convert frame data to OpenCV Mat for JPEG encoding
-    // Assuming RGB32 format from Media Foundation (4 bytes per pixel)
-    if (frame.data.size() == frame.resolution.width * frame.resolution.height * 4) {
-        cv::Mat image(frame.resolution.height, frame.resolution.width, CV_8UC4, frame.data.data());
+    // Use application service to handle format complexity
+    auto processed_image = golf_sim::camera::application::CameraImageProcessor::ProcessCameraFrame(
+        frame, camera.GetCurrentMediaTypeInfo());
+    
+    if (processed_image.conversion_successful) {
+        BOOST_TEST_MESSAGE("Frame format detected: " << processed_image.format_detected);
         
-        // Convert BGRA to BGR for JPEG (remove alpha channel)
-        cv::Mat bgr_image;
-        cv::cvtColor(image, bgr_image, cv::COLOR_BGRA2BGR);
+        // Save image using application service
+        auto save_result = golf_sim::camera::application::CameraImageProcessor::SaveImage(
+            processed_image.image, "camera_test_frame");
         
-        // Save as JPEG for review
-        std::string filename = "captured_frames/camera_test_frame.jpg";
-        bool saved = cv::imwrite(filename, bgr_image);
-        
-        if (saved) {
-            BOOST_TEST_MESSAGE("Frame saved as JPEG: " << filename);
+        if (save_result.success) {
+            BOOST_TEST_MESSAGE("Frame saved as JPEG: " << save_result.filename);
             BOOST_TEST_MESSAGE("Please review the captured image to verify camera functionality");
         } else {
-            BOOST_TEST_MESSAGE("Failed to save frame as JPEG");
+            BOOST_TEST_MESSAGE("Failed to save frame: " << save_result.error_message);
         }
         
-        BOOST_CHECK(saved);
+        BOOST_CHECK(save_result.success);
     } else {
-        BOOST_TEST_MESSAGE("Unexpected frame data size. Expected: " 
-                          << (frame.resolution.width * frame.resolution.height * 4)
-                          << ", Got: " << frame.data.size());
+        BOOST_TEST_MESSAGE("Frame format conversion failed: " << processed_image.error_message);
         
         // Save raw data for analysis
         std::string raw_filename = "captured_frames/camera_test_frame.raw";
@@ -357,7 +354,7 @@ BOOST_AUTO_TEST_CASE(detect_cameras_in_use_by_other_processes) {
 
 BOOST_AUTO_TEST_CASE(capture_individual_camera_images_for_approval) {
     // Arrange
-    BOOST_TEST_MESSAGE("=== Individual Camera Image Capture Test ===");
+    BOOST_TEST_MESSAGE("=== Individual Camera Behavior Test ===");
     
     // Create camera discovery service to find all cameras
     auto discovery_service = golf_sim::camera::domain::CameraDiscoveryServiceFactory::CreateDiscoveryService();
@@ -367,27 +364,20 @@ BOOST_AUTO_TEST_CASE(capture_individual_camera_images_for_approval) {
     BOOST_TEST_MESSAGE("Found " << cameras.size() << " camera device(s)");
     
     if (cameras.empty()) {
-        BOOST_TEST_MESSAGE("No cameras available for image capture test");
+        BOOST_TEST_MESSAGE("No cameras available for behavior test");
         return;
     }
-    
-    // Create output directory for captured images
-    std::filesystem::create_directories("captured_frames");
     
     std::vector<std::string> captured_images;
     int successfully_captured_count = 0;
     
-    // Test each camera individually
+    // Test each camera's behavior individually  
     for (size_t i = 0; i < cameras.size(); ++i) {
         const auto& camera_info = cameras[i];
         
         BOOST_TEST_MESSAGE("--- Testing Camera " << i << ": " << camera_info.name << " ---");
         
-        // Try to capture even if camera shows as "in use" - maybe our detection is overly strict
-        BOOST_TEST_MESSAGE("Camera " << i << " accessibility status: " << (camera_info.is_accessible ? "ACCESSIBLE" : "IN USE"));
-        BOOST_TEST_MESSAGE("Attempting to initialize camera regardless of accessibility status...");
-        
-        // Initialize camera
+        // Test camera initialization behavior
         golf_sim::camera::infrastructure::windows::WindowsCamera camera;
         golf_sim::camera::domain::CameraConfig config;
         config.resolution = golf_sim::camera::domain::Size(640, 480);
@@ -395,166 +385,91 @@ BOOST_AUTO_TEST_CASE(capture_individual_camera_images_for_approval) {
         
         bool initialized = camera.Initialize(config);
         if (!initialized) {
-            BOOST_TEST_MESSAGE("Failed to initialize camera " << i << " - may be in use");
+            BOOST_TEST_MESSAGE("✗ Camera " << i << " initialization failed - may be in use");
             continue;
         }
         
-        BOOST_TEST_MESSAGE("Camera " << i << " initialized successfully");
+        BOOST_TEST_MESSAGE("✓ Camera " << i << " initialized successfully");
         
-        // Query the actual media type information
-        auto media_type_info = camera.GetCurrentMediaTypeInfo();
-        BOOST_TEST_MESSAGE("Current media type: " << media_type_info);
-        
-        // Start streaming
+        // Test streaming behavior
         bool streaming_started = camera.StartStreaming();
         if (!streaming_started) {
-            BOOST_TEST_MESSAGE("Failed to start streaming on camera " << i);
+            BOOST_TEST_MESSAGE("✗ Camera " << i << " streaming failed");
             continue;
         }
         
-        BOOST_TEST_MESSAGE("Camera " << i << " streaming started");
+        BOOST_TEST_MESSAGE("✓ Camera " << i << " streaming started");
         
-        // Capture a frame
-        BOOST_TEST_MESSAGE("Capturing frame from camera " << i << "...");
+        // Test frame capture behavior
         auto frame = camera.CaptureFrame();
         
-        // If first capture fails, try a few more times with delays
+        // Retry capture if first attempt fails (camera warm-up)
         if (frame.data.empty()) {
-            BOOST_TEST_MESSAGE("First capture attempt failed, trying 2 more times...");
+            BOOST_TEST_MESSAGE("First capture empty, retrying...");
             for (int attempt = 1; attempt <= 2; ++attempt) {
-                BOOST_TEST_MESSAGE("Capture attempt " << (attempt + 1) << "...");
-                std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Wait 500ms
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 frame = camera.CaptureFrame();
                 if (!frame.data.empty()) {
-                    BOOST_TEST_MESSAGE("Success on attempt " << (attempt + 1));
                     break;
                 }
             }
         }
         
+        // Verify camera behavior
         if (frame.data.empty()) {
-            BOOST_TEST_MESSAGE("No frame data captured from camera " << i);
+            BOOST_TEST_MESSAGE("✗ Camera " << i << " failed to capture frames");
             camera.StopStreaming();
             continue;
         }
         
-        BOOST_TEST_MESSAGE("Frame captured from camera " << i << ":");
+        BOOST_TEST_MESSAGE("✓ Camera " << i << " captured frame:");
         BOOST_TEST_MESSAGE("  Data size: " << frame.data.size() << " bytes");
         BOOST_TEST_MESSAGE("  Resolution: " << frame.resolution.width << "x" << frame.resolution.height);
         
-        // Parse media type to extract actual format and dimensions
-        std::string media_info = camera.GetCurrentMediaTypeInfo();
-        BOOST_TEST_MESSAGE("  Media type: " << media_info);
+        // Process image using application service (not test responsibility)
+        auto processed_image = golf_sim::camera::application::CameraImageProcessor::ProcessCameraFrame(
+            frame, camera.GetCurrentMediaTypeInfo());
         
-        // Extract actual dimensions from media type info
-        size_t size_pos = media_info.find("Size: ");
-        int actual_width = 640, actual_height = 480;  // defaults
-        if (size_pos != std::string::npos) {
-            std::string size_str = media_info.substr(size_pos + 6);
-            sscanf(size_str.c_str(), "%dx%d", &actual_width, &actual_height);
-            BOOST_TEST_MESSAGE("  Actual camera dimensions: " << actual_width << "x" << actual_height);
-        }
-        
-        cv::Mat image;
-        bool conversion_success = false;
-        
-        // Check for NV12 format based on media type
-        if (media_info.find("NV12") != std::string::npos) {
-            // NV12: Y plane + UV interleaved plane
-            size_t expected_nv12 = actual_width * actual_height * 3 / 2;
-            if (frame.data.size() == expected_nv12) {
-                BOOST_TEST_MESSAGE("Converting NV12 format for camera " << i);
-                
-                // Create Y plane
-                cv::Mat y_plane(actual_height, actual_width, CV_8UC1, frame.data.data());
-                
-                // Create UV plane (half width, half height, 2 channels interleaved)
-                cv::Mat uv_plane(actual_height / 2, actual_width / 2, CV_8UC2, 
-                                frame.data.data() + actual_width * actual_height);
-                
-                // Convert NV12 to BGR
-                cv::Mat yuv_mat;
-                cv::vconcat(y_plane, uv_plane.reshape(1, actual_height / 2), yuv_mat);
-                cv::cvtColor(yuv_mat, image, cv::COLOR_YUV2BGR_NV12);
-                conversion_success = true;
-            }
-        }
-        
-        if (!conversion_success) {
-            // Try other format detection as before
-            size_t expected_rgb32 = frame.resolution.width * frame.resolution.height * 4;
-            size_t expected_rgb24 = frame.resolution.width * frame.resolution.height * 3;
-            size_t expected_yuy2 = frame.resolution.width * frame.resolution.height * 2;
+        if (processed_image.conversion_successful) {
+            std::string filename = "camera_" + std::to_string(i) + "_frame";
+            auto save_result = golf_sim::camera::application::CameraImageProcessor::SaveImage(
+                processed_image.image, filename);
             
-            if (frame.data.size() == expected_rgb32) {
-                BOOST_TEST_MESSAGE("Converting RGB32/BGRA format for camera " << i);
-                image = cv::Mat(frame.resolution.height, frame.resolution.width, CV_8UC4, frame.data.data());
-                cv::cvtColor(image, image, cv::COLOR_BGRA2BGR);
-                conversion_success = true;
-            } else if (frame.data.size() == expected_rgb24) {
-                BOOST_TEST_MESSAGE("Converting RGB24 format for camera " << i);
-                image = cv::Mat(frame.resolution.height, frame.resolution.width, CV_8UC3, frame.data.data());
-                conversion_success = true;
-            }
-        }
-        
-        if (conversion_success) {
-            // Successfully converted - save the image
-            std::string filename = "captured_frames/camera_" + std::to_string(i) + "_frame.jpg";
-            
-            if (cv::imwrite(filename, image)) {
-                BOOST_TEST_MESSAGE("Successfully saved frame from camera " << i << " to: " << filename);
-                captured_images.push_back(filename);
+            if (save_result.success) {
+                BOOST_TEST_MESSAGE("✓ Frame saved: " << save_result.filename);
+                captured_images.push_back(save_result.filename);
                 successfully_captured_count++;
             } else {
-                BOOST_TEST_MESSAGE("Failed to save frame from camera " << i);
+                BOOST_TEST_MESSAGE("✗ Image save failed: " << save_result.error_message);
             }
         } else {
-            BOOST_TEST_MESSAGE("Unknown/unsupported pixel format for camera " << i);
-            BOOST_TEST_MESSAGE("  Media type: " << media_info);
-            BOOST_TEST_MESSAGE("  Data size: " << frame.data.size() << " bytes");
+            BOOST_TEST_MESSAGE("✗ Format not supported: " << processed_image.error_message);
         }
         
-        // Stop streaming for this camera
+        // Test streaming stop behavior
         camera.StopStreaming();
-        BOOST_TEST_MESSAGE("Camera " << i << " streaming stopped");
+        BOOST_TEST_MESSAGE("✓ Camera " << i << " streaming stopped");
     }
     
-    // Show results summary and launch image viewer
-    BOOST_TEST_MESSAGE("=== Image Capture Results ===");
-    BOOST_TEST_MESSAGE("Successfully captured " << successfully_captured_count << " images");
+    // Report results using application service (not test responsibility)
+    golf_sim::camera::application::CameraTestReporter::ReportCaptureResults(
+        captured_images, successfully_captured_count);
     
-    if (captured_images.empty()) {
-        BOOST_TEST_MESSAGE("No images were captured - all cameras may be in use or unavailable");
-    } else {
-        BOOST_TEST_MESSAGE("Captured files:");
-        for (const auto& file : captured_images) {
-            BOOST_TEST_MESSAGE("  " << file);
-        }
-
-        // Launch Windows Photo Viewer or default image viewer for the first captured image
-        if (!captured_images.empty()) {
-            std::string first_image = captured_images[0];
-            // Convert forward slashes to backslashes for Windows
-            std::replace(first_image.begin(), first_image.end(), '/', '\\');
-
-            BOOST_TEST_MESSAGE("Opening image viewer for: " << first_image);
-
-            // Use Windows start command to open with default image viewer
-            std::string command = "start \"Image Viewer\" \"" + first_image + "\"";
-            int result = std::system(command.c_str());
-
-            if (result == 0) {
-                BOOST_TEST_MESSAGE("✓ Image viewer launched successfully");
-                BOOST_TEST_MESSAGE("📸 Please review the captured images and verify camera functionality");
-            } else {
-                BOOST_TEST_MESSAGE("⚠ Failed to launch image viewer (error code: " << result << ")");
-                BOOST_TEST_MESSAGE("You can manually open the images in: captured_frames/");
-            }
+    // Launch image viewer using application service
+    if (!captured_images.empty()) {
+        bool viewer_launched = golf_sim::camera::application::CameraTestReporter::LaunchImageViewer(
+            captured_images[0]);
+        
+        if (viewer_launched) {
+            BOOST_TEST_MESSAGE("✓ Image viewer launched successfully");
+            BOOST_TEST_MESSAGE("📸 Please review the captured images and verify camera functionality");
+        } else {
+            BOOST_TEST_MESSAGE("⚠ Failed to launch image viewer");
+            BOOST_TEST_MESSAGE("You can manually open the images in: captured_frames/");
         }
     }
 
-    BOOST_TEST_MESSAGE("=== End Individual Camera Image Capture Test ===");
+    BOOST_TEST_MESSAGE("=== End Camera Behavior Test ===");
 }
 
 BOOST_AUTO_TEST_CASE(camera_busy_exception_handling) {

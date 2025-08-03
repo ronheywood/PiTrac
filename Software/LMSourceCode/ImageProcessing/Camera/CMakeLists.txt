@@ -31,6 +31,7 @@ if(WIN32)
         infrastructure/windows/windows_camera.cpp
         infrastructure/windows/windows_camera_discovery.cpp
         domain/camera_discovery.cpp
+        application/camera_image_service.cpp
     )
     set(PLATFORM_LIBS
         mf
@@ -53,6 +54,11 @@ if(PLATFORM_SOURCES)
     
     target_link_libraries(camera_implementations PRIVATE
         ${PLATFORM_LIBS}
+        ${OpenCV_LIBS}
+    )
+    
+    target_include_directories(camera_implementations PRIVATE
+        ${OpenCV_INCLUDE_DIRS}
     )
     
     # Platform-specific compile definitions

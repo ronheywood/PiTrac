@@ -6,7 +6,6 @@
 #include <iostream>
 #include <string>
 #include <locale>
-#include <codecvt>
 
 namespace golf_sim::camera::infrastructure::windows {
 

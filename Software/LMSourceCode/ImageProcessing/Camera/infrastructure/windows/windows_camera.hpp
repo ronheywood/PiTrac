@@ -34,6 +34,9 @@ namespace golf_sim::camera::infrastructure::windows {
         std::vector<domain::Size> GetSupportedResolutions() const override;
         std::string GetDeviceInfo() const override;
 
+        // Windows-specific methods for debugging
+        std::string GetCurrentMediaTypeInfo() const;
+
     private:
         // Windows Media Foundation objects
         Microsoft::WRL::ComPtr<IMFSourceReader> source_reader_;

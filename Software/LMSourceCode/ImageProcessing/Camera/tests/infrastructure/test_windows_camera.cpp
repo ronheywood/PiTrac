@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <cstdio>
 #include <algorithm>
 #include <thread>
 #include <chrono>
@@ -373,7 +374,8 @@ BOOST_AUTO_TEST_CASE(capture_individual_camera_images_for_approval) {
     // Create output directory for captured images
     std::filesystem::create_directories("captured_frames");
     
-    std::vector<std::string> captured_files;
+    std::vector<std::string> captured_images;
+    int successfully_captured_count = 0;
     
     // Test each camera individually
     for (size_t i = 0; i < cameras.size(); ++i) {
@@ -398,6 +400,10 @@ BOOST_AUTO_TEST_CASE(capture_individual_camera_images_for_approval) {
         }
         
         BOOST_TEST_MESSAGE("Camera " << i << " initialized successfully");
+        
+        // Query the actual media type information
+        auto media_type_info = camera.GetCurrentMediaTypeInfo();
+        BOOST_TEST_MESSAGE("Current media type: " << media_type_info);
         
         // Start streaming
         bool streaming_started = camera.StartStreaming();
@@ -436,73 +442,108 @@ BOOST_AUTO_TEST_CASE(capture_individual_camera_images_for_approval) {
         BOOST_TEST_MESSAGE("  Data size: " << frame.data.size() << " bytes");
         BOOST_TEST_MESSAGE("  Resolution: " << frame.resolution.width << "x" << frame.resolution.height);
         
-        // Convert frame data to OpenCV Mat and save as JPEG
-        if (frame.data.size() == frame.resolution.width * frame.resolution.height * 4) {
-            cv::Mat image(frame.resolution.height, frame.resolution.width, CV_8UC4, frame.data.data());
-            
-            // Convert BGRA to BGR for JPEG (remove alpha channel)
-            cv::Mat bgr_image;
-            cv::cvtColor(image, bgr_image, cv::COLOR_BGRA2BGR);
-            
-            // Create filename with camera info
-            std::stringstream filename_stream;
-            filename_stream << "captured_frames/camera_" << i << "_" << camera_info.name;
-            // Replace spaces and special characters with underscores
-            std::string safe_name = filename_stream.str();
-            std::replace_if(safe_name.begin(), safe_name.end(), [](char c) { 
-                return !std::isalnum(c) && c != '_' && c != '/' && c != '\\' && c != '.'; 
-            }, '_');
-            safe_name += "_640x480.jpg";
-            
-            bool saved = cv::imwrite(safe_name, bgr_image);
-            
-            if (saved) {
-                BOOST_TEST_MESSAGE("✓ Image saved: " << safe_name);
-                captured_files.push_back(safe_name);
-                
-                // Add timestamp and camera info to image as text overlay
-                cv::Mat labeled_image = bgr_image.clone();
-                std::string label = "Camera " + std::to_string(i) + ": " + camera_info.name;
-                cv::putText(labeled_image, label, cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 0), 2);
-                
-                std::string labeled_filename = safe_name;
-                labeled_filename.replace(labeled_filename.find(".jpg"), 4, "_labeled.jpg");
-                cv::imwrite(labeled_filename, labeled_image);
-                BOOST_TEST_MESSAGE("✓ Labeled image saved: " << labeled_filename);
-            } else {
-                BOOST_TEST_MESSAGE("✗ Failed to save image for camera " << i);
-            }
-        } else {
-            BOOST_TEST_MESSAGE("Unexpected frame data size for camera " << i << " - cannot convert to image");
+        // Parse media type to extract actual format and dimensions
+        std::string media_info = camera.GetCurrentMediaTypeInfo();
+        BOOST_TEST_MESSAGE("  Media type: " << media_info);
+        
+        // Extract actual dimensions from media type info
+        size_t size_pos = media_info.find("Size: ");
+        int actual_width = 640, actual_height = 480;  // defaults
+        if (size_pos != std::string::npos) {
+            std::string size_str = media_info.substr(size_pos + 6);
+            sscanf(size_str.c_str(), "%dx%d", &actual_width, &actual_height);
+            BOOST_TEST_MESSAGE("  Actual camera dimensions: " << actual_width << "x" << actual_height);
         }
         
-        // Stop streaming
+        cv::Mat image;
+        bool conversion_success = false;
+        
+        // Check for NV12 format based on media type
+        if (media_info.find("NV12") != std::string::npos) {
+            // NV12: Y plane + UV interleaved plane
+            size_t expected_nv12 = actual_width * actual_height * 3 / 2;
+            if (frame.data.size() == expected_nv12) {
+                BOOST_TEST_MESSAGE("Converting NV12 format for camera " << i);
+                
+                // Create Y plane
+                cv::Mat y_plane(actual_height, actual_width, CV_8UC1, frame.data.data());
+                
+                // Create UV plane (half width, half height, 2 channels interleaved)
+                cv::Mat uv_plane(actual_height / 2, actual_width / 2, CV_8UC2, 
+                                frame.data.data() + actual_width * actual_height);
+                
+                // Convert NV12 to BGR
+                cv::Mat yuv_mat;
+                cv::vconcat(y_plane, uv_plane.reshape(1, actual_height / 2), yuv_mat);
+                cv::cvtColor(yuv_mat, image, cv::COLOR_YUV2BGR_NV12);
+                conversion_success = true;
+            }
+        }
+        
+        if (!conversion_success) {
+            // Try other format detection as before
+            size_t expected_rgb32 = frame.resolution.width * frame.resolution.height * 4;
+            size_t expected_rgb24 = frame.resolution.width * frame.resolution.height * 3;
+            size_t expected_yuy2 = frame.resolution.width * frame.resolution.height * 2;
+            
+            if (frame.data.size() == expected_rgb32) {
+                BOOST_TEST_MESSAGE("Converting RGB32/BGRA format for camera " << i);
+                image = cv::Mat(frame.resolution.height, frame.resolution.width, CV_8UC4, frame.data.data());
+                cv::cvtColor(image, image, cv::COLOR_BGRA2BGR);
+                conversion_success = true;
+            } else if (frame.data.size() == expected_rgb24) {
+                BOOST_TEST_MESSAGE("Converting RGB24 format for camera " << i);
+                image = cv::Mat(frame.resolution.height, frame.resolution.width, CV_8UC3, frame.data.data());
+                conversion_success = true;
+            }
+        }
+        
+        if (conversion_success) {
+            // Successfully converted - save the image
+            std::string filename = "captured_frames/camera_" + std::to_string(i) + "_frame.jpg";
+            
+            if (cv::imwrite(filename, image)) {
+                BOOST_TEST_MESSAGE("Successfully saved frame from camera " << i << " to: " << filename);
+                captured_images.push_back(filename);
+                successfully_captured_count++;
+            } else {
+                BOOST_TEST_MESSAGE("Failed to save frame from camera " << i);
+            }
+        } else {
+            BOOST_TEST_MESSAGE("Unknown/unsupported pixel format for camera " << i);
+            BOOST_TEST_MESSAGE("  Media type: " << media_info);
+            BOOST_TEST_MESSAGE("  Data size: " << frame.data.size() << " bytes");
+        }
+        
+        // Stop streaming for this camera
         camera.StopStreaming();
         BOOST_TEST_MESSAGE("Camera " << i << " streaming stopped");
     }
     
     // Show results summary and launch image viewer
     BOOST_TEST_MESSAGE("=== Image Capture Results ===");
-    BOOST_TEST_MESSAGE("Successfully captured " << captured_files.size() << " images");
+    BOOST_TEST_MESSAGE("Successfully captured " << successfully_captured_count << " images");
     
-    if (!captured_files.empty()) {
+    if (captured_images.empty()) {
+        BOOST_TEST_MESSAGE("No images were captured - all cameras may be in use or unavailable");
+    } else {
         BOOST_TEST_MESSAGE("Captured files:");
-        for (const auto& file : captured_files) {
+        for (const auto& file : captured_images) {
             BOOST_TEST_MESSAGE("  " << file);
         }
-        
+
         // Launch Windows Photo Viewer or default image viewer for the first captured image
-        if (!captured_files.empty()) {
-            std::string first_image = captured_files[0];
+        if (!captured_images.empty()) {
+            std::string first_image = captured_images[0];
             // Convert forward slashes to backslashes for Windows
             std::replace(first_image.begin(), first_image.end(), '/', '\\');
-            
+
             BOOST_TEST_MESSAGE("Opening image viewer for: " << first_image);
-            
+
             // Use Windows start command to open with default image viewer
             std::string command = "start \"Image Viewer\" \"" + first_image + "\"";
             int result = std::system(command.c_str());
-            
+
             if (result == 0) {
                 BOOST_TEST_MESSAGE("✓ Image viewer launched successfully");
                 BOOST_TEST_MESSAGE("📸 Please review the captured images and verify camera functionality");
@@ -511,10 +552,8 @@ BOOST_AUTO_TEST_CASE(capture_individual_camera_images_for_approval) {
                 BOOST_TEST_MESSAGE("You can manually open the images in: captured_frames/");
             }
         }
-    } else {
-        BOOST_TEST_MESSAGE("No images were captured - all cameras may be in use or unavailable");
     }
-    
+
     BOOST_TEST_MESSAGE("=== End Individual Camera Image Capture Test ===");
 }
 
@@ -545,7 +584,6 @@ BOOST_AUTO_TEST_CASE(camera_busy_exception_handling) {
             BOOST_TEST_MESSAGE("Camera " << i << " (" << camera_info.name << ") is already in use - testing exception handling...");
             
             // Act & Assert: Attempt to initialize a camera that's in use
-            golf_sim::camera::infrastructure::windows::WindowsCamera camera;
             golf_sim::camera::domain::CameraConfig config;
             config.resolution = golf_sim::camera::domain::Size(640, 480);
             config.fps = 30;
@@ -558,6 +596,7 @@ BOOST_AUTO_TEST_CASE(camera_busy_exception_handling) {
             std::string exception_message;
             
             try {
+                golf_sim::camera::infrastructure::windows::WindowsCamera camera;
                 initialized = camera.Initialize(config);
                 BOOST_TEST_MESSAGE("Initialize returned: " << (initialized ? "true" : "false"));
             } catch (const golf_sim::camera::domain::CameraBusyException& e) {
@@ -592,7 +631,6 @@ BOOST_AUTO_TEST_CASE(camera_busy_exception_handling) {
             BOOST_TEST_MESSAGE("--- Test 2: Double Initialization on Available Camera ---");
             
             golf_sim::camera::infrastructure::windows::WindowsCamera camera1;
-            golf_sim::camera::infrastructure::windows::WindowsCamera camera2;
             golf_sim::camera::domain::CameraConfig config;
             config.resolution = golf_sim::camera::domain::Size(640, 480);
             config.fps = 30;
@@ -610,6 +648,7 @@ BOOST_AUTO_TEST_CASE(camera_busy_exception_handling) {
                 std::string exception_message;
                 
                 try {
+                    golf_sim::camera::infrastructure::windows::WindowsCamera camera2;
                     second_init = camera2.Initialize(config);
                     BOOST_TEST_MESSAGE("Second initialize returned: " << (second_init ? "true" : "false"));
                 } catch (const golf_sim::camera::domain::CameraBusyException& e) {
@@ -683,7 +722,7 @@ BOOST_AUTO_TEST_CASE(diagnose_camera_accessibility_issues) {
     BOOST_TEST_MESSAGE("--- Step 2: Device Manager Camera Status ---");
     std::string device_command = "powershell -Command \"Get-PnpDevice | Where-Object {$_.FriendlyName -match 'camera|webcam|imaging'} | Select-Object FriendlyName, Status, InstanceId\"";
     BOOST_TEST_MESSAGE("Running device status check...");
-    int device_result = std::system(device_command.c_str());
+    [[maybe_unused]] int device_result = std::system(device_command.c_str());
     
     // Third, detailed Media Foundation testing
     BOOST_TEST_MESSAGE("--- Step 3: Detailed Media Foundation Analysis ---");
@@ -712,44 +751,48 @@ BOOST_AUTO_TEST_CASE(diagnose_camera_accessibility_issues) {
         BOOST_TEST_MESSAGE("Attempting camera initialization...");
         bool initialized = camera.Initialize(config);
         
-        if (initialized) {
-            BOOST_TEST_MESSAGE("✓ Camera initialization SUCCEEDED - camera appears available!");
-            
-            // Test streaming
-            BOOST_TEST_MESSAGE("Attempting to start streaming...");
-            bool streaming = camera.StartStreaming();
-            
-            if (streaming) {
-                BOOST_TEST_MESSAGE("✓ Streaming started successfully");
-                
-                // Test frame capture
-                BOOST_TEST_MESSAGE("Attempting frame capture...");
-                auto frame = camera.CaptureFrame();
-                
-                if (!frame.data.empty()) {
-                    BOOST_TEST_MESSAGE("✓ Frame captured successfully!");
-                    BOOST_TEST_MESSAGE("  Frame size: " << frame.data.size() << " bytes");
-                    BOOST_TEST_MESSAGE("  Resolution: " << frame.resolution.width << "x" << frame.resolution.height);
-                    BOOST_TEST_MESSAGE("CONCLUSION: Camera " << i << " is FULLY FUNCTIONAL and NOT in use");
-                } else {
-                    BOOST_TEST_MESSAGE("✗ Frame capture failed - camera may be partially in use");
-                }
-                
-                camera.StopStreaming();
-            } else {
-                BOOST_TEST_MESSAGE("✗ Streaming failed - camera may be in use at streaming level");
-            }
-        } else {
+        if (!initialized) {
             BOOST_TEST_MESSAGE("✗ Camera initialization failed");
             BOOST_TEST_MESSAGE("Device info: " << camera.GetDeviceInfo());
+            continue;
         }
+
+        BOOST_TEST_MESSAGE("✓ Camera initialization SUCCEEDED - camera appears available!");
+
+        // Test streaming
+        BOOST_TEST_MESSAGE("Attempting to start streaming...");
+        bool streaming = camera.StartStreaming();
+
+        if (!streaming) {
+            BOOST_TEST_MESSAGE("✗ Streaming failed - camera may be in use at streaming level");
+            continue;
+        }
+
+        BOOST_TEST_MESSAGE("✓ Streaming started successfully");
+
+        // Test frame capture
+        BOOST_TEST_MESSAGE("Attempting frame capture...");
+        auto frame = camera.CaptureFrame();
+
+        if (frame.data.empty()) {
+            BOOST_TEST_MESSAGE("✗ Frame capture failed - camera may be partially in use");
+            camera.StopStreaming();
+            continue;
+        }
+
+        BOOST_TEST_MESSAGE("✓ Frame captured successfully!");
+        BOOST_TEST_MESSAGE("  Frame size: " << frame.data.size() << " bytes");
+        BOOST_TEST_MESSAGE("  Resolution: " << frame.resolution.width << "x" << frame.resolution.height);
+        BOOST_TEST_MESSAGE("CONCLUSION: Camera " << i << " is FULLY FUNCTIONAL and NOT in use");
+
+        camera.StopStreaming();
     }
     
     // Fourth, check for Windows Camera Privacy Settings
     BOOST_TEST_MESSAGE("--- Step 4: Windows Privacy Settings Check ---");
     std::string privacy_command = "powershell -Command \"Get-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\webcam' -Name Value -ErrorAction SilentlyContinue\"";
     BOOST_TEST_MESSAGE("Checking camera privacy settings...");
-    int privacy_result = std::system(privacy_command.c_str());
+    [[maybe_unused]] int privacy_result = std::system(privacy_command.c_str());
     
     // Fifth, test with different configurations
     BOOST_TEST_MESSAGE("--- Step 5: Alternative Configuration Testing ---");

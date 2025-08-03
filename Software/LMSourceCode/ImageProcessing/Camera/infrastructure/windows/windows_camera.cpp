@@ -8,6 +8,7 @@
 #include "windows_camera.hpp"
 #include <iostream>
 #include <chrono>
+#include <sstream>
 
 #pragma comment(lib, "mf.lib")
 #pragma comment(lib, "mfplat.lib")
@@ -166,6 +167,60 @@ namespace golf_sim::camera::infrastructure::windows {
 
     std::string WindowsCamera::GetDeviceInfo() const {
         return device_name_;
+    }
+
+    std::string WindowsCamera::GetCurrentMediaTypeInfo() const {
+        if (!source_reader_) {
+            return "No source reader available";
+        }
+
+        Microsoft::WRL::ComPtr<IMFMediaType> media_type;
+        HRESULT hr = source_reader_->GetCurrentMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, &media_type);
+        
+        if (FAILED(hr) || !media_type) {
+            return "Failed to get current media type";
+        }
+
+        std::stringstream info;
+        
+        // Get subtype (format)
+        GUID subtype;
+        hr = media_type->GetGUID(MF_MT_SUBTYPE, &subtype);
+        if (SUCCEEDED(hr)) {
+            char format_str[5] = {0};
+            memcpy(format_str, &subtype.Data1, 4);
+            info << "Format: " << format_str << " (" << std::hex << subtype.Data1 << std::dec << ")";
+        }
+
+        // Get frame size
+        UINT32 width = 0, height = 0;
+        hr = MFGetAttributeSize(media_type.Get(), MF_MT_FRAME_SIZE, &width, &height);
+        if (SUCCEEDED(hr)) {
+            info << ", Size: " << width << "x" << height;
+        }
+
+        // Get stride
+        UINT32 stride = 0;
+        hr = media_type->GetUINT32(MF_MT_DEFAULT_STRIDE, &stride);
+        if (SUCCEEDED(hr)) {
+            info << ", Stride: " << stride;
+        }
+
+        // Get sample size
+        UINT32 sample_size = 0;
+        hr = media_type->GetUINT32(MF_MT_SAMPLE_SIZE, &sample_size);
+        if (SUCCEEDED(hr)) {
+            info << ", Sample Size: " << sample_size;
+        }
+
+        // Get frame rate
+        UINT32 numerator = 0, denominator = 0;
+        hr = MFGetAttributeRatio(media_type.Get(), MF_MT_FRAME_RATE, &numerator, &denominator);
+        if (SUCCEEDED(hr) && denominator != 0) {
+            info << ", FPS: " << (float)numerator / denominator;
+        }
+
+        return info.str();
     }
 
     // Private helper methods

@@ -58,6 +58,7 @@ add_executable(camera_tests
     domain/test_camera_domain.cpp
     domain/test_advanced_domain.cpp
     domain/test_camera_discovery.cpp
+    domain/test_independent_camera.cpp
     infrastructure/test_platform_selection.cpp
 )
 
@@ -166,3 +167,10 @@ elseif(WIN32)
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
 endif()
+
+# Bridge tests (platform independent)
+add_test(
+    NAME camera_independent_tests
+    COMMAND camera_tests --run_test=IndependentCameraTests
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)

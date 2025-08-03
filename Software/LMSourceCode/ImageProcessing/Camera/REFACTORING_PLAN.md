@@ -1,14 +1,45 @@
 # Camera Bounded Context - Refactoring Plan
 
+## 🏌️ **GOLF LAUNCH MONITOR DOMAIN REQUIREMENTS**
+
+**Problem**: Current implementation exposes low-level camera formats (NV12) and platform details to tests and orchestration logic. For a golf launch monitor, we need:
+
+- **Tee Camera**: Detect golf ball, analyze frames, set capture area
+- **Flight Camera**: Capture ball flight with long exposure + strobe  
+- **Format Abstraction**: Hide NV12/RGB/YUV buffer complexity
+- **Cross-Platform**: Windows/Linux camera implementations
+- **Clean Orchestrator**: No knowledge of camera internals
+
+**Solution**: Domain-driven design with proper abstraction layers.
+
+---
+
 ## 📋 Clean Code & Architecture Review Results
 
-Based on comprehensive code review, the Camera bounded context has several areas that need improvement to meet Clean Code standards and proper domain-driven design principles.
+Based on comprehensive code review and **golf launch monitor domain analysis**, the Camera bounded context has several critical design issues that prevent proper domain orchestration.
 
 ---
 
 ## 🚨 CRITICAL ISSUES - HIGH PRIORITY
 
-### 1. Business Logic in Tests
+### 1. **Domain Architecture Missing**
+```markdown
+### 🔴 CRITICAL: Golf Launch Monitor Domain Design
+
+#### ❌ Current Issues:
+- **No golf launch monitor domain model** - Missing TeeCamera, FlightCamera, GolfBall entities
+- **Infrastructure leakage to orchestration** - Tests handling NV12 conversion, format detection
+- **No camera abstraction for golf operations** - Should have `CaptureGolfBallImage()` not `CaptureFrame()`
+- **Platform coupling prevents cross-platform golf monitors** - Windows-specific throughout
+
+#### ✅ Required Actions:
+- [ ] **Create Golf Launch Monitor domain layer** - TeeCamera, FlightCamera, GolfBall, StrobeConfiguration
+- [ ] **Build camera abstractions for golf operations** - Hide format complexity behind golf-specific interfaces
+- [ ] **Implement Launch Monitor Orchestrator** - Coordinates tee detection and flight capture
+- [ ] **Add platform abstraction layer** - ICameraFactory for Windows/Linux implementations
+```
+
+### 2. Business Logic in Tests
 ```markdown
 ### 🔴 CRITICAL: Remove Business Logic from Tests
 
@@ -25,7 +56,24 @@ Based on comprehensive code review, the Camera bounded context has several areas
 - [ ] **Use pure assertions only** - Tests should only verify behavior, not perform business operations
 ```
 
-### 2. Domain Purity Violations
+### 2. **Infrastructure Leakage**
+```markdown
+### 🔴 CRITICAL: Remove Infrastructure from Golf Domain
+
+#### ❌ Current Issues:
+- **NV12 format handling in tests** - Should be hidden inside camera implementation
+- **Media Foundation APIs in orchestration layer** - Platform details leaking up
+- **Manual frame format conversion** - Each caller doing OpenCV conversion
+- **Camera discovery scattered** - No clean interface for finding tee/flight cameras
+
+#### ✅ Required Actions:
+- [ ] **Hide format conversion inside camera classes** - Return processed Image objects
+- [ ] **Create ICameraFactory abstraction** - Clean discovery interface
+- [ ] **Implement camera role assignment** - Designate cameras as TeeCamera vs FlightCamera
+- [ ] **Add adapter pattern for cross-platform** - WindowsCameraAdapter, LinuxCameraAdapter
+```
+
+### 3. Business Logic in Tests
 ```markdown
 ### 🔴 CRITICAL: Clean Domain Layer
 
@@ -202,6 +250,154 @@ Based on comprehensive code review, the Camera bounded context has several areas
 - [ ] **Add domain events** - State change notifications
 - [ ] **Create fluent APIs** - Improved usability
 - [ ] **Add async support** - Non-blocking operations
+```
+
+---
+
+## 🏌️ **GOLF LAUNCH MONITOR IMPLEMENTATION STRATEGY**
+
+### **Step 1: Create Domain Layer**
+```cpp
+// File: golf_launch_monitor_domain.hpp
+namespace GolfLaunchMonitor::Domain {
+    
+    class GolfBall {
+        Point3D position;
+        bool detected;
+        Timestamp detectionTime;
+    };
+    
+    class TeeArea {
+        Rectangle captureRegion;
+        CalibrationData calibration;
+    };
+    
+    class FlightCapture {
+        vector<Point3D> trajectory;
+        Duration flightTime;
+        Image strobeImage;
+    };
+    
+    // Golf-specific camera interfaces - no format leakage
+    interface ITeeCamera {
+        GolfBall DetectBallOnTee();
+        void SetCaptureArea(TeeArea area);
+        Image GetCurrentFrame();  // Processed image, no NV12 exposure
+    };
+    
+    interface IFlightCamera {
+        FlightCapture CaptureTrajectory(StrobeConfiguration strobe);
+        void StartLongExposure();
+        void TriggerCapture();
+    };
+}
+```
+
+### **Step 2: Application Orchestrator**
+```cpp
+// File: launch_monitor_orchestrator.hpp
+class LaunchMonitorOrchestrator {
+private:
+    unique_ptr<ITeeCamera> teeCamera;
+    unique_ptr<IFlightCamera> flightCamera;
+    IStrobeController& strobeController;
+    
+public:
+    void StartMonitoring();
+    void ProcessGolfShot();
+    void StopMonitoring();
+    
+private:
+    void WaitForBallOnTee();
+    void CaptureFlightPath();
+    void AnalyzeTrajectory();
+};
+```
+
+### **Step 3: Infrastructure Abstraction**
+```cpp
+// File: camera_infrastructure.hpp
+namespace Infrastructure {
+    
+    // Clean camera interface - hides all format complexity
+    interface IImageCamera {
+        CameraId GetId();
+        string GetName();
+        Image CaptureFrame();        // Always returns processed image
+        void StartStreaming();
+        void StopStreaming();
+        CameraCapabilities GetCapabilities();
+    };
+    
+    // Platform abstraction
+    interface ICameraFactory {
+        vector<IImageCamera> DiscoverCameras();
+        unique_ptr<IImageCamera> CreateCamera(CameraId id);
+    };
+    
+    // Hide Windows complexity
+    class WindowsCameraAdapter : public IImageCamera {
+        WindowsCamera impl;        // Current implementation
+    public:
+        Image CaptureFrame() override {
+            // All NV12 conversion happens HERE
+            auto rawFrame = impl.CaptureRawFrame();
+            return FormatConverter::ToProcessedImage(rawFrame);
+        }
+    };
+}
+```
+
+### **Step 4: Clean Test Architecture**
+```cpp
+// File: test_golf_launch_monitor.cpp
+class MockTeeCamera : public ITeeCamera {
+    // No format conversion, no file I/O, no UI interaction
+    GolfBall DetectBallOnTee() override {
+        return GolfBall{Point3D{100, 200, 0}, true, Now()};
+    }
+};
+
+TEST(LaunchMonitorOrchestrator, Should_DetectBallAndCaptureTrajectory) {
+    // Arrange
+    auto mockTeeCamera = make_unique<MockTeeCamera>();
+    auto mockFlightCamera = make_unique<MockFlightCamera>();
+    auto orchestrator = LaunchMonitorOrchestrator{move(mockTeeCamera), move(mockFlightCamera)};
+    
+    // Act
+    orchestrator.ProcessGolfShot();
+    
+    // Assert
+    // Clean assertions only - no business logic in tests
+}
+```
+
+---
+
+## 🎯 **IMMEDIATE ACTION PLAN**
+
+### **Priority 1: Remove Format Complexity from Tests**
+```bash
+# Move all NV12 conversion logic from tests to WindowsCameraAdapter
+# Tests should never see camera formats again
+```
+
+### **Priority 2: Create Golf Domain Interfaces**
+```bash
+# Define ITeeCamera, IFlightCamera with golf-specific operations
+# Hide all infrastructure concerns behind these interfaces
+```
+
+### **Priority 3: Build Launch Monitor Orchestrator**
+```bash
+# Application service that coordinates golf shot analysis
+# Uses domain interfaces, no platform dependencies
+```
+
+### **Priority 4: Platform Abstraction**
+```bash
+# ICameraFactory for Windows/Linux camera discovery
+# Adapter pattern for different platform implementations
 ```
 
 ### Phase 4: Platform Support (Future)

@@ -101,15 +101,15 @@ BOOST_AUTO_TEST_CASE(capture_single_frame_for_review) {
     
     // Convert frame data to OpenCV Mat for JPEG encoding
     // Use application service to handle format complexity
-    auto processed_image = golf_sim::camera::application::CameraImageProcessor::ProcessCameraFrame(
+    auto [image, conversion_successful, format_detected, error_message] = golf_sim::camera::application::CameraImageProcessor::ProcessCameraFrame(
         frame, camera.GetCurrentMediaTypeInfo());
     
-    if (processed_image.conversion_successful) {
-        BOOST_TEST_MESSAGE("Frame format detected: " << processed_image.format_detected);
+    if (conversion_successful) {
+        BOOST_TEST_MESSAGE("Frame format detected: " << format_detected);
         
         // Save image using application service
         auto save_result = golf_sim::camera::application::CameraImageProcessor::SaveImage(
-            processed_image.image, "camera_test_frame");
+            image, "camera_test_frame");
         
         if (save_result.success) {
             BOOST_TEST_MESSAGE("Frame saved as JPEG: " << save_result.filename);
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE(capture_single_frame_for_review) {
         
         BOOST_CHECK(save_result.success);
     } else {
-        BOOST_TEST_MESSAGE("Frame format conversion failed: " << processed_image.error_message);
+        BOOST_TEST_MESSAGE("Frame format conversion failed: " << error_message);
         
         // Save raw data for analysis
         std::string raw_filename = "captured_frames/camera_test_frame.raw";
@@ -192,18 +192,14 @@ BOOST_AUTO_TEST_CASE(enumerate_available_cameras) {
             for (const auto& format : camera.supported_formats) {
                 BOOST_TEST_MESSAGE("    " << format);
             }
-            
-            // Test individual camera info retrieval
-            auto camera_info = discovery_service->GetCameraInfo(camera.id);
-            if (camera_info.has_value()) {
+
+            if (discovery_service->GetCameraInfo(camera.id).has_value()) {
                 BOOST_TEST_MESSAGE("  ✓ Individual camera info retrieval works");
             } else {
                 BOOST_TEST_MESSAGE("  ✗ Individual camera info retrieval failed");
             }
-            
-            // Test accessibility check
-            bool is_accessible = discovery_service->IsCameraAccessible(camera.id);
-            BOOST_TEST_MESSAGE("  ✓ Accessibility check: " << (is_accessible ? "ACCESSIBLE" : "NOT ACCESSIBLE"));
+
+            BOOST_TEST_MESSAGE("  ✓ Accessibility check: " << (discovery_service->IsCameraAccessible(camera.id) ? "ACCESSIBLE" : "NOT ACCESSIBLE"));
         } else {
             BOOST_TEST_MESSAGE("    Camera may be in use by another application");
         }

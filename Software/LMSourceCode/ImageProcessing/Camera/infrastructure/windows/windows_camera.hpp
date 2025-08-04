@@ -8,7 +8,6 @@
 #pragma once
 
 #include "../../domain/camera_domain.hpp"
-#include <Windows.h>
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
